@@ -825,6 +825,7 @@ $('btnCoverChange').addEventListener('click',()=>{
     D.eCover.src=b64; D.eCover.style.display='block'; D.eCoverPh.style.display='none';
     D.eBg.style.backgroundImage=`url('${b64}')`;
     saveLibrary();
+    renderLibrary();
     toast('Cover updated','success');
   };
   inp.click();
@@ -867,10 +868,12 @@ async function applyResult(r) {
     D.eBg.style.backgroundImage=`url('${r.coverUrl}')`;
     const book=S.library[S.activeIdx];
     if(book){ book.coverUrl=r.coverUrl; }
+    renderLibrary();
     // Attempt blob conversion in background for local saving
     fetch(r.coverUrl).then(res=>res.blob()).then(async blob=>{
       const b64=await blobToB64(blob);
       if(book){ book.coverBase64=b64.split(',')[1]; book.coverMime=blob.type; }
+      renderLibrary();
     }).catch(()=>{});
   }
   toast('Applied!','success');
