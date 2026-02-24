@@ -505,22 +505,13 @@ function pickNewCover() {
     dom.heroCover.src = b64;
     dom.heroCover.style.display = 'block';
     dom.heroBg.style.backgroundImage = `url('${b64}')`;
+    await persistLibrary();
+    renderLibrary();
     toast('Cover updated', 'success');
   };
   input.click();
 }
 
-$('btnHeroCoverSave').addEventListener('click', async () => {
-  haptic('Light');
-  const book = state.library[state.activeBookIndex];
-  if (!book?.coverBase64) { toast('No cover to save', ''); return; }
-  const ext  = book.coverMime?.includes('png') ? 'png' : 'jpg';
-  const link = document.createElement('a');
-  link.href  = `data:${book.coverMime};base64,${book.coverBase64}`;
-  link.download = `${(book.title || 'cover').replace(/[^a-z0-9]/gi,'_')}.${ext}`;
-  link.click();
-  toast('Cover saved', 'success');
-});
 
 // ─── Results Sheet ────────────────────────────────────────────────────────────
 function openResultsSheet() {
@@ -568,6 +559,7 @@ async function applyResultToEditor(r) {
       dom.heroCover.src = b64;
       dom.heroCover.style.display = 'block';
       dom.heroBg.style.backgroundImage = `url('${b64}')`;
+      renderLibrary();
     } catch {}
     hideLoading();
   }
