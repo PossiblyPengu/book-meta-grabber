@@ -22,6 +22,9 @@ export async function fetchGoogleBooks(query) {
     const data = await r.json();
     return (data.items || []).map(item => {
       const v = item.volumeInfo || {};
+      const imgs = v.imageLinks || {};
+      const prefer = ['extraLarge', 'large', 'medium', 'small', 'thumbnail', 'smallThumbnail'];
+      const coverUrl = prefer.map(p => imgs[p]).find(Boolean) || null;
       return {
         source:      'Google Books',
         title:       v.title || '',
@@ -32,7 +35,7 @@ export async function fetchGoogleBooks(query) {
         description: stripHtml(v.description || ''),
         genre:       (v.categories || []).join(', '),
         language:    v.language || '',
-        coverUrl:    v.imageLinks?.extraLarge || v.imageLinks?.large || v.imageLinks?.thumbnail || null,
+        coverUrl,
       };
     });
   } catch { return []; }
@@ -76,7 +79,11 @@ export async function fetchItunes(query) {
       year:        (item.releaseDate || '').slice(0, 4),
       description: stripHtml(item.description || item.longDescription || ''),
       genre:       item.primaryGenreName || '',
-      coverUrl:    (item.artworkUrl600 || item.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
+      coverUrl:    (() => {
+        const url = item.artworkUrl600 || item.artworkUrl100 || item.artworkUrl60 || '';
+        if (!url) return null;
+        return url.replace(/(\d+)x(\d+)(bb)?/i, '1000x1000$3');
+      })(),
     }));
   } catch { return []; }
 }
@@ -96,7 +103,8 @@ export async function fetchMusicBrainz(query) {
       try {
         const cr   = await fetchWithTimeout(`https://coverartarchive.org/release/${rel.id}`, { headers: { Accept: 'application/json' } });
         const crd  = await cr.json();
-        coverUrl   = crd?.images?.[0]?.image || null;
+        const img = crd?.images?.[0];
+        coverUrl = img?.thumbnails?.large || img?.thumbnails?.'500' || img?.image || null;
       } catch {}
       results.push({
         source:    'MusicBrainz',

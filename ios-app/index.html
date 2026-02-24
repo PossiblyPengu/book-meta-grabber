@@ -226,6 +226,17 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
+      <button class="source-option-btn" id="srcFolder">
+        <div class="source-option-icon" style="background:linear-gradient(135deg,#10B981,#06B6D4)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </div>
+        <div class="source-option-info">
+          <span class="source-option-title">Folder (audiobooks)</span>
+          <span class="source-option-sub">Import directories with audio parts</span>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
       <button class="source-option-btn" id="srcGDrive">
         <div class="source-option-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="m12 3-9 15h18z"/><path d="m7.5 12 4.5 7.5"/><path d="m16.5 12-4.5 7.5"/></svg>
@@ -380,6 +391,50 @@
   <div class="loading-pill glass-panel" id="loadingPill" style="display:none">
     <div class="spinner-sm"></div>
     <span id="loadingMsg">Loading…</span>
+  </div>
+
+  <!-- Folder import confirmation modal -->
+  <div class="modal-backdrop" id="folderConfirmBackdrop" style="display:none"></div>
+  <div class="modal" id="folderConfirm" style="display:none">
+    <h3 id="folderConfirmTitle">Import folder</h3>
+    <p id="folderConfirmBody">Import as a single file (concatenate parts) or keep as a multi-part audiobook?</p>
+    <div class="modal-actions">
+      <button class="glass-btn glass-btn-primary" id="folderConfirmConcat">Concatenate & Import</button>
+      <button class="glass-btn" id="folderConfirmParts">Import as Parts</button>
+      <button class="glass-btn sheet-cancel" id="folderConfirmCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Concatenation progress modal -->
+  <div class="modal-backdrop" id="concatProgressBackdrop" style="display:none"></div>
+  <div class="modal" id="concatProgress" style="display:none">
+    <h3 id="concatProgressTitle">Concatenating…</h3>
+    <div style="margin:12px 0">
+      <div style="background:rgba(255,255,255,0.06);height:10px;border-radius:6px;overflow:hidden">
+        <div id="concatProgressBar" style="width:0%;height:100%;background:linear-gradient(90deg,#60A5FA,#A78BFA)"></div>
+      </div>
+      <div style="font-size:13px;color:var(--t3);margin-top:8px" id="concatProgressMsg">Starting…</div>
+    </div>
+    <div class="modal-actions">
+      <button class="glass-btn sheet-cancel" id="concatCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Parts list in editor -->
+  <div class="parts-list-wrap" id="partsListWrap" style="display:none">
+    <div class="parts-list-header">Parts</div>
+    <div class="parts-list" id="partsList"></div>
+  </div>
+
+  <!-- Generic confirm modal -->
+  <div class="modal-backdrop" id="confirmBackdrop" style="display:none"></div>
+  <div class="modal" id="confirmModal" style="display:none">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmBody">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="glass-btn glass-btn-primary" id="confirmOk">Yes</button>
+      <button class="glass-btn" id="confirmCancel">No</button>
+    </div>
   </div>
 
   <script type="module" src="js/app.js"></script>

@@ -1,3 +1,29 @@
+// Generic confirm modal for root UI
+function showConfirm(title, body) {
+  return new Promise(res => {
+    let backdrop = document.getElementById('rootConfirmBackdrop');
+    let modal = document.getElementById('rootConfirmModal');
+    if (!backdrop) {
+      backdrop = document.createElement('div'); backdrop.id = 'rootConfirmBackdrop'; backdrop.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.5);display:none'; document.body.appendChild(backdrop);
+    }
+    if (!modal) {
+      modal = document.createElement('div'); modal.id = 'rootConfirmModal'; modal.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1000;width:min(92%,420px);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:16px;border-radius:12px;display:none;box-shadow:0 10px 40px rgba(0,0,0,0.6)';
+      modal.innerHTML = `<h3 id="rct">Confirm</h3><p id="rcb"></p><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button id="rcOk" style="padding:8px 12px">Yes</button><button id="rcCancel" style="padding:8px 12px">No</button></div>`;
+      document.body.appendChild(modal);
+    }
+    backdrop.style.display = 'block'; modal.style.display = 'block';
+    modal.querySelector('#rct').textContent = title || 'Confirm';
+    modal.querySelector('#rcb').textContent = body || '';
+
+    const okBtn = modal.querySelector('#rcOk');
+    const cancelBtn = modal.querySelector('#rcCancel');
+    const cleanup = () => { backdrop.style.display='none'; modal.style.display='none'; okBtn.removeEventListener('click', onOk); cancelBtn.removeEventListener('click', onCancel); };
+    const onOk = () => { cleanup(); res(true); };
+    const onCancel = () => { cleanup(); res(false); };
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -997,8 +1023,11 @@ $('togAutoFetch').addEventListener('click',()=>{
 });
 $('settGDrive').addEventListener('change',()=>{ S.settings.gDriveId=$('settGDrive').value.trim(); toast('Settings saved','success'); });
 $('btnClearLib').addEventListener('click',()=>{
-  if(!confirm('Remove all books from library?')) return;
-  S.library=[]; S.activeIdx=-1; saveLibrary(); renderLibrary(); toast('Library cleared');
+  (async function(){
+    const ok = await showConfirm('Remove all books from library?', 'This will permanently remove all items from your library.');
+    if(!ok) return;
+    S.library=[]; S.activeIdx=-1; saveLibrary(); renderLibrary(); toast('Library cleared');
+  })();
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

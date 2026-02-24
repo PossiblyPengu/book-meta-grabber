@@ -50,6 +50,27 @@ export async function pickFromFiles() {
   }
 }
 
+// ─── Folder / audiobook folder import ─────────────────────────────────────────
+// Attempts to let the native picker choose a directory; falls back to a
+// browser `input.webkitdirectory` flow which groups files by their top-level
+// folder and returns 'audiobook' style entries with `parts` arrays.
+export async function pickFolder() {
+  // If the Capacitor document picker provides a directory API, try it.
+  try {
+    if (FilePicker && typeof FilePicker.getDirectory === 'function') {
+      const res = await FilePicker.getDirectory();
+      // Expected: res.files or similar; normalize conservatively.
+      const files = res.files || [];
+      return groupFilesAsFolders(files.map(f => ({ uri: f.uri || f.path, name: f.name || (f.path && f.path.split('/').pop()), file: null })));
+    }
+  } catch (e) {
+    // ignore and fall back to browser behavior
+  }
+
+  // Browser fallback
+  return simulateFolderPick();
+}
+
 // ─── Google Drive ─────────────────────────────────────────────────────────────
 // Opens Google Picker in @capacitor/browser in-app sheet.
 // After user picks, we receive the file ID via a custom URL scheme callback.
@@ -156,4 +177,52 @@ async function simulateFilePick() {
     input.oncancel = () => resolve([]);
     input.click();
   });
+}
+
+function simulateFolderPick() {
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true;
+    input.multiple = true;
+    input.accept = '.mp3,.m4b,.m4a,.flac,.ogg,.opus';
+    input.onchange = () => {
+      const files = Array.from(input.files || []);
+      const folderEntries = groupFilesAsFolders(files.map(f => ({ file: f, name: f.name, uri: URL.createObjectURL(f), relativePath: f.webkitRelativePath || f.name })));
+      resolve(folderEntries);
+    };
+    input.oncancel = () => resolve([]);
+    input.click();
+  });
+}
+
+function groupFilesAsFolders(items) {
+  // items: { file?, name, uri, relativePath }
+  const byFolder = {};
+  for (const it of items) {
+    const rel = it.relativePath || it.name || '';
+    const parts = rel.split('/').filter(Boolean);
+    const folder = parts.length > 1 ? parts[0] : (it.name || 'root');
+    byFolder[folder] = byFolder[folder] || [];
+    byFolder[folder].push({ name: it.name, uri: it.uri, file: it.file || null, format: getFormat(it.name) });
+  }
+
+  // Convert to array of folder entries. If folder contains mostly audio files,
+  // treat it as an audiobook with `parts` array.
+  const out = [];
+  for (const [folderName, files] of Object.entries(byFolder)) {
+    const audioCount = files.filter(f => SUPPORTED_EXTS.has(f.format)).length;
+    if (audioCount >= 2) {
+      out.push({
+        name: folderName,
+        source: 'local-folder',
+        format: 'audiobook-folder',
+        parts: files.sort((a,b) => a.name.localeCompare(b.name)),
+      });
+    } else {
+      // Not a multi-part audiobook: expose individual files instead
+      for (const f of files) out.push({ uri: f.uri, name: f.name, format: f.format, source: 'local', file: f.file });
+    }
+  }
+  return out;
 }

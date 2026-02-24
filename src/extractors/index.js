@@ -75,6 +75,28 @@ async function extractEpub(fileOrBlob, fileName) {
     }
   }
 
+  // If no explicit cover found, pick the largest image in the EPUB (best chance of high-res)
+  if (!coverBase64) {
+    const imgs = zip.file(/\.(png|jpe?g|webp)$/i) || [];
+    if (imgs.length) {
+      let bestBuf = null;
+      let bestName = null;
+      for (const f of imgs) {
+        try {
+          const buf = await f.async('uint8array');
+          if (!bestBuf || buf.length > bestBuf.length) {
+            bestBuf = buf;
+            bestName = f.name || (opfDir + f.name);
+          }
+        } catch (e) {}
+      }
+      if (bestBuf) {
+        coverBase64 = uint8ToBase64(bestBuf);
+        coverMime   = bestName.match(/\.png$/i) ? 'image/png' : 'image/jpeg';
+      }
+    }
+  }
+
   return {
     title:       get('title')       || guessTitle(fileName),
     author:      get('creator')     || '',

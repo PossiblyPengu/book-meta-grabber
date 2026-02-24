@@ -84,6 +84,7 @@ const dom = {
   sourcePickerSheet:    $('sourcePickerSheet'),
   srcLocal:   $('srcLocal'),
   srcICloud:  $('srcICloud'),
+  srcFolder:  $('srcFolder'),
   srcGDrive:  $('srcGDrive'),
 
   // Editor
@@ -129,6 +130,28 @@ const dom = {
   toast:        $('toast'),
   loadingPill:  $('loadingPill'),
   loadingMsg:   $('loadingMsg'),
+  // Folder/concat UI
+  folderConfirmBackdrop: $('folderConfirmBackdrop'),
+  folderConfirm:         $('folderConfirm'),
+  folderConfirmTitle:    $('folderConfirmTitle'),
+  folderConfirmBody:     $('folderConfirmBody'),
+  folderConfirmConcat:   $('folderConfirmConcat'),
+  folderConfirmParts:    $('folderConfirmParts'),
+  folderConfirmCancel:   $('folderConfirmCancel'),
+  concatProgressBackdrop: $('concatProgressBackdrop'),
+  concatProgress:         $('concatProgress'),
+  concatProgressBar:      $('concatProgressBar'),
+  concatProgressMsg:      $('concatProgressMsg'),
+  concatCancel:           $('concatCancel'),
+  partsListWrap:          $('partsListWrap'),
+  partsList:              $('partsList'),
+  // Generic confirm
+  confirmBackdrop: $('confirmBackdrop'),
+  confirmModal:    $('confirmModal'),
+  confirmTitle:    $('confirmTitle'),
+  confirmBody:     $('confirmBody'),
+  confirmOk:       $('confirmOk'),
+  confirmCancel:   $('confirmCancel'),
 };
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -223,7 +246,234 @@ async function importFromGoogleDrive() {
 
 dom.srcLocal.addEventListener('click', importFromFilePicker);
 dom.srcICloud.addEventListener('click', importFromFilePicker);
+dom.srcFolder.addEventListener('click', importFromFolder);
 dom.srcGDrive.addEventListener('click', importFromGoogleDrive);
+
+// Import from a folder (audiobook parts)
+async function importFromFolder() {
+  closeSourcePicker();
+  const { pickFolder } = await import('../../src/fileSources.js');
+  try {
+    const picked = await pickFolder();
+    if (!picked || !picked.length) return;
+    showLoading('Importing folder…');
+    for (const item of picked) {
+      try {
+        if (item.format === 'audiobook-folder' && item.parts && item.parts.length) {
+          const choice = await showFolderImportConfirm(item.name, item.parts.length);
+          if (choice === 'concat') {
+            try {
+              // show concat progress UI and allow cancellation
+              const controller = createConcatController();
+              showConcatProgressUI();
+              const outBlob = await concatenateAudioParts(item.parts, item.name, controller);
+              hideConcatProgressUI();
+              const meta = await extractMetadata(outBlob, `${item.name}.m4b`);
+              const entry = {
+                id: Date.now() + Math.random(),
+                uri: URL.createObjectURL(outBlob),
+                fileName: `${item.name}.m4b`,
+                format: 'm4b',
+                source: 'local-folder',
+                status: 'imported',
+                parts: item.parts.map(p => ({ name: p.name, uri: p.uri })),
+                ...meta,
+              };
+              state.library.push(entry);
+            } catch (e) {
+              hideConcatProgressUI();
+              if (e && e.name === 'FFMPEG_ABORT') {
+                toast('Concatenation canceled', 'info');
+                const entry = makeFolderEntry(item);
+                state.library.push(entry);
+              } else {
+                console.error('[concat]', e);
+                toast('Concatenation failed; importing as multi-part', 'error');
+                const entry = makeFolderEntry(item);
+                state.library.push(entry);
+              }
+            }
+          } else if (choice === 'parts') {
+            const entry = makeFolderEntry(item);
+            state.library.push(entry);
+          } else {
+            // canceled
+          }
+        } else {
+          await processPickedFiles([item]);
+        }
+      } catch (e) {
+        console.error('[importFolder]', e);
+      }
+    }
+    hideLoading();
+    await persistLibrary();
+    renderLibrary();
+    toast('Folder(s) added', 'success');
+  } catch (e) {
+    hideLoading();
+    toast(`Folder import failed: ${e.message}`, 'error');
+  }
+}
+
+function makeFolderEntry(item) {
+  // Use first part to extract basic metadata when possible
+  const first = item.parts[0];
+  const entry = {
+    id: Date.now() + Math.random(),
+    uri: first?.uri || null,
+    fileName: `${item.name}`,
+    format: 'audiobook-folder',
+    source: 'local-folder',
+    status: 'imported',
+    parts: item.parts.map(p => ({ name: p.name, uri: p.uri })),
+    title: item.name,
+  };
+  return entry;
+}
+
+async function concatenateAudioParts(parts, outName, controller) {
+  // parts: [{name, uri, file, format}, ...]
+  // Use FFmpeg.wasm (@ffmpeg/ffmpeg). This is optional and may be heavy.
+  const { createFFmpeg, fetchFile } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js');
+  const ffmpeg = createFFmpeg({ log: false });
+  await ffmpeg.load();
+
+  if (controller) {
+    controller.setFFmpeg(ffmpeg);
+    // attach progress callback
+    if (typeof ffmpeg.setProgress === 'function') {
+      ffmpeg.setProgress(({ ratio, time }) => {
+        const pct = Math.round(ratio * 100);
+        updateConcatProgress(pct, `Processing... ${pct}%`);
+      });
+    }
+  }
+
+  // Write each part to FS
+  const listLines = [];
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    // obtain ArrayBuffer
+    let data;
+    if (p.file instanceof File) data = await p.file.arrayBuffer();
+    else {
+      const r = await fetch(p.uri);
+      data = await r.arrayBuffer();
+    }
+    const name = `part${i}.${p.name.split('.').pop() || 'mp3'}`;
+    ffmpeg.FS('writeFile', name, await fetchFile(new Uint8Array(data)));
+    listLines.push(`file '${name}'`);
+  }
+
+  // Write concat list
+  ffmpeg.FS('writeFile', 'list.txt', listLines.join('\n'));
+
+  // Output file: use m4b container with AAC audio
+  const outFile = `${outName.replace(/[^a-z0-9]/gi,'_')}.m4b`;
+  try {
+    await ffmpeg.run('-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c:a', 'aac', '-b:a', '128k', outFile);
+  } catch (e) {
+    // If ffmpeg was aborted via controller, throw a specific error
+    if (controller && controller.aborted) {
+      const err = new Error('FFMPEG aborted'); err.name = 'FFMPEG_ABORT'; throw err;
+    }
+    throw e;
+  }
+
+  const data = ffmpeg.FS('readFile', outFile);
+  const blob = new Blob([data.buffer], { type: 'audio/mp4' });
+  // Clean up FS (best effort)
+  try { ffmpeg.FS('unlink', 'list.txt'); } catch {}
+  for (let i = 0; i < parts.length; i++) try { ffmpeg.FS('unlink', `part${i}.${parts[i].name.split('.').pop()}`); } catch {}
+  try { ffmpeg.FS('unlink', outFile); } catch {}
+  return blob;
+}
+
+// --- Folder import confirmation UI helpers ---
+function showFolderImportConfirm(name, partCount) {
+  return new Promise(res => {
+    dom.folderConfirmTitle.textContent = `Import “${name}”`;
+    dom.folderConfirmBody.textContent = `This folder contains ${partCount} part${partCount>1?'s':''}. Concatenate into a single file or import as parts?`;
+    dom.folderConfirmBackdrop.style.display = 'block';
+    dom.folderConfirm.style.display = 'block';
+
+    const clear = () => {
+      dom.folderConfirmBackdrop.style.display = 'none';
+      dom.folderConfirm.style.display = 'none';
+      dom.folderConfirmConcat.removeEventListener('click', onConcat);
+      dom.folderConfirmParts.removeEventListener('click', onParts);
+      dom.folderConfirmCancel.removeEventListener('click', onCancel);
+    };
+    const onConcat = () => { clear(); res('concat'); };
+    const onParts  = () => { clear(); res('parts'); };
+    const onCancel = () => { clear(); res('cancel'); };
+
+    dom.folderConfirmConcat.addEventListener('click', onConcat);
+    dom.folderConfirmParts.addEventListener('click', onParts);
+    dom.folderConfirmCancel.addEventListener('click', onCancel);
+  });
+}
+
+function showConcatProgressUI() {
+  dom.concatProgressBackdrop.style.display = 'block';
+  dom.concatProgress.style.display = 'block';
+  dom.concatProgressBar.style.width = '0%';
+  dom.concatProgressMsg.textContent = 'Starting…';
+}
+
+function hideConcatProgressUI() {
+  dom.concatProgressBackdrop.style.display = 'none';
+  dom.concatProgress.style.display = 'none';
+}
+
+function updateConcatProgress(pct, msg) {
+  dom.concatProgressBar.style.width = `${pct}%`;
+  dom.concatProgressMsg.textContent = msg || `${pct}%`;
+}
+
+function createConcatController() {
+  let ffmpegInst = null;
+  const controller = {
+    aborted: false,
+    setFFmpeg(inst) { ffmpegInst = inst; },
+    abort() {
+      controller.aborted = true;
+      try { ffmpegInst && ffmpegInst.exit && ffmpegInst.exit(); } catch (e) {}
+    }
+  };
+
+  // Wire cancel button
+  const onCancel = () => { controller.abort(); };
+  dom.concatCancel.addEventListener('click', onCancel, { once: true });
+  return controller;
+}
+
+function createPartsListHtml(parts) {
+  return parts.map((p, i) => `<div class="part-row">${i+1}. ${esc(p.name)}</div>`).join('');
+}
+
+// --- Generic confirm modal ---
+function showConfirm(title, body) {
+  return new Promise(res => {
+    dom.confirmTitle.textContent = title || 'Confirm';
+    dom.confirmBody.textContent = body || '';
+    dom.confirmBackdrop.style.display = 'block';
+    dom.confirmModal.style.display = 'block';
+
+    const clear = () => {
+      dom.confirmBackdrop.style.display = 'none';
+      dom.confirmModal.style.display = 'none';
+      dom.confirmOk.removeEventListener('click', onOk);
+      dom.confirmCancel.removeEventListener('click', onCancel);
+    };
+    const onOk = () => { clear(); res(true); };
+    const onCancel = () => { clear(); res(false); };
+
+    dom.confirmOk.addEventListener('click', onOk);
+    dom.confirmCancel.addEventListener('click', onCancel);
+  });
+}
 
 // ─── Process Picked Files ─────────────────────────────────────────────────────
 async function processPickedFiles(picked) {
@@ -309,10 +559,16 @@ function renderLibrary() {
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
          </div>`;
 
+    // Parts badge for audiobook-folder entries
+    const partsBadge = (book.format === 'audiobook-folder' && Array.isArray(book.parts) && book.parts.length)
+      ? `<span class="parts-badge">${book.parts.length}</span>`
+      : '';
+
     card.innerHTML = `
       <div class="book-cover-wrap">
         ${coverHtml}
         <span class="book-fmt-badge fmt-${book.format}">${FORMAT_LABELS[book.format] || book.format.toUpperCase()}</span>
+        ${partsBadge}
       </div>
       <div class="book-title">${esc(book.title || book.fileName)}</div>
       <div class="book-author">${esc(book.author || '—')}</div>`;
@@ -406,6 +662,15 @@ function populateEditor(book) {
   dom.fTitle.oninput  = () => { dom.heroTitle.textContent  = dom.fTitle.value  || '—'; };
   dom.fAuthor.oninput = () => { dom.heroAuthor.textContent = dom.fAuthor.value || '—'; };
 }
+
+  // Show parts list for audiobook-folder entries
+  if (book.format === 'audiobook-folder' && Array.isArray(book.parts)) {
+    dom.partsListWrap.style.display = 'block';
+    dom.partsList.innerHTML = createPartsListHtml(book.parts);
+  } else {
+    dom.partsListWrap.style.display = 'none';
+    dom.partsList.innerHTML = '';
+  }
 
 function collectEditorValues() {
   const book = state.library[state.activeBookIndex] || {};
@@ -671,9 +936,10 @@ dom.settingAutoFetch.addEventListener('click', async () => {
   await persistSettings();
 });
 
-// Clear library
+// Clear library (use modal)
 $('btnClearLibrary').addEventListener('click', async () => {
-  if (!confirm('Remove all books from library?')) return;
+  const ok = await showConfirm('Remove all books from library?', 'This will permanently remove all items from your library.');
+  if (!ok) return;
   haptic('Heavy');
   state.library = [];
   state.activeBookIndex = -1;

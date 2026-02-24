@@ -24,6 +24,15 @@ Built with **Capacitor 5** + vanilla JS, styled with **iOS Liquid Glass** aesthe
 | **iCloud Drive** | Same picker — iCloud Drive appears automatically in Files |
 | **Google Drive** | OAuth2 in-app browser → Google Picker → download via Drive API |
 
+### Folder / Audiobook import
+
+You can import directories containing audiobook parts (multiple audio files in a folder). On platforms that support directory selection the app will group files by top-level folder and present an "Import Folder" option. When importing a multi-part audiobook you can:
+
+- Import as a multi-part entry (keeps parts separate in the library), or
+- Concatenate parts into a single M4B file in the browser using FFmpeg.wasm (re-encodes to AAC). This can be slow and memory-heavy — the app will fall back to importing parts if concatenation fails.
+
+The browser fallback uses `input.webkitdirectory` (Chrome/Edge) when native directory picking isn't available.
+
 ## Metadata Sources (All queried in parallel)
 
 - Google Books API
