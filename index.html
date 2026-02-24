@@ -714,8 +714,11 @@ function renderLibrary() {
     card.className='bcard fu';
     card.style.animationDelay=`${Math.min(i*40,300)}ms`;
     const grad = `cg${i%6}`;
-    const coverHtml = book.coverBase64
-      ? `<img class="bcover-img" src="data:${book.coverMime||'image/jpeg'};base64,${book.coverBase64}" alt="" loading="lazy"/>`
+    const thumbSrc = book.coverBase64
+      ? `data:${book.coverMime||'image/jpeg'};base64,${book.coverBase64}`
+      : book.coverUrl || null;
+    const coverHtml = thumbSrc
+      ? `<img class="bcover-img" src="${thumbSrc}" alt="" loading="lazy"/>`
       : `<div class="bcover-ph ${grad}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>`;
     card.innerHTML=`<div class="bcover-wrap">${coverHtml}<span class="bfmt-badge fmt-${book.format}">${FMT_LABELS[book.format]||book.format.toUpperCase()}</span></div><div class="btitle">${esc(book.title||book.fileName)}</div><div class="bauthor">${esc(book.author||'—')}</div>`;
     card.addEventListener('click',()=>openEditor(realIdx));
@@ -751,10 +754,12 @@ function populate(b) {
   D.eTitle.textContent   = b.title  || b.fileName || '—';
   D.eAuthor.textContent  = b.author || '—';
 
-  if(b.coverBase64){
-    const src=`data:${b.coverMime||'image/jpeg'};base64,${b.coverBase64}`;
-    D.eCover.src=src; D.eCover.style.display='block'; D.eCoverPh.style.display='none';
-    D.eBg.style.backgroundImage=`url('${src}')`;
+  const coverSrc = b.coverBase64
+    ? `data:${b.coverMime||'image/jpeg'};base64,${b.coverBase64}`
+    : b.coverUrl || null;
+  if(coverSrc){
+    D.eCover.src=coverSrc; D.eCover.style.display='block'; D.eCoverPh.style.display='none';
+    D.eBg.style.backgroundImage=`url('${coverSrc}')`;
   } else {
     D.eCover.style.display='none'; D.eCoverPh.style.display='flex';
     D.eBg.style.backgroundImage='';
@@ -1009,7 +1014,14 @@ function sh(s){return s.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()}
 function guessTitle(n){return n.replace(/\.[^.]+$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ').trim()}
 function fmtDur(s){if(!s) return'—';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`}
 function blobToB64(blob){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=j;fr.readAsDataURL(blob)})}
-function saveLibrary(){try{localStorage.setItem('bmg_library',JSON.stringify(S.library));}catch(e){console.warn('Save failed:',e);}}
+function saveLibrary(){
+  try{
+    // Strip base64 covers before saving — they blow the 5MB localStorage limit.
+    // coverUrl is kept so the image can be re-displayed from the remote URL.
+    const slim=S.library.map(b=>({...b,coverBase64:null,coverMime:null}));
+    localStorage.setItem('bmg_library',JSON.stringify(slim));
+  }catch(e){console.warn('Save failed:',e);}
+}
 function loadLibrary(){try{const d=localStorage.getItem('bmg_library');return d?JSON.parse(d):[];}catch{return[];}}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
