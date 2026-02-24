@@ -821,7 +821,7 @@ $('btnCoverChange').addEventListener('click',()=>{
     const f=inp.files[0]; if(!f) return;
     const b64=await blobToB64(f);
     const book=S.library[S.activeIdx];
-    if(book){ book.coverBase64=b64.split(',')[1]; book.coverMime=f.type; }
+    if(book){ book.coverBase64=b64.split(',')[1]; book.coverMime=f.type; book.coverUrl=b64; }
     D.eCover.src=b64; D.eCover.style.display='block'; D.eCoverPh.style.display='none';
     D.eBg.style.backgroundImage=`url('${b64}')`;
     saveLibrary();
