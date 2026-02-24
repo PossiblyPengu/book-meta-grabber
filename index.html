@@ -566,15 +566,7 @@ const S = {
   settings: { gDriveId: '', autoFetch: true },
 };
 
-// ── Seed demo data ───────────────────────────────────────────────────────────
-S.library = [
-  { id:1, fileName:'Project Hail Mary.epub', format:'epub', title:'Project Hail Mary', author:'Andy Weir', year:'2021', publisher:'Ballantine Books', genre:'Science Fiction', isbn:'9780593135204', description:'A lone astronaut must save the Earth from disaster in this propulsive sci-fi adventure.', language:'en', coverBase64:null, coverMime:null, narrator:'', series:'', },
-  { id:2, fileName:'Dune.epub', format:'epub', title:'Dune', author:'Frank Herbert', year:'1965', publisher:'Chilton Books', genre:'Science Fiction', isbn:'9780441013593', description:'Set in the distant future amidst a feudal interstellar society, Dune tells the story of young Paul Atreides.', language:'en', coverBase64:null, coverMime:null, narrator:'', series:'Dune Chronicles', },
-  { id:3, fileName:'Atomic Habits.pdf', format:'pdf', title:'Atomic Habits', author:'James Clear', year:'2018', publisher:'Avery', genre:'Self-Help', isbn:'9780735211292', description:"An easy and proven way to build good habits and break bad ones.", language:'en', coverBase64:null, coverMime:null, narrator:'', series:'', },
-  { id:4, fileName:'The Name of the Wind.mp3', format:'mp3', title:'The Name of the Wind', author:'Patrick Rothfuss', year:'2007', publisher:'DAW Books', genre:'Fantasy', isbn:'9780756404079', description:'A heroic symphony of a legend told in three days.', language:'en', coverBase64:null, coverMime:null, narrator:'Nick Podehl', series:'Kingkiller Chronicle', duration:57600, bitrate:256, sampleRate:44100, channels:2, },
-  { id:5, fileName:'Sapiens.m4b', format:'m4b', title:'Sapiens', author:'Yuval Noah Harari', year:'2011', publisher:'Harper', genre:'History', isbn:'9780062316097', description:'A brief history of humankind.', language:'en', coverBase64:null, coverMime:null, narrator:'Derek Perkins', series:'', duration:51840, bitrate:128, sampleRate:44100, channels:1, },
-  { id:6, fileName:'Foundation.epub', format:'epub', title:'Foundation', author:'Isaac Asimov', year:'1951', publisher:'Gnome Press', genre:'Science Fiction', isbn:'9780553293357', description:'The fall of the Galactic Empire and the rise of a new civilization.', language:'en', coverBase64:null, coverMime:null, narrator:'', series:'Foundation', },
-];
+
 
 // ── DOM ──────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -1014,15 +1006,6 @@ function blobToB64(blob){return new Promise((r,j)=>{const fr=new FileReader();fr
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 renderLibrary();
-// Auto-enrich demo books
-setTimeout(async()=>{
-  for(let i=0;i<S.library.length;i++){
-    if(!S.library[i].coverBase64) {
-      await fetchAndEnrich(i);
-      await new Promise(r=>setTimeout(r,400));
-    }
-  }
-},500);
 </script>
 </body>
 </html>
