@@ -1,0 +1,14 @@
+node_modules/
+dist/
+ios/
+.DS_Store
+.env
+.vscode/
+npm-debug.log*
+yarn-error.log*
+coverage/
+.idea/
+.parcel-cache/
+.nyc_output/
+.cache/
+dist-archive/

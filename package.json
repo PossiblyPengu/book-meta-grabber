@@ -9,7 +9,11 @@
     "cap:sync":   "npx cap sync ios",
     "cap:open":   "npx cap open ios",
     "cap:run":    "npx cap run ios",
-    "deploy":     "npm run build && npx cap sync ios && npx cap open ios"
+    "deploy":     "npm run build && npx cap sync ios && npx cap open ios",
+    "lint":       "eslint . --ext .js --max-warnings=0",
+    "lint:fix":   "eslint . --ext .js --fix",
+    "format":     "prettier --write \"**/*.{js,css,md,json,html}\"",
+    "ci":         "npm run lint && npm run build"
   },
   "dependencies": {
     "@capacitor/app":             "^5.0.0",
@@ -24,7 +28,11 @@
   "devDependencies": {
     "@capacitor/cli": "^5.0.0",
     "@capacitor/ios": "^5.0.0",
-    "vite":           "^5.0.0"
+    "vite":           "^5.0.0",
+    "eslint":         "^8.50.0",
+    "prettier":       "^2.8.8",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1"
   },
   "author": "Andrew",
   "license": "MIT"
