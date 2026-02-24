@@ -27,7 +27,7 @@ async function fetchBlob(source) {
 }
 
 async function exportEpub(blob, metadata) {
-  const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js')).default;
+  const JSZip = (await import('jszip')).default;
   const zip = await JSZip.loadAsync(blob);
 
   const containerXml = await zip.file('META-INF/container.xml')?.async('string') || '';
@@ -103,7 +103,7 @@ async function exportEpub(blob, metadata) {
 
 async function exportMp3(blob, metadata) {
   // Use browser-id3-writer ESM if available
-  const mod = await import('https://cdn.jsdelivr.net/npm/browser-id3-writer@4.0.0/dist/browser-id3-writer.esm.js');
+  const mod = await import('browser-id3-writer');
   const ID3Writer = mod.default || mod.ID3Writer || mod;
   const arrayBuffer = await blob.arrayBuffer();
   const writer = new ID3Writer(new Uint8Array(arrayBuffer));

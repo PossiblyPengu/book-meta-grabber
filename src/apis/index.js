@@ -103,8 +103,8 @@ export async function fetchMusicBrainz(query) {
       try {
         const cr   = await fetchWithTimeout(`https://coverartarchive.org/release/${rel.id}`, { headers: { Accept: 'application/json' } });
         const crd  = await cr.json();
-        const img = crd?.images?.[0];
-        coverUrl = img?.thumbnails?.large || img?.thumbnails?.'500' || img?.image || null;
+        const img = crd?.images?.[0] || null;
+        coverUrl = img?.thumbnails?.large || img?.thumbnails?.['500'] || img?.image || null;
       } catch {}
       results.push({
         source:    'MusicBrainz',

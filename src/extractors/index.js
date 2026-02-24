@@ -7,9 +7,27 @@
 
 // ─── Audio (music-metadata-browser) ──────────────────────────────────────────
 async function extractAudio(fileOrBlob, fileName) {
-  const { parseBlob } = await import('https://cdn.jsdelivr.net/npm/music-metadata-browser@2.5.10/dist/index.js');
-  const meta   = await parseBlob(fileOrBlob, { skipPostHeaders: true, includeChapters: true });
-  const { common, format } = meta;
+  // Offload to metadata worker to avoid blocking UI
+  return new Promise((res, rej) => {
+    try {
+      const worker = new Worker(new URL('../workers/metadataWorker.js', import.meta.url), { type: 'module' });
+      worker.addEventListener('message', (ev) => {
+        const d = ev.data || {};
+        if (d.event === 'result') {
+          worker.terminate();
+          res(d.result);
+        } else if (d.event === 'error') {
+          worker.terminate();
+          rej(new Error(d.message || 'metadata parse error'));
+        }
+      });
+      // send ArrayBuffer to worker
+      (async () => {
+        const ab = await fileOrBlob.arrayBuffer();
+        worker.postMessage({ cmd: 'parse', buffer: ab, fileName }, [ab]);
+      })();
+    } catch (e) { rej(e); }
+  });
 
   let coverBase64 = null;
   let coverMime   = null;
@@ -42,7 +60,7 @@ async function extractAudio(fileOrBlob, fileName) {
 
 // ─── EPUB (manual OPF parse via JSZip) ───────────────────────────────────────
 async function extractEpub(fileOrBlob, fileName) {
-  const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js')).default;
+  const JSZip = (await import('jszip')).default;
   const zip   = await JSZip.loadAsync(fileOrBlob);
 
   const containerXml = await zip.file('META-INF/container.xml')?.async('string') || '';
@@ -115,9 +133,11 @@ async function extractPdf(fileOrBlob, fileName) {
   try {
     const arrayBuffer = await fileOrBlob.arrayBuffer();
     // PDF.js — load via CDN worker
-    const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs');
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
+    // Let the bundler provide the worker path at runtime; fallback to package worker
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.js', import.meta.url).toString();
+    } catch {}
 
     const doc  = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const meta = await doc.getMetadata();

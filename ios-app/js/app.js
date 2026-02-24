@@ -5,6 +5,7 @@
 
 import { fetchAll } from '../../src/apis/index.js';
 import { extractMetadata } from '../../src/extractors/index.js';
+import { loadLibrary, saveLibrary, loadSettings, saveSettings } from '../../src/storage.js';
 
 // ─── Capacitor Plugins (graceful fallback in browser) ────────────────────────
 let Haptics, HapticsImpactStyle;
@@ -19,17 +20,7 @@ async function haptic(style = 'Medium') {
   try { await Haptics.impact({ style: HapticsImpactStyle?.[style] || style }); } catch {}
 }
 
-// Preferences shim
-let prefs;
-try {
-  const p = await import('@capacitor/preferences');
-  prefs = p.Preferences;
-} catch {
-  prefs = {
-    get:  async ({ key }) => ({ value: localStorage.getItem(key) }),
-    set:  async ({ key, value }) => localStorage.setItem(key, value),
-  };
-}
+// Persistence handled by `src/storage.js` (uses Capacitor Preferences or localStorage fallback)
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
@@ -45,23 +36,27 @@ const state = {
 
 // ─── Persist ──────────────────────────────────────────────────────────────────
 async function persistLibrary() {
-  const slim = state.library.map(b => ({ ...b, coverBase64: null, coverMime: null }));
-  await prefs.set({ key: 'library_v2', value: JSON.stringify(slim) });
+  await saveLibrary(state.library);
 }
 
 async function loadPersistedData() {
   try {
-    const { value: libVal } = await prefs.get({ key: 'library_v2' });
-    if (libVal) state.library = JSON.parse(libVal);
+    const lib = await loadLibrary();
+    if (lib && lib.length) state.library = lib;
   } catch {}
   try {
-    const { value: sVal } = await prefs.get({ key: 'settings_v1' });
-    if (sVal) state.settings = { ...state.settings, ...JSON.parse(sVal) };
+    const s = await loadSettings();
+    if (s) state.settings = { ...state.settings, ...s };
+    // Backwards-compat: older installs may have saved under 'settings_v1'
+    try {
+      const old = localStorage.getItem('settings_v1');
+      if (old) state.settings = { ...state.settings, ...JSON.parse(old) };
+    } catch {}
   } catch {}
 }
 
 async function persistSettings() {
-  await prefs.set({ key: 'settings_v1', value: JSON.stringify(state.settings) });
+  await saveSettings(state.settings);
 }
 
 // ─── DOM ──────────────────────────────────────────────────────────────────────
@@ -333,61 +328,55 @@ function makeFolderEntry(item) {
 }
 
 async function concatenateAudioParts(parts, outName, controller) {
-  // parts: [{name, uri, file, format}, ...]
-  // Use FFmpeg.wasm (@ffmpeg/ffmpeg). This is optional and may be heavy.
-  const { createFFmpeg, fetchFile } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js');
-  const ffmpeg = createFFmpeg({ log: false });
-  await ffmpeg.load();
+  // Use background worker to run FFmpeg off the main thread
+  return new Promise(async (res, rej) => {
+    const worker = new Worker(new URL('../../src/workers/ffmpegWorker.js', import.meta.url), { type: 'module' });
+    let aborted = false;
+    worker.addEventListener('message', (ev) => {
+      const d = ev.data || {};
+      if (d.event === 'progress') updateConcatProgress(d.pct || 0, `Processing... ${d.pct || 0}%`);
+      else if (d.event === 'done') {
+        const ab = d.buffer;
+        const blob = new Blob([ab], { type: 'audio/mp4' });
+        worker.terminate();
+        res(blob);
+      } else if (d.event === 'error') {
+        worker.terminate();
+        if (d.name === 'FFMPEG_ABORT') {
+          const err = new Error('FFMPEG aborted'); err.name = 'FFMPEG_ABORT'; rej(err);
+        } else rej(new Error(d.message || 'FFMPEG error'));
+      } else if (d.event === 'aborted') {
+        aborted = true;
+        worker.terminate();
+        const err = new Error('FFMPEG aborted'); err.name = 'FFMPEG_ABORT'; rej(err);
+      }
+    });
 
-  if (controller) {
-    controller.setFFmpeg(ffmpeg);
-    // attach progress callback
-    if (typeof ffmpeg.setProgress === 'function') {
-      ffmpeg.setProgress(({ ratio, time }) => {
-        const pct = Math.round(ratio * 100);
-        updateConcatProgress(pct, `Processing... ${pct}%`);
-      });
+    // wire controller to worker for aborts
+    if (controller) controller.setWorker && controller.setWorker(worker);
+
+    try {
+      const prepared = [];
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        let ab;
+        if (p.file instanceof File) ab = await p.file.arrayBuffer();
+        else {
+          const r = await fetch(p.uri);
+          ab = await r.arrayBuffer();
+        }
+        const ext = (p.name || '').split('.').pop() || 'mp3';
+        prepared.push({ arrayBuffer: ab, ext });
+      }
+      // Transfer buffers to worker
+      const transfer = prepared.map(p => p.arrayBuffer);
+      const partsForWorker = prepared.map((p, i) => ({ data: p.arrayBuffer, ext: p.ext }));
+      worker.postMessage({ cmd: 'concat', parts: partsForWorker, outName }, transfer);
+    } catch (e) {
+      worker.terminate();
+      rej(e);
     }
-  }
-
-  // Write each part to FS
-  const listLines = [];
-  for (let i = 0; i < parts.length; i++) {
-    const p = parts[i];
-    // obtain ArrayBuffer
-    let data;
-    if (p.file instanceof File) data = await p.file.arrayBuffer();
-    else {
-      const r = await fetch(p.uri);
-      data = await r.arrayBuffer();
-    }
-    const name = `part${i}.${p.name.split('.').pop() || 'mp3'}`;
-    ffmpeg.FS('writeFile', name, await fetchFile(new Uint8Array(data)));
-    listLines.push(`file '${name}'`);
-  }
-
-  // Write concat list
-  ffmpeg.FS('writeFile', 'list.txt', listLines.join('\n'));
-
-  // Output file: use m4b container with AAC audio
-  const outFile = `${outName.replace(/[^a-z0-9]/gi,'_')}.m4b`;
-  try {
-    await ffmpeg.run('-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c:a', 'aac', '-b:a', '128k', outFile);
-  } catch (e) {
-    // If ffmpeg was aborted via controller, throw a specific error
-    if (controller && controller.aborted) {
-      const err = new Error('FFMPEG aborted'); err.name = 'FFMPEG_ABORT'; throw err;
-    }
-    throw e;
-  }
-
-  const data = ffmpeg.FS('readFile', outFile);
-  const blob = new Blob([data.buffer], { type: 'audio/mp4' });
-  // Clean up FS (best effort)
-  try { ffmpeg.FS('unlink', 'list.txt'); } catch {}
-  for (let i = 0; i < parts.length; i++) try { ffmpeg.FS('unlink', `part${i}.${parts[i].name.split('.').pop()}`); } catch {}
-  try { ffmpeg.FS('unlink', outFile); } catch {}
-  return blob;
+  });
 }
 
 // --- Folder import confirmation UI helpers ---
@@ -433,13 +422,13 @@ function updateConcatProgress(pct, msg) {
 }
 
 function createConcatController() {
-  let ffmpegInst = null;
+  let workerInst = null;
   const controller = {
     aborted: false,
-    setFFmpeg(inst) { ffmpegInst = inst; },
+    setWorker(w) { workerInst = w; },
     abort() {
       controller.aborted = true;
-      try { ffmpegInst && ffmpegInst.exit && ffmpegInst.exit(); } catch (e) {}
+      try { workerInst && workerInst.postMessage && workerInst.postMessage({ cmd: 'abort' }); } catch (e) {}
     }
   };
 
