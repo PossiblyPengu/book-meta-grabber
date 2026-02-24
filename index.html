@@ -852,16 +852,18 @@ async function applyResult(r) {
   D.eTitle.textContent  = D.fTitle.value  || '—';
   D.eAuthor.textContent = D.fAuthor.value || '—';
   if(r.coverUrl){
-    showLoad('Fetching cover…');
-    try{
-      const resp=await fetch(r.coverUrl); const blob=await resp.blob();
+    // Set img src directly — browsers handle CORS for <img>, unlike fetch()
+    D.eCover.src=r.coverUrl;
+    D.eCover.style.display='block';
+    D.eCoverPh.style.display='none';
+    D.eBg.style.backgroundImage=`url('${r.coverUrl}')`;
+    const book=S.library[S.activeIdx];
+    if(book){ book.coverUrl=r.coverUrl; }
+    // Attempt blob conversion in background for local saving
+    fetch(r.coverUrl).then(res=>res.blob()).then(async blob=>{
       const b64=await blobToB64(blob);
-      const book=S.library[S.activeIdx];
       if(book){ book.coverBase64=b64.split(',')[1]; book.coverMime=blob.type; }
-      D.eCover.src=b64; D.eCover.style.display='block'; D.eCoverPh.style.display='none';
-      D.eBg.style.backgroundImage=`url('${b64}')`;
-    } catch{}
-    hideLoad();
+    }).catch(()=>{});
   }
   toast('Applied!','success');
 }
