@@ -650,6 +650,7 @@ function makeFilePicker() {
       if(S.settings.autoFetch && entry.title) fetchAndEnrich(0);
     }
     hideLoad();
+    saveLibrary();
     renderLibrary();
     toast(`Added ${files.length} book${files.length>1?'s':''}`, 'success');
   };
@@ -790,6 +791,7 @@ function collectForm() {
 $('btnSave').addEventListener('click',()=>{
   if(S.activeIdx<0) return;
   S.library[S.activeIdx] = collectForm();
+  saveLibrary();
   renderLibrary();
   toast('Saved!','success');
 });
@@ -817,6 +819,7 @@ $('btnCoverChange').addEventListener('click',()=>{
     if(book){ book.coverBase64=b64.split(',')[1]; book.coverMime=f.type; }
     D.eCover.src=b64; D.eCover.style.display='block'; D.eCoverPh.style.display='none';
     D.eBg.style.backgroundImage=`url('${b64}')`;
+    saveLibrary();
     toast('Cover updated','success');
   };
   inp.click();
@@ -943,6 +946,7 @@ async function fetchAndEnrich(idx){
     if(!b.coverBase64&&best.coverUrl){
       try{const r=await fetch(best.coverUrl);const bl=await r.blob();const b64=await blobToB64(bl);b.coverBase64=b64.split(',')[1];b.coverMime=bl.type;}catch{}
     }
+    saveLibrary();
     renderLibrary();
   }catch{}
 }
@@ -996,7 +1000,7 @@ $('togAutoFetch').addEventListener('click',()=>{
 $('settGDrive').addEventListener('change',()=>{ S.settings.gDriveId=$('settGDrive').value.trim(); toast('Settings saved','success'); });
 $('btnClearLib').addEventListener('click',()=>{
   if(!confirm('Remove all books from library?')) return;
-  S.library=[]; S.activeIdx=-1; renderLibrary(); toast('Library cleared');
+  S.library=[]; S.activeIdx=-1; saveLibrary(); renderLibrary(); toast('Library cleared');
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1005,8 +1009,11 @@ function sh(s){return s.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()}
 function guessTitle(n){return n.replace(/\.[^.]+$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ').trim()}
 function fmtDur(s){if(!s) return'—';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`}
 function blobToB64(blob){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=j;fr.readAsDataURL(blob)})}
+function saveLibrary(){try{localStorage.setItem('bmg_library',JSON.stringify(S.library));}catch(e){console.warn('Save failed:',e);}}
+function loadLibrary(){try{const d=localStorage.getItem('bmg_library');return d?JSON.parse(d):[];}catch{return[];}}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+S.library = loadLibrary();
 renderLibrary();
 </script>
 </body>
