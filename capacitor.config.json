@@ -1,0 +1,20 @@
+{
+  "appId": "com.andrew.bookmetagrabber",
+  "appName": "Meta Grabber",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#000000",
+    "allowsLinkPreview": false,
+    "scrollEnabled": false
+  },
+  "plugins": {
+    "Browser": {
+      "presentationStyle": "popover"
+    },
+    "Filesystem": {
+      "iosScheme": "ionic"
+    }
+  }
+}
