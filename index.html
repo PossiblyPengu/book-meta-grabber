@@ -278,8 +278,8 @@ html,body{width:100%;height:100%;overflow:auto;font-family:var(--font);color:var
   display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--t3);font-size:18px;}
 
 /* Hero back button (flat, non-overlapping) */
-.hero .enav-back{position:relative;top:auto;left:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--g-border);background:transparent;color:var(--t1);box-shadow:none;z-index:5}
-.hero .enav-back svg{stroke:var(--t1)}
+.hero .enav-back{position:absolute;top:var(--safe-top);left:12px;padding:8px 12px;border-radius:12px;border:none;background:var(--g-elev);color:var(--t1);box-shadow:0 8px 20px rgba(0,0,0,.22);z-index:30;min-height:var(--touch);display:flex;align-items:center;gap:8px}
+.hero .enav-back svg{stroke:currentColor}
 /* Cover frame used in hero and meta panel */
 .cover-frame{width:clamp(120px,32vw,220px);aspect-ratio:180/260;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 12px 36px rgba(0,0,0,0.28)}
 .cover-frame .cover-img{width:100%;height:100%;object-fit:cover;display:block}
@@ -300,8 +300,8 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
 .enav{position:absolute;top:var(--safe-top);left:16px;right:16px;z-index:10;display:flex;
   align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-lg);
   background:var(--g-bg-elevated)}
-.enav-back{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--blue);
-  font-family:var(--font);font-size:16px;font-weight:500;cursor:pointer;min-height:var(--touch);padding:6px 0}
+.enav-back{display:flex;align-items:center;gap:6px;background:var(--g-elev);border:none;color:var(--t1);
+  font-family:var(--font);font-size:16px;font-weight:600;cursor:pointer;min-height:var(--touch);padding:8px 10px;border-radius:10px}
 .enav-actions{display:flex;gap:8px}
 .hero-info{position:absolute;bottom:0;left:0;right:0;padding:16px 20px 14px;z-index:4;display:flex;flex-direction:column;gap:4px}
 .hero-fmt{display:inline-block;padding:3px 9px;border-radius:var(--r-xs);font-size:10px;font-weight:700;
