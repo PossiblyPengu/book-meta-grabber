@@ -575,7 +575,10 @@ async function processPickedFiles(picked, { forceGroup = false } = {}) {
       // strip extension
       let base = name.replace(/\.[^/.]+$/, '');
       // remove common part/disc/volume markers like "part 1", "pt.1", "disc 01"
-      base = base.replace(/\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i, '');
+      base = base.replace(
+        /\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i,
+        ''
+      );
       // remove trailing numeric suffixes like " - 01" or " (1)"
       base = base.replace(/[\s._-]*\(?\d{1,3}\)?$/i, '');
       return base.trim().toLowerCase();
