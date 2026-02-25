@@ -558,7 +558,8 @@ async function processPickedFiles(picked) {
       const audioExts = new Set(['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus']);
       const parts = picked.map((item) => {
         const fmt =
-          item.format || (item.name ? item.name.split('.').pop().toLowerCase() : '');
+          item.format ||
+          (item.name ? item.name.split('.').pop().toLowerCase() : '');
         return {
           name: item.name,
           uri: item.uri,
@@ -697,9 +698,7 @@ function renderLibrary() {
     card.innerHTML = `
       <div class="book-cover-wrap">
         ${coverHtml}
-        <span class="book-fmt-badge fmt-${book.format}">${
-      FORMAT_LABELS[book.format] || book.format.toUpperCase()
-    }</span>
+        <span class="book-fmt-badge fmt-${book.format}">${FORMAT_LABELS[book.format] || book.format.toUpperCase()}</span>
         ${partsBadge}
       </div>
       <div class="book-title">${esc(book.title || book.fileName)}</div>
