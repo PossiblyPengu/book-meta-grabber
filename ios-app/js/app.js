@@ -6,6 +6,11 @@
 import { fetchAll } from '../../src/apis/index.js';
 import { extractMetadata } from '../../src/extractors/index.js';
 import {
+  pickFromFiles,
+  pickFolder,
+  openGoogleDrivePicker,
+} from '../../src/fileSources.js';
+import {
   loadLibrary,
   saveLibrary,
   loadSettings,
@@ -236,7 +241,6 @@ $('btnSheetCancel').addEventListener('click', () => {
 // Local + iCloud — both use the same document picker on iOS
 async function importFromFilePicker() {
   closeSourcePicker();
-  const { pickFromFiles } = await import('../../src/fileSources.js');
   try {
     const picked = await pickFromFiles();
     if (!picked.length) return;
@@ -254,7 +258,8 @@ async function importFromGoogleDrive() {
     setTimeout(() => switchTab('Settings'), 800);
     return;
   }
-  const { openGoogleDrivePicker } = await import('../../src/fileSources.js');
+  // Use the statically imported `openGoogleDrivePicker` to avoid
+  // creating an async gap that can break the user gesture chain on mobile.
   await openGoogleDrivePicker(state.settings.googleDriveClientId);
   toast('Sign in and select your file in the browser', 'info', 5000);
 }
@@ -267,7 +272,6 @@ dom.srcGDrive.addEventListener('click', importFromGoogleDrive);
 // Import from a folder (audiobook parts)
 async function importFromFolder() {
   closeSourcePicker();
-  const { pickFolder } = await import('../../src/fileSources.js');
   try {
     const picked = await pickFolder();
     if (!picked || !picked.length) return;
