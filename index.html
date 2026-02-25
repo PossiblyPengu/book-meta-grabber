@@ -589,7 +589,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
       <div class="fgroup"><label class="flabel">Language</label><input class="finput" id="fLang" placeholder="en"/></div>
     </div>
     <div class="fcard glass">
-      <div class="fgroup"><label class="flabel">Description</label><textarea class="finput ftarea" id="fDesc" rows="5" placeholder="Synopsis / description"></textarea></div>
+      <div class="fgroup"><label class="flabel">Parts</label>
+        <div id="partsList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+    <div class="fcard glass">
+      <div class="fgroup"><label class="flabel">Description</label><textarea class="finput ftarea" id="fDesc" rows="8" placeholder="Synopsis / description"></textarea></div>
     </div>
     <div class="epad"></div>
   </div>
@@ -643,6 +648,7 @@ const D = {
   eFormat:$('eFormat'), eTitle:$('eTitle'), eAuthor:$('eAuthor'),
   aStrip:$('aStrip'), aDur:$('aDur'), aBit:$('aBit'), aSR:$('aSR'), aCh:$('aCh'),
   fTitle:$('fTitle'), fAuthor:$('fAuthor'), fNarrator:$('fNarrator'),
+  partsList:$('partsList'),
   fSeries:$('fSeries'), fYear:$('fYear'), fPub:$('fPub'), fGenre:$('fGenre'),
   fISBN:$('fISBN'), fLang:$('fLang'), fDesc:$('fDesc'),
   rBack:$('rBack'), rSheet:$('rSheet'), rList:$('rList'), rSheetTitle:$('rSheetTitle'),
@@ -942,6 +948,30 @@ function populate(b) {
   D.fAuthor.oninput = ()=>{ D.eAuthor.textContent = D.fAuthor.value||'—'; };
 
   D.eScroll.scrollTop = 0;
+
+  // Render parts list (for grouped / multi-file entries)
+  try {
+    const partsEl = D.partsList;
+    if(partsEl){
+      if(Array.isArray(b.parts) && b.parts.length){
+        partsEl.innerHTML = b.parts.map((p,i)=>{
+          const name = esc(p.name||p.fileName||`Part ${i+1}`);
+          const fmt = esc((p.format||'').toUpperCase());
+          const playBtn = AUDIO_FMTS.has((p.format||'').toLowerCase()) ? `<button class="ibtn part-play" data-uri="${p.uri||''}" title="Play" style="margin-right:8px">▶</button>` : '';
+          const dl = p.uri ? `<a class="gbtn" href="${p.uri}" download="${name}" style="padding:6px 10px;margin-left:8px">Download</a>` : '';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:13px">${name}</div><div style="font-size:11px;color:var(--t3)">${fmt}</div></div><div style="display:flex;align-items:center">${playBtn}${dl}</div></div>`;
+        }).join('');
+        // Attach play handlers
+        partsEl.querySelectorAll('.part-play').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            const uri = btn.dataset.uri; if(!uri) return; try{ const a = new Audio(uri); a.play(); }catch{};
+          });
+        });
+      } else {
+        partsEl.innerHTML = '<div style="color:var(--t3);font-size:13px">No extra parts</div>';
+      }
+    }
+  } catch(e){ console.warn('Render parts failed', e); }
 }
 
 function collectForm() {
@@ -1164,7 +1194,16 @@ $('btnClearLib').addEventListener('click', async ()=>{
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function sh(s){return s.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()}
-function guessTitle(n){return n.replace(/\.[^.]+$/,'').replace(/[_\-.]+/g,' ').replace(/\s+/g,' ').trim()}
+function guessTitle(n){
+  if(!n) return '';
+  let s = String(n).replace(/\.[^.]+$/,'');
+  s = s.replace(/[_\-.]+/g,' ').replace(/\s+/g,' ').trim();
+  // Remove common part/volume/disc markers like "part 1", "pt 01", "disc 2", "vol 1" etc.
+  s = s.replace(/\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i,'');
+  // Remove trailing numeric sequence like " - 01" or " (01)"
+  s = s.replace(/[\s._-]*\(?\d{1,4}\)?$/,'');
+  return s.trim();
+}
 function fmtDur(s){if(!s) return'—';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`}
 function blobToB64(blob){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=j;fr.readAsDataURL(blob)})}
 function saveLibrary(){
