@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>Meta Grabber</title>
@@ -37,6 +37,9 @@ html.browser{ --safe-top: calc(env(safe-area-inset-top, 10px) + 6px); --safe-bot
 html,body{width:100%;height:100%;overflow:auto;font-family:var(--font);color:var(--t1);
   font-size:var(--base-font-size);line-height:1.6;-webkit-font-smoothing:antialiased;background:var(--g-bg);
   overscroll-behavior:none}
+
+/* global mobile behavior adjustments to avoid double-tap zoom and respect touch */
+html, body { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; touch-action: manipulation; }
 
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.13);border-radius:999px}
@@ -609,6 +612,25 @@ html.ios, html.ios body{overscroll-behavior-y:contain}
   <div class="noise"></div>
 </div>
 <div class="sbpad"></div>
+
+<!-- Pull-to-refresh indicator -->
+<div id="ptr" class="ptr" aria-hidden="true">
+  <div class="ptr-inner">
+    <div class="ptr-icon" id="ptrIcon">⟲</div>
+    <div class="ptr-text" id="ptrText">Pull to refresh</div>
+  </div>
+</div>
+
+<style>
+/* Pull-to-refresh visuals */
+.ptr{position:fixed;top:0;left:0;right:0;height:60px;display:flex;align-items:flex-end;justify-content:center;transform:translateY(-60px);transition:transform .18s ease,opacity .18s;z-index:9999;pointer-events:none}
+.ptr .ptr-inner{display:flex;align-items:center;gap:10px;padding-bottom:8px;background:transparent;color:var(--t2);font-size:14px}
+.ptr .ptr-icon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-size:16px}
+.ptr.pull{transform:translateY(6px);pointer-events:none}
+.ptr.release{transform:translateY(48px);pointer-events:none}
+.ptr.refreshing .ptr-icon{animation:ptr-rotate .9s linear infinite}
+@keyframes ptr-rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
 
 <!-- ════════ LIBRARY ════════ -->
 <div class="tab-screen active" id="scrLibrary">
@@ -1734,6 +1756,89 @@ renderLibrary();
     const isi = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform));
     if(isi) document.documentElement.classList.add('ios');
   }catch(e){}
+})();
+// Fix potential initial layout fitting issues on some iOS WebViews by forcing a reflow
+;(function(){
+  function doReflow(){
+    try{
+      // small scroll to trigger layout, then back
+      if('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      window.scrollTo(0,0);
+      // force reflow
+      document.body.getBoundingClientRect();
+      window.dispatchEvent(new Event('resize'));
+    }catch(e){}
+  }
+  window.addEventListener('load', ()=>{ setTimeout(doReflow, 120); setTimeout(doReflow, 600); });
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') setTimeout(doReflow,100); });
+})();
+
+// Remove stray "mobile only" text nodes that may have been injected accidentally
+;(function(){
+  function removeStray(){
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    const rem = [];
+    while(walk.nextNode()){
+      const t = walk.currentNode.nodeValue.trim().toLowerCase();
+      if(t==='mobile only' || t==='mobile-only' || t==='mobileonly'){
+        rem.push(walk.currentNode);
+      }
+    }
+    rem.forEach(n=>{ if(n && n.parentNode) n.parentNode.removeChild(n); });
+  }
+  document.addEventListener('DOMContentLoaded', removeStray);
+  window.addEventListener('load', removeStray);
+})();
+</script>
+<script>
+// Pull-to-refresh implementation (mobile)
+(function(){
+  const ptr = document.getElementById('ptr');
+  const ptrText = document.getElementById('ptrText');
+  const ptrIcon = document.getElementById('ptrIcon');
+  if(!ptr) return;
+  let startY = 0, dist = 0, pulling = false, refreshing = false;
+  const THRESHOLD = 80;
+
+  function onTouchStart(e){
+    if(refreshing) return;
+    if(document.scrollingElement && document.scrollingElement.scrollTop > 0) return;
+    const t = e.touches ? e.touches[0] : e;
+    startY = t.clientY; pulling = true; dist = 0;
+  }
+  function onTouchMove(e){
+    if(!pulling || refreshing) return;
+    const t = e.touches ? e.touches[0] : e;
+    dist = t.clientY - startY;
+    if(dist <= 0) return;
+    // prevent native overscroll
+    e.preventDefault();
+    const pull = Math.min(dist, 140);
+    if(pull > 12) ptr.classList.add('pull');
+    ptr.style.transform = `translateY(${Math.min(pull-60, 48)}px)`;
+    if(pull > THRESHOLD){ ptrText.textContent = 'Release to refresh'; ptr.classList.add('release'); }
+    else { ptrText.textContent = 'Pull to refresh'; ptr.classList.remove('release'); }
+  }
+  function onTouchEnd(){
+    if(!pulling) return; pulling = false;
+    if(dist > THRESHOLD){
+      // trigger refresh (perform full reload to ensure fresh state)
+      refreshing = true; ptr.classList.add('refreshing'); ptrText.textContent = 'Refreshing…'; ptr.style.transform='translateY(48px)';
+      setTimeout(()=>{ try{ location.reload(); }catch(e){ /* fallback: soft refresh */ try{ S.library = loadLibrary(); renderLibrary(); }catch{} } }, 120);
+    } else {
+      // animate hide
+      ptr.className='ptr'; ptr.style.transform='translateY(-60px)'; ptrText.textContent='Pull to refresh'; ptr.classList.remove('release');
+    }
+    dist = 0;
+  }
+
+  window.addEventListener('touchstart', onTouchStart, {passive:false});
+  window.addEventListener('touchmove', onTouchMove, {passive:false});
+  window.addEventListener('touchend', onTouchEnd);
+  // also support pointer events on some browsers
+  window.addEventListener('pointerdown', e=>{ if(e.pointerType==='touch') onTouchStart(e); }, {passive:false});
+  window.addEventListener('pointermove', e=>{ if(e.pointerType==='touch') onTouchMove(e); }, {passive:false});
+  window.addEventListener('pointerup', e=>{ if(e.pointerType==='touch') onTouchEnd(e); });
 })();
 </script>
 </body>
