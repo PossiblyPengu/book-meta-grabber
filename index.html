@@ -300,8 +300,13 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
 .enav{position:absolute;top:var(--safe-top);left:16px;right:16px;z-index:10;display:flex;
   align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-lg);
   background:var(--g-bg-elevated)}
+.enav .enav-back{position:relative;left:0;top:0}
 .enav-back{display:flex;align-items:center;gap:6px;background:var(--g-elev);border:none;color:var(--t1);
   font-family:var(--font);font-size:16px;font-weight:600;cursor:pointer;min-height:var(--touch);padding:8px 10px;border-radius:10px}
+
+/* Force dark background across viewport (fix stray white bars when opened outside Safari) */
+html,body{background-color:var(--g-bg) !important}
+.bg, .tab-bar, .bsheet, .editor-scr{background-color:var(--g-bg) !important}
 .enav-actions{display:flex;gap:8px}
 .hero-info{position:absolute;bottom:0;left:0;right:0;padding:16px 20px 14px;z-index:4;display:flex;flex-direction:column;gap:4px}
 .hero-fmt{display:inline-block;padding:3px 9px;border-radius:var(--r-xs);font-size:10px;font-weight:700;
@@ -648,6 +653,7 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
   <div class="hero" id="eHero">
     <div class="hero-bg" id="eBg"></div>
     <div class="hero-overlay"></div>
+    <div class="enav" aria-hidden="false"></div>
     <div class="hero-content" style="position:relative;z-index:4;display:flex;align-items:center;gap:32px;padding:32px 24px;">
       <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;">
         <div class="cover-frame" id="heroCoverFrame">
@@ -669,7 +675,7 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
           <button class="ibtn" id="btnMetaToggle" title="Details"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg></button>
         </div>
       </div>
-      <button class="enav-back" id="btnBack"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>Library</button>
+      <!-- back button moved into .enav for correct positioning -->
     </div>
   </div>
 
@@ -1094,6 +1100,17 @@ function closeEditor() {
   S.activeIdx=-1;
   if(D.metaPanel) D.metaPanel.style.display='none';
 }
+// ensure back button exists inside .enav (moved from hero content)
+if(!document.getElementById('btnBack')){
+  const _enav = document.querySelector('.enav');
+  if(_enav){
+    const b = document.createElement('button');
+    b.className = 'enav-back'; b.id = 'btnBack';
+    b.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>Library';
+    _enav.appendChild(b);
+  }
+}
+
 $('btnBack').addEventListener('click',()=>{ if(history.state && history.state.page==='editor'){ try{ history.back(); }catch(e){ closeEditor({back:false}); } } else closeEditor({back:false}); });
 
 function populate(b) {
