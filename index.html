@@ -24,13 +24,13 @@
   --r-lg: 12px; --r-md: 10px; --r-sm: 8px; --r-pill: 999px;
   --touch: 48px;
   --card-gap: 12px;
+  --base-font-size: clamp(15px, 1.4vw + 12px, 18px);
   --card-radius: 12px;
   --card-padding: 12px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--t1);
-  font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;background:#0a0a12;
-  background:radial-gradient(ellipse at 20% 5%,#1a2236 0%,#0a0a12 70%);
+html,body{width:100%;height:100%;overflow:auto;font-family:var(--font);color:var(--t1);
+  font-size:var(--base-font-size);line-height:1.6;-webkit-font-smoothing:antialiased;background:var(--g-bg);
   overscroll-behavior:none}
 
 ::-webkit-scrollbar{width:6px}
@@ -100,7 +100,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
   box-shadow:0 6px 20px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.04) inset;
 }
 .bcard:active{transform:scale(.99);filter:brightness(1.02);box-shadow:0 10px 30px rgba(41,151,255,0.12);}
-.bcover-wrap{width:84px;height:112px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+.bcover-wrap{width:clamp(72px,18vw,120px);aspect-ratio:3/4;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;
   background:var(--g-bg);
   border:1px solid var(--g-border);
   box-shadow:0 8px 28px rgba(0,0,0,0.18);
@@ -171,9 +171,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
 .tbtn.active .tab-icon-wrap{background:rgba(37,99,235,0.12);transform:scale(1.04)}
 
 /* ── Backdrop ── */
-.backdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.50);
-  backdrop-filter:blur(8px) saturate(120%);-webkit-backdrop-filter:blur(8px) saturate(120%);opacity:0;
-  pointer-events:none;transition:opacity .3s}
+.backdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.50);opacity:0;pointer-events:none;transition:opacity .3s}
 .backdrop.vis{opacity:1;pointer-events:auto}
 
 /* ── Bottom sheet ── */
@@ -278,17 +276,24 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
   border:2px solid rgba(255,255,255,.12);}
 .hero-cover-ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;
   display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--t3);font-size:18px;}
+
+/* Hero back button (flat, non-overlapping) */
+.hero .enav-back{position:relative;top:auto;left:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--g-border);background:transparent;color:var(--t1);box-shadow:none;z-index:5}
+.hero .enav-back svg{stroke:var(--t1)}
 /* Cover frame used in hero and meta panel */
-.cover-frame{width:180px;height:260px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 12px 36px rgba(0,0,0,0.28)}
+.cover-frame{width:clamp(120px,32vw,220px);aspect-ratio:180/260;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 12px 36px rgba(0,0,0,0.28)}
 .cover-frame .cover-img{width:100%;height:100%;object-fit:cover;display:block}
 .cover-frame .cover-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);font-size:14px;width:100%;height:100%}
-.cover-frame .cover-zoom{position:absolute;right:8px;bottom:8px;width:40px;height:40px;border-radius:10px;background:rgba(0,0,0,0.28);color:var(--t1);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.04)}
-.cover-frame.mp{width:120px;height:180px}
+.cover-frame .cover-zoom{position:absolute;right:8px;bottom:8px;width:40px;height:40px;border-radius:8px;background:rgba(0,0,0,0.16);color:var(--t1);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.02)}
+.cover-frame.mp{width:clamp(96px,22vw,160px);aspect-ratio:120/180}
 
 @media(min-width:1000px){
   .cover-frame{width:220px;height:320px;border-radius:18px}
-  .cover-frame.mp{width:180px;height:260px}
+  .cover-frame.mp{width:clamp(140px,18vw,180px);aspect-ratio:180/260}
 }
+
+/* Global image rules */
+img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
 .hero-overlay{position:absolute;inset:0;
   background:radial-gradient(ellipse at center 30%,transparent 40%,rgba(24,26,34,.28) 100%),
   linear-gradient(to bottom,rgba(24,26,34,.32) 0%,transparent 30%,transparent 45%,rgba(24,26,34,.92) 100%);z-index:3;}
@@ -616,7 +621,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
           <button class="ibtn" id="btnMetaToggle" title="Details"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg></button>
         </div>
       </div>
-      <button class="enav-back" id="btnBack" style="position:absolute;top:24px;left:24px;background:var(--g-bg-elevated);padding:8px 16px;border-radius:12px;box-shadow:0 2px 8px var(--accent);font-size:16px;color:var(--blue);display:flex;align-items:center;gap:6px;z-index:10"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>Library</button>
+      <button class="enav-back" id="btnBack"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>Library</button>
     </div>
   </div>
 
@@ -626,7 +631,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
       <div style="display:flex;justify-content:flex-end"><button class="ibtn" id="btnMetaClose" title="Close" style="width:40px;height:40px;padding:0">✕</button></div>
     </div>
     <div class="fgroup" style="display:flex;flex-direction:column;align-items:center;gap:10px">
-      <div id="mpCoverWrap" class="cover-frame mp" style="width:120px;height:180px;">
+      <div id="mpCoverWrap" class="cover-frame mp" style="width:clamp(96px,22vw,160px);aspect-ratio:120/180;">
         <img id="mpCoverImg" class="cover-img" src="" alt="" style="display:none"/>
         <div id="mpCoverPh" class="cover-ph" style="font-size:12px">No cover</div>
       </div>
