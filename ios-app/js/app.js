@@ -683,25 +683,28 @@ function renderLibrary() {
 
     const gradClass = `cover-grad-${i % 6}`;
     const coverHtml = book.coverBase64
-      ? `<img class="book-cover-img" src="data:${book.coverMime || 'image/jpeg'};base64,${book.coverBase64}" alt="" loading="lazy" />`
+      ? `<img class="book-cover-img" src="data:${
+          book.coverMime || 'image/jpeg'
+        };base64,${book.coverBase64}" alt="" loading="lazy" />`
       : `<div class="book-cover-placeholder ${gradClass}">
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5">
-             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
            </svg>
          </div>`;
 
     // Parts badge when entry has `parts` (a grouped import)
-    const partsBadge = Array.isArray(book.parts) && book.parts.length
-      ? `<span class="parts-badge">${book.parts.length}</span>`
-      : '';
+    const partsBadge =
+      Array.isArray(book.parts) && book.parts.length
+        ? `<span class="parts-badge">${book.parts.length}</span>`
+        : '';
 
     card.innerHTML = `
       <div class="book-cover-wrap">
         ${coverHtml}
         <span class="book-fmt-badge fmt-${book.format}">${
-          FORMAT_LABELS[book.format] || book.format.toUpperCase()
-        }</span>
+      FORMAT_LABELS[book.format] || book.format.toUpperCase()
+    }</span>
         ${partsBadge}
       </div>
       <div class="book-title">${esc(book.title || book.fileName)}</div>
