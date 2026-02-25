@@ -204,6 +204,24 @@ async function simulateFilePick() {
 function simulateFolderPick() {
   return new Promise((resolve) => {
     const input = document.createElement('input');
+
+    // Some mobile browsers (iOS Safari / WebKit) do not support
+    // `webkitdirectory`. Detect this early and show a helpful hint
+    // rather than attempting a programmatic `.click()` which will fail.
+    if (!('webkitdirectory' in input)) {
+      window.dispatchEvent(
+        new CustomEvent('app:toast', {
+          detail: {
+            msg: 'Folder upload is not supported in iOS browsers. Use the native iOS app or upload from a desktop.',
+            type: 'info',
+            ms: 6000,
+          },
+        })
+      );
+      resolve([]);
+      return;
+    }
+
     input.type = 'file';
     input.webkitdirectory = true;
     input.multiple = true;

@@ -96,6 +96,9 @@ const dom = {
   srcFolder: $('srcFolder'),
   srcGDrive: $('srcGDrive'),
 
+  // Settings toggles
+  settingGroupMulti: $('settingGroupMulti'),
+
   // Editor
   heroFormat: $('heroFormat'),
   heroTitle: $('heroTitle'),
@@ -548,6 +551,48 @@ async function processPickedFiles(picked) {
     `Importing ${picked.length} file${picked.length > 1 ? 's' : ''}…`
   );
 
+  // If user enabled grouping and multiple files selected, create a single
+  // library entry with `parts` instead of individual entries.
+  if (picked.length > 1 && state.settings.groupMultiImport) {
+    try {
+      const audioExts = new Set(['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus']);
+      const parts = picked.map((item) => {
+        const fmt =
+          item.format || (item.name ? item.name.split('.').pop().toLowerCase() : '');
+        return {
+          name: item.name,
+          uri: item.uri,
+          file: item.file || null,
+          format: fmt,
+        };
+      });
+
+      const allAudio = parts.every((p) => audioExts.has(p.format));
+      const entry = {
+        id: Date.now() + Math.random(),
+        uri: parts[0]?.uri || null,
+        fileName: parts[0]?.name || 'Multiple files',
+        format: allAudio ? 'audiobook-folder' : 'multi-file',
+        source: 'local',
+        status: 'imported',
+        parts,
+        title: guessTitle(parts[0]?.name || 'Multiple files'),
+      };
+
+      state.library.push(entry);
+      if (state.settings.autoFetch && (entry.title || entry.author)) {
+        fetchAndEnrichEntry(state.library.length - 1);
+      }
+    } catch (e) {
+      console.error('[import-group]', e); // eslint-disable-line no-console
+    }
+    hideLoading();
+    await persistLibrary();
+    renderLibrary();
+    toast(`Added ${picked.length} files as one entry`, 'success');
+    return;
+  }
+
   for (const item of picked) {
     try {
       let blob = item.file || item.blob;
@@ -644,13 +689,10 @@ function renderLibrary() {
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
          </div>`;
 
-    // Parts badge for audiobook-folder entries
-    const partsBadge =
-      book.format === 'audiobook-folder' &&
-      Array.isArray(book.parts) &&
-      book.parts.length
-        ? `<span class="parts-badge">${book.parts.length}</span>`
-        : '';
+    // Parts badge when entry has `parts` (a grouped import)
+    const partsBadge = Array.isArray(book.parts) && book.parts.length
+      ? `<span class="parts-badge">${book.parts.length}</span>`
+      : '';
 
     card.innerHTML = `
       <div class="book-cover-wrap">
@@ -780,8 +822,8 @@ function populateEditor(book) {
     dom.heroAuthor.textContent = dom.fAuthor.value || '—';
   };
 
-  // Show parts list for audiobook-folder entries
-  if (book.format === 'audiobook-folder' && Array.isArray(book.parts)) {
+  // Show parts list for entries that include `parts`
+  if (Array.isArray(book.parts) && book.parts.length) {
     dom.partsListWrap.style.display = 'block';
     dom.partsList.innerHTML = createPartsListHtml(book.parts);
   } else {
@@ -1086,6 +1128,18 @@ dom.settingAutoFetch.addEventListener('click', async () => {
   autoFetchToggle?.classList.toggle('active', state.settings.autoFetch);
   await persistSettings();
 });
+
+// Group multiple files toggle
+if (dom.settingGroupMulti) {
+  const groupToggle = dom.settingGroupMulti.querySelector('.toggle');
+  if (state.settings.groupMultiImport) groupToggle?.classList.add('active');
+  dom.settingGroupMulti.addEventListener('click', async () => {
+    haptic('Light');
+    state.settings.groupMultiImport = !state.settings.groupMultiImport;
+    groupToggle?.classList.toggle('active', state.settings.groupMultiImport);
+    await persistSettings();
+  });
+}
 
 // Clear library (use modal)
 $('btnClearLibrary').addEventListener('click', async () => {

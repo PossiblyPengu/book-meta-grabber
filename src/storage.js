@@ -55,6 +55,7 @@ function defaultSettings() {
   return {
     googleDriveClientId: '',
     autoFetch: true,
+    groupMultiImport: false,
     preferredSources: [
       'Google Books',
       'Open Library',
