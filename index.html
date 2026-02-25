@@ -111,15 +111,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
 
 /* ── Book grid ── */
 .book-grid{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 20px;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start}
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-content:start;place-items:start}
 
 /* ── Book card ── */
 .bcard{display:flex;flex-direction:column;gap:6px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:transform .15s cubic-bezier(.34,1.3,.64,1),filter .2s}
 .bcard:active{transform:scale(.94);filter:brightness(1.05)}
-.bcover-wrap{width:100%;aspect-ratio:2/3;border-radius:var(--r-lg);overflow:hidden;
-  background:var(--g-bg);border:1px solid var(--g-border);box-shadow:var(--g-shadow-s),0 0 0 0 rgba(96,165,250,0);
-  position:relative;transition:box-shadow .25s}
+.bcover-wrap{width:100%;aspect-ratio:3/4;border-radius:var(--r-lg);overflow:hidden;display:flex;align-items:center;justify-content:center;
+  background:var(--g-bg);border:1px solid var(--g-border);box-shadow:var(--g-shadow-s);position:relative;transition:box-shadow .25s}
 .bcard:active .bcover-wrap{box-shadow:var(--g-shadow-s),0 0 16px rgba(96,165,250,.12)}
 .bcover-img{width:100%;height:100%;object-fit:cover}
 .bcover-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
@@ -133,7 +132,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
 .fmt-flac{background:rgba(167,139,250,.85);color:#fff;box-shadow:0 2px 8px rgba(167,139,250,.35);border:1px solid rgba(167,139,250,.5)}
 .fmt-ogg{background:rgba(20,184,166,.85);color:#fff;box-shadow:0 2px 8px rgba(20,184,166,.35);border:1px solid rgba(20,184,166,.5)}
 .btitle{font-size:11px;font-weight:600;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bauthor{font-size:10px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bauthor{font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-actions{display:flex;align-items:center;gap:8px;margin-top:6px}
+.card-play{width:36px;height:36px;border-radius:10px;border:1px solid var(--g-border);background:transparent;color:var(--t1);display:inline-flex;align-items:center;justify-content:center}
+.parts-badge{font-size:11px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.04);color:var(--t2);border:1px solid var(--g-border)}
 
 /* ── Empty state ── */
 .empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -310,6 +312,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
 /* ── Editor scroll ── */
 .escroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:14px}
 .epad{height:40px}
+
+/* Editor layout: place meta panel on the right for wide screens */
+@media(min-width:1000px){
+  .editor-scr{display:grid;grid-template-columns:1fr 360px;grid-template-rows:auto 1fr;gap:18px}
+  .hero{grid-column:1/2}
+  #metaPanel{grid-column:2/3;grid-row:1/3;display:flex;flex-direction:column;gap:10px;padding:14px}
+  .escroll{grid-column:1/2}
+}
 
 /* ── Audio strip ── */
 .astrip{border-radius:var(--r-lg);display:flex;align-items:center;padding:14px 0}
@@ -557,6 +567,18 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
     </div>
   </div>
 
+  <aside id="metaPanel" class="glass" style="display:none;">
+    <div class="fgroup" style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div id="mpCoverWrap" style="width:120px;height:180px;overflow:hidden;border-radius:10px;background:var(--g-bg);display:flex;align-items:center;justify-content:center">
+        <img id="mpCoverImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none"/>
+        <div id="mpCoverPh" style="color:var(--t3);font-size:12px">No cover</div>
+      </div>
+      <div style="text-align:center"><div id="mpTitle" style="font-weight:700;font-size:16px">—</div><div id="mpAuthor" style="font-size:13px;color:var(--t2)">—</div></div>
+    </div>
+    <div class="fgroup"><label class="flabel">Parts</label><div id="mpParts" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    <div class="fgroup"><button class="gbtn gbtn-primary" id="mpPlayAll">Play All</button><div style="height:8px"></div><button class="gbtn" id="mpFetchMeta">Fetch Metadata</button></div>
+  </aside>
+
   <div class="escroll" id="eScroll">
     <div class="astrip glass" id="aStrip" style="display:none">
       <div class="astat"><span class="ast-val" id="aDur">—</span><span class="ast-lbl">Duration</span></div>
@@ -649,6 +671,7 @@ const D = {
   aStrip:$('aStrip'), aDur:$('aDur'), aBit:$('aBit'), aSR:$('aSR'), aCh:$('aCh'),
   fTitle:$('fTitle'), fAuthor:$('fAuthor'), fNarrator:$('fNarrator'),
   partsList:$('partsList'),
+  metaPanel:$('metaPanel'), mpCoverImg:$('mpCoverImg'), mpCoverPh:$('mpCoverPh'), mpTitle:$('mpTitle'), mpAuthor:$('mpAuthor'), mpParts:$('mpParts'), mpPlayAll:$('mpPlayAll'), mpFetchMeta:$('mpFetchMeta'),
   fSeries:$('fSeries'), fYear:$('fYear'), fPub:$('fPub'), fGenre:$('fGenre'),
   fISBN:$('fISBN'), fLang:$('fLang'), fDesc:$('fDesc'),
   rBack:$('rBack'), rSheet:$('rSheet'), rList:$('rList'), rSheetTitle:$('rSheetTitle'),
@@ -907,11 +930,24 @@ function renderLibrary() {
     const coverHtml = thumbSrc
       ? `<img class="bcover-img" src="${thumbSrc}" alt="" loading="lazy"/>`
       : `<div class="bcover-ph ${grad}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>`;
-    card.innerHTML=`<div class="bcover-wrap">${coverHtml}<span class="bfmt-badge fmt-${book.format}">${FMT_LABELS[book.format]||book.format.toUpperCase()}</span></div><div class="btitle">${esc(book.title||book.fileName)}</div><div class="bauthor">${esc(book.author||'—')}</div>`;
+    const partsCount = Array.isArray(book.parts)?book.parts.length: (book.format && AUDIO_FMTS.has(book.format)?1:0);
+    card.innerHTML=`<div class="bcover-wrap">${coverHtml}<span class="bfmt-badge fmt-${book.format}">${FMT_LABELS[book.format]||book.format.toUpperCase()}</span></div><div class="btitle">${esc(book.title||book.fileName)}</div><div class="bauthor">${esc(book.author||'—')}</div><div class="card-actions"><button class="card-play ibtn" data-idx="${realIdx}" title="Play">▶</button><div class="parts-badge">${partsCount>1?partsCount+' parts':(partsCount===1?'audio':'')}</div></div>`;
     card.addEventListener('click',()=>openEditor(realIdx));
     frag.appendChild(card);
   });
   D.bookGrid.appendChild(frag);
+  // Attach play handlers for card-play buttons
+  D.bookGrid.querySelectorAll('.card-play').forEach(btn=>{
+    btn.addEventListener('click',async(e)=>{
+      e.stopPropagation();
+      const idx = Number(btn.dataset.idx);
+      const book = S.library[idx]; if(!book) return;
+      try{
+        if(Array.isArray(book.parts) && book.parts.length){ const u = book.parts[0].uri; if(u){ const a=new Audio(u); await a.play(); } }
+        else if(book.uri){ const a=new Audio(book.uri); await a.play(); }
+      }catch(err){ toast('Playback failed'); }
+    });
+  });
 }
 
 // Filter pills
@@ -928,6 +964,8 @@ function openEditor(idx) {
   S.activeIdx = idx;
   populate(S.library[idx]);
   D.editorScr.classList.add('open');
+  // ensure meta panel visible on desktop
+  if(window.innerWidth>900 && D.metaPanel) D.metaPanel.style.display='block';
 }
 function closeEditor() {
   D.editorScr.classList.remove('open');
@@ -995,6 +1033,26 @@ function populate(b) {
       }
     }
   } catch(e){ console.warn('Render parts failed', e); }
+
+  // Populate meta panel (right-hand summary)
+  try{
+    const mp = D.metaPanel;
+    if(mp){
+      D.mpTitle.textContent = b.title||b.fileName||'—';
+      D.mpAuthor.textContent = b.author||'—';
+      const csrc = b.coverBase64 ? `data:${b.coverMime||'image/jpeg'};base64,${b.coverBase64}` : b.coverUrl || null;
+      if(csrc){ D.mpCoverImg.src = csrc; D.mpCoverImg.style.display='block'; D.mpCoverPh.style.display='none'; }
+      else { D.mpCoverImg.style.display='none'; D.mpCoverPh.style.display='block'; }
+      // parts in meta panel
+      const mpParts = D.mpParts; if(mpParts){
+        if(Array.isArray(b.parts) && b.parts.length){
+          mpParts.innerHTML = b.parts.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px">${esc(p.name||p.fileName||`Part ${i+1}`)}</div><div><button class="gbtn" data-uri="${p.uri||''}" style="padding:6px 10px">Play</button></div></div>`).join('');
+          mpParts.querySelectorAll('button[data-uri]').forEach(btn=>btn.addEventListener('click',()=>{ const u=btn.dataset.uri; if(u) try{ (new Audio(u)).play(); }catch{} }));
+        } else mpParts.innerHTML = '<div style="color:var(--t3)">No extra parts</div>';
+      }
+      mp.style.display='block';
+    }
+  }catch(e){console.warn('Meta panel populate failed',e)}
 }
 
 function collectForm() {
