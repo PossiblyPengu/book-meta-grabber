@@ -299,6 +299,35 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
 .hero-overlay{position:absolute;inset:0;
   background:radial-gradient(ellipse at center 30%,transparent 40%,rgba(24,26,34,.28) 100%),
   linear-gradient(to bottom,rgba(24,26,34,.32) 0%,transparent 30%,transparent 45%,rgba(24,26,34,.92) 100%);z-index:3;}
+
+/* Hero content should respect device safe areas and scale on small iPhones */
+.hero .hero-content{position:relative;z-index:4;display:flex;align-items:center;gap:clamp(12px,4vw,32px);
+  padding-top:calc(18px + env(safe-area-inset-top,6px));
+  padding-left:calc(16px + env(safe-area-inset-left,12px));
+  padding-right:calc(16px + env(safe-area-inset-right,12px));
+  padding-bottom:16px}
+
+/* Ensure .enav uses safe horizontal insets */
+.enav{left:calc(12px + env(safe-area-inset-left,0));right:calc(12px + env(safe-area-inset-right,0));}
+
+/* Tab bar and full-screen areas must account for bottom inset */
+.tab-bar{padding-bottom:calc(var(--safe-bottom));height:var(--tab-h)}
+.editor-scr, .bsheet{padding-bottom:calc(var(--safe-bottom));}
+
+/* Small device adjustments (iPhone SE and narrow devices) */
+@media (max-width:360px){
+  .hero{min-height:40vh}
+  .hero-title{font-size:clamp(18px,6vw,26px)}
+  .hero-author{font-size:13px}
+  .cover-frame{width:clamp(88px,26vw,140px)}
+  .enav-back{padding:6px 8px;font-size:15px}
+}
+
+@media (max-width:330px){
+  /* tiny phones: reduce gaps and scale typography */
+  .hero .hero-content{gap:12px}
+  .hero-title{font-size:20px}
+}
 .enav{position:absolute;top:var(--safe-top);left:16px;right:16px;z-index:10;display:flex;
   align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-lg);
   background:var(--g-bg-elevated)}
