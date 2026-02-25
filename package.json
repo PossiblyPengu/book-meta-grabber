@@ -1,5 +1,5 @@
 {
-  "name": "book-meta-mobile",
+  "name": "book-meta-grabber",
   "version": "1.0.0",
   "description": "Web metadata + cover grabber for books and audiobooks",
   "main": "index.js",
