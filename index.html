@@ -562,6 +562,44 @@ html.browser{ --safe-top: calc(env(safe-area-inset-top, 10px) + 6px); --safe-bot
 html.standalone .enav{ padding-top: var(--safe-top); }
 html.browser .enav{ padding-top: calc(var(--safe-top) - 8px); }
 </style>
+<!-- iOS-specific refreshed layout overrides -->
+<style>
+/* Applied when JS detects an iOS device and adds `ios` class to <html> */
+html.ios{
+  --font: -apple-system, 'SF Pro Text', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --base-font-size: clamp(15px, 1.8vw + 12px, 18px);
+}
+
+html.ios body{ -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%; }
+
+/* Show a visible safe-area top spacer in standalone mode for iOS home-screen apps */
+html.ios.standalone .sbpad{display:block;height:var(--safe-top);}
+
+/* Enforce larger touch targets and spacing on iOS */
+html.ios .ibtn, html.ios .gbtn, html.ios .tbtn{min-height:56px;padding:12px}
+html.ios .tab-bar{height:calc(60px + var(--safe-bottom));padding-bottom:var(--safe-bottom);}
+
+/* Hero: stack on narrow iPhones, avoid absolute cover overlap */
+html.ios .hero{border-radius:14px;padding-left:16px;padding-right:16px;padding-top:calc(var(--safe-top) + 10px);}
+html.ios .hero .hero-content{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0}
+html.ios .hero .cover-frame{width:clamp(96px,26vw,160px);aspect-ratio:120/160;margin-bottom:6px}
+html.ios .hero-cover, html.ios .hero-cover-ph{position:static;transform:none}
+
+/* Top navigation: pinned but respecting safe insets */
+html.ios .enav{position:fixed;left:env(safe-area-inset-left,12px);right:env(safe-area-inset-right,12px);top:calc(var(--safe-top) - 8px);z-index:60}
+
+/* Editor overlay: account for safe-top so content is not hidden */
+html.ios .editor-scr{padding-top:var(--safe-top)}
+
+/* Ensure bottom sheets and tab bar avoid the home indicator */
+html.ios .bsheet, html.ios .tab-bar, html.ios .bsheet .sh-handle{padding-bottom:var(--safe-bottom)}
+
+/* Reduce hero image shadows and avoid spilling under notch */
+html.ios .hero-bg, html.ios .hero-cover{box-shadow:none}
+
+/* Prevent accidental pull-to-refresh visual overflow */
+html.ios, html.ios body{overscroll-behavior-y:contain}
+</style>
 </head>
 <body>
 
@@ -1688,6 +1726,14 @@ renderLibrary();
   window.addEventListener('resize', updateDisplayMode);
   window.addEventListener('visibilitychange', updateDisplayMode);
   document.addEventListener('DOMContentLoaded', updateDisplayMode);
+})();
+// detect iOS devices and add an `ios` class to <html>
+(function(){
+  try{
+    const ua = navigator.userAgent || '';
+    const isi = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform));
+    if(isi) document.documentElement.classList.add('ios');
+  }catch(e){}
 })();
 </script>
 </body>
