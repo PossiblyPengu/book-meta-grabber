@@ -572,8 +572,10 @@ async function processPickedFiles(picked, { forceGroup = false } = {}) {
   if (picked.length > 1 && !forceGroup && !state.settings.groupMultiImport) {
     const normalizeBase = (name) => {
       if (!name) return '';
+      // Use the last path segment if a full path/URI was provided
+      let base = name.split(/[\\/]/).pop();
       // strip extension
-      let base = name.replace(/\.[^/.]+$/, '');
+      base = base.replace(/\.[^/.]+$/, '');
       // remove common part/disc/volume markers like "part 1", "pt.1", "disc 01"
       base = base.replace(
         /\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i,
@@ -581,6 +583,8 @@ async function processPickedFiles(picked, { forceGroup = false } = {}) {
       );
       // remove trailing numeric suffixes like " - 01" or " (1)"
       base = base.replace(/[\s._-]*\(?\d{1,3}\)?$/i, '');
+      // collapse multiple spaces/underscores/dashes
+      base = base.replace(/[\s._-]+/g, ' ');
       return base.trim().toLowerCase();
     };
 
