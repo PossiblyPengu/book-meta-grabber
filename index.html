@@ -452,6 +452,54 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
 .cg4{background:linear-gradient(135deg,#0c4a6e,#0369a1)}
 .cg5{background:linear-gradient(135deg,#831843,#be185d)}
 </style>
+<!-- New clean theme overrides -->
+<style>
+/* Clean theme (flat, light) */
+.clean{ --ct-bg:#f6f7fb; --ct-surface:#ffffff; --ct-muted:#6b7280; --ct-accent:#2563eb; --ct-text:#0f1724; }
+.clean html, .clean body { background:var(--ct-bg) !important; color:var(--ct-text) !important }
+.clean .gbar, .clean .glass { background:var(--ct-surface) !important; border-color:rgba(15,23,36,0.06) !important; box-shadow:0 6px 18px rgba(15,23,36,0.06) !important }
+.clean .bg, .clean .orb, .clean .noise { display:none !important }
+.clean .scr-hdr{background:transparent;border-bottom:1px solid rgba(15,23,36,0.04);}
+.clean .scr-title{color:var(--ct-text)}
+.clean .ibtn, .clean .gbtn{background:transparent;border:1px solid rgba(15,23,36,0.06);color:var(--ct-text)}
+.clean .ibtn-accent, .clean .gbtn-primary{background:var(--ct-accent);color:#fff;border:none}
+.clean .bcard{background:var(--ct-surface);border:1px solid rgba(15,23,36,0.04);box-shadow:0 6px 18px rgba(15,23,36,0.04);border-radius:10px}
+.clean .btitle{color:var(--ct-text)}
+.clean .bauthor{color:var(--ct-muted)}
+.clean .hero{background:transparent;box-shadow:none;border-radius:0;padding:12px 16px}
+.clean .hero .cover-frame{box-shadow:0 6px 18px rgba(15,23,36,0.06);border:1px solid rgba(15,23,36,0.04)}
+.clean .hero-title{color:var(--ct-text)}
+.clean .hero-author{color:var(--ct-muted)}
+.clean .tab-bar{background:transparent;border-top:1px solid rgba(15,23,36,0.04);box-shadow:none}
+.clean .tbtn{color:var(--ct-muted)}
+.clean .tbtn.active{color:var(--ct-accent)}
+.clean .finput{background:transparent;border:1px solid rgba(15,23,36,0.06);color:var(--ct-text)}
+.clean .ftarea{background:transparent;border:1px solid rgba(15,23,36,0.06)}
+.clean .meta-top .ibtn{border:1px solid rgba(15,23,36,0.06);background:transparent}
+.clean .cover-zoom{background:rgba(15,23,36,0.04)}
+.clean .backdrop{background:rgba(15,23,36,0.45)}
+</style>
+/* Mobile-only enforcement overrides */
+<style>
+  /* Force the app to behave like a native mobile app */
+  html,body{height:100%;width:100%;}
+  /* Editor overlay is full screen and scrolls normally */
+  .editor-scr{position:fixed;inset:0;z-index:300;display:block;overflow-y:auto;background:var(--ct-bg, var(--g-bg));}
+  .editor-scr.open{transform:none}
+  /* Meta panel acts as a bottom sheet when toggled */
+  #metaPanel{display:none;position:fixed;left:10px;right:10px;bottom:10px;margin:0;border-radius:12px;padding:12px 14px;max-height:70vh;overflow:auto;box-shadow:0 18px 48px rgba(0,0,0,0.28);z-index:450}
+  .editor-scr.meta-open #metaPanel{display:block}
+  /* Ensure the library is a single column list */
+  .book-grid{display:flex;flex-direction:column;padding:12px;gap:12px}
+  .bcard{width:100%}
+  /* Bigger touch targets */
+  .ibtn, .gbtn, .tbtn{min-height:48px;padding:10px}
+  .tab-bar{left:0;right:0;width:100%;border-radius:0;height:var(--tab-h);padding-bottom:env(safe-area-inset-bottom,12px)}
+  /* Constrain width on large screens but keep mobile layout */
+  @media(min-width:700px){
+    body{max-width:460px;margin:0 auto}
+  }
+</style>
 </head>
 <body>
 
@@ -718,6 +766,10 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
 
 <script>
 'use strict';
+// enable new clean theme by default
+document.documentElement.classList.add('clean');
+// Ensure a known base history state for mobile PWA navigation
+try{ if(!history.state || history.state.page!=='library') history.replaceState({page:'library'}, '', location.pathname + location.search); }catch(e){}
 // ── State ────────────────────────────────────────────────────────────────────
 const S = {
   library: [],
@@ -1042,7 +1094,7 @@ function closeEditor() {
   S.activeIdx=-1;
   if(D.metaPanel) D.metaPanel.style.display='none';
 }
-$('btnBack').addEventListener('click',closeEditor);
+$('btnBack').addEventListener('click',()=>{ if(history.state && history.state.page==='editor'){ try{ history.back(); }catch(e){ closeEditor({back:false}); } } else closeEditor({back:false}); });
 
 function populate(b) {
   D.eFormat.textContent  = FMT_LABELS[b.format]||b.format?.toUpperCase()||'—';
@@ -1196,9 +1248,33 @@ $('btnMetaClose')?.addEventListener('click',()=>{
 
 // Ensure meta panel visibility on open/close editor for mobile
 const _openEditor = openEditor;
-openEditor = function(idx){ _openEditor(idx); if(window.innerWidth<=900){ D.metaPanel.style.display='none'; D.editorScr.classList.remove('meta-open'); } };
+openEditor = function(idx, opts={push:true}){
+  _openEditor(idx);
+  if(window.innerWidth<=900){ D.metaPanel.style.display='none'; D.editorScr.classList.remove('meta-open'); }
+  if(opts.push!==false){ try{ history.pushState({page:'editor', idx}, '', '#editor'); }catch(e){} }
+};
 const _closeEditor = closeEditor;
-closeEditor = function(){ _closeEditor(); D.editorScr.classList.remove('meta-open'); D.metaPanel.style.display = 'none'; document.body.style.overflow=''; };
+closeEditor = function(opts={back:true}){
+  // If caller wants to navigate back in history, prefer history.back() so the browser back behaves naturally
+  if(opts.back && history.state && history.state.page==='editor'){
+    try{ history.back(); return; }catch(e){}
+  }
+  _closeEditor(); D.editorScr.classList.remove('meta-open'); D.metaPanel.style.display = 'none'; document.body.style.overflow='';
+};
+
+// Handle browser / home-screen back behavior
+window.addEventListener('popstate',(e)=>{
+  const st = e.state || {};
+  if(st.page==='editor'){
+    // open editor for given index without pushing another state
+    if(typeof st.idx === 'number') openEditor(st.idx, {push:false});
+  } else {
+    // any other state -> ensure editor closed
+    if(S.activeIdx>=0 || D.editorScr.classList.contains('open')){
+      _closeEditor(); S.activeIdx=-1; D.editorScr.classList.remove('meta-open'); D.metaPanel.style.display='none';
+    }
+  }
+});
 
 
 // Results sheet
