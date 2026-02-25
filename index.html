@@ -30,6 +30,9 @@
   --card-radius: 12px;
   --card-padding: 12px;
 }
+/* Different defaults when launched from Home Screen (standalone) vs browser */
+html.standalone{ --safe-top: calc(env(safe-area-inset-top, 18px) + 12px); --safe-bottom: calc(env(safe-area-inset-bottom, 12px) + 12px); }
+html.browser{ --safe-top: calc(env(safe-area-inset-top, 10px) + 6px); --safe-bottom: calc(env(safe-area-inset-bottom, 6px) + 6px); }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:auto;font-family:var(--font);color:var(--t1);
   font-size:var(--base-font-size);line-height:1.6;-webkit-font-smoothing:antialiased;background:var(--g-bg);
@@ -473,6 +476,17 @@ html,body{background-color:var(--g-bg) !important}
   .hero-title{font-size:18px}
   .hero-author{font-size:13px}
 }
+/* Prevent horizontal overflow and make hero stack on narrow screens */
+html,body{overflow-x:hidden}
+
+@media (max-width: 420px){
+  .hero{padding-top:calc(var(--safe-top) + 8px);padding-left:12px;padding-right:12px}
+  .hero .hero-content{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0}
+  .hero .cover-frame{width:clamp(88px,24vw,140px);margin-bottom:8px}
+  .hero .hero-fmt,.hero-title,.hero-author{text-align:center}
+  /* hide older absolute cover if present */
+  .hero-cover{display:none!important}
+}
 @media (max-width: 480px) {
   .scr-title { font-size:26px; }
   .hero-title { font-size:20px; }
@@ -535,6 +549,13 @@ html,body{background-color:var(--g-bg) !important}
   @media(min-width:700px){
     body{max-width:460px;margin:0 auto}
   }
+</style>
+<style>
+/* Standalone vs browser mode helper classes toggled by JS */
+html.standalone{ --safe-top: calc(env(safe-area-inset-top, 18px) + 12px); --safe-bottom: calc(env(safe-area-inset-bottom, 12px) + 12px); }
+html.browser{ --safe-top: calc(env(safe-area-inset-top, 10px) + 6px); --safe-bottom: calc(env(safe-area-inset-bottom, 6px) + 6px); }
+html.standalone .enav{ padding-top: var(--safe-top); }
+html.browser .enav{ padding-top: calc(var(--safe-top) - 8px); }
 </style>
 </head>
 <body>
@@ -685,7 +706,7 @@ html,body{background-color:var(--g-bg) !important}
     <div class="hero-bg" id="eBg"></div>
     <div class="hero-overlay"></div>
     <div class="enav" aria-hidden="false"></div>
-    <div class="hero-content" style="position:relative;z-index:4;display:flex;align-items:center;gap:32px;padding:32px 24px;">
+    <div class="hero-content">
       <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;">
         <div class="cover-frame" id="heroCoverFrame">
           <img class="cover-img" id="eCover" src="" alt="" style="display:none"/>
@@ -1581,6 +1602,30 @@ function loadLibrary(){try{const d=localStorage.getItem('bmg_library');return d?
 // ── Init ──────────────────────────────────────────────────────────────────────
 S.library = loadLibrary();
 renderLibrary();
+</script>
+<script>
+// Toggle classes on <html> depending on whether the app is running standalone (homescreen) or in-browser.
+(function(){
+  function updateDisplayMode(){
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || window.navigator.standalone === true
+      || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+    document.documentElement.classList.toggle('standalone', !!isStandalone);
+    document.documentElement.classList.toggle('browser', !isStandalone);
+    // also update --safe-top/--safe-bottom vars for browsers that may not expose env() properly
+    if(isStandalone){
+      document.documentElement.style.setProperty('--safe-top', 'calc(env(safe-area-inset-top, 18px) + 12px)');
+      document.documentElement.style.setProperty('--safe-bottom', 'calc(env(safe-area-inset-bottom, 12px) + 12px)');
+    } else {
+      document.documentElement.style.setProperty('--safe-top', 'calc(env(safe-area-inset-top, 10px) + 6px)');
+      document.documentElement.style.setProperty('--safe-bottom', 'calc(env(safe-area-inset-bottom, 6px) + 6px)');
+    }
+  }
+  updateDisplayMode();
+  window.addEventListener('resize', updateDisplayMode);
+  window.addEventListener('visibilitychange', updateDisplayMode);
+  document.addEventListener('DOMContentLoaded', updateDisplayMode);
+})();
 </script>
 </body>
 </html>
