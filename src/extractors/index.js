@@ -115,7 +115,7 @@ async function extractPdf(fileOrBlob, fileName) {
   try {
     const arrayBuffer = await fileOrBlob.arrayBuffer();
     // PDF.js — load via CDN worker
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
+    const pdfjsLib = await import(/* @vite-ignore */ 'pdfjs-dist/legacy/build/pdf.mjs');
     // Let the bundler provide the worker path at runtime; fallback to package worker
     try {
       pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
