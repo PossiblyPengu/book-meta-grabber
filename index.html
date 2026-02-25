@@ -1757,6 +1757,25 @@ renderLibrary();
     if(isi) document.documentElement.classList.add('ios');
   }catch(e){}
 })();
+// Ensure default theme is dark unless user explicitly chose light
+(function(){
+  try{
+    const stored = localStorage.getItem('bmg_theme');
+    if(stored === 'light'){
+      document.documentElement.classList.add('clean');
+      document.documentElement.classList.remove('dark');
+    } else {
+      // default to dark
+      document.documentElement.classList.remove('clean');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('bmg_theme','dark');
+    }
+    // set meta theme-color for status bar on mobile
+    let m = document.querySelector('meta[name="theme-color"]');
+    if(!m){ m = document.createElement('meta'); m.name='theme-color'; document.head.appendChild(m); }
+    m.content = getComputedStyle(document.documentElement).getPropertyValue('--g-bg').trim() || '#0f1724';
+  }catch(e){}
+})();
 // Fix potential initial layout fitting issues on some iOS WebViews by forcing a reflow
 ;(function(){
   function doReflow(){
