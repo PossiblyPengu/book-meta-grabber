@@ -7,13 +7,13 @@
  */
 
 // ─── Document Picker (Local + iCloud) ────────────────────────────────────────
-// @capacitor-community/document-picker opens the native iOS Files app,
-// which already surfaces both local storage AND iCloud Drive.
+// Uses @capawesome/capacitor-file-picker if available (native iOS),
+// otherwise falls back to browser <input type="file">.
 
 let FilePicker;
 try {
-  const mod = await import('@capacitor-community/document-picker');
-  FilePicker = mod.DocumentPicker || mod.default;
+  const mod = await import('@capawesome/capacitor-file-picker');
+  FilePicker = mod.FilePicker || mod.default;
 } catch {
   FilePicker = null;
 }
@@ -24,9 +24,9 @@ export async function pickFromFiles() {
   }
 
   try {
-    const result = await FilePicker.getDocument({
+    const result = await FilePicker.pickFiles({
       multiple:  true,
-      mimeTypes: [
+      types: [
         'application/epub+zip',
         'application/pdf',
         'audio/mpeg',
@@ -34,18 +34,17 @@ export async function pickFromFiles() {
         'audio/flac',
         'audio/ogg',
         'audio/x-m4b',
-        '*/*',
       ],
     });
 
-    return (result.uris || []).map(uri => ({
-      uri,
-      name:   uri.split('/').pop().split('?')[0],
-      format: getFormat(uri),
+    return (result.files || []).map(f => ({
+      uri:    f.path || f.uri,
+      name:   f.name || (f.path && f.path.split('/').pop().split('?')[0]),
+      format: getFormat(f.name || f.path || ''),
       source: 'local',
     }));
   } catch (e) {
-    if (e.message?.includes('cancelled')) return [];
+    if (e.message?.includes('cancel')) return [];
     throw e;
   }
 }
