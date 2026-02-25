@@ -1106,8 +1106,9 @@ function renderLibrary() {
     const thumbSrc = book.coverBase64
       ? `data:${book.coverMime||'image/jpeg'};base64,${book.coverBase64}`
       : book.coverUrl || null;
-    const coverHtml = thumbSrc
-      ? `<img class="bcover-img" src="${thumbSrc}" alt="" loading="lazy"/>`
+    const safeThumb = sanitizeUri(thumbSrc);
+    const coverHtml = safeThumb
+      ? `<img class="bcover-img" src="${safeThumb}" alt="" loading="lazy"/>`
       : `<div class="bcover-ph ${grad}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>`;
     const partsCount = Array.isArray(book.parts)?book.parts.length: (book.format && AUDIO_FMTS.has(book.format)?1:0);
     card.innerHTML=`<div class="bcover-wrap">${coverHtml}<span class="bfmt-badge fmt-${book.format}">${FMT_LABELS[book.format]||book.format.toUpperCase()}</span></div><div class="btitle">${esc(book.title||book.fileName)}</div><div class="bauthor">${esc(book.author||'—')}</div><div class="card-actions"><button class="card-play ibtn" data-idx="${realIdx}" title="Play">▶</button><div class="parts-badge">${partsCount>1?partsCount+' parts':(partsCount===1?'audio':'')}</div></div>`;
@@ -1173,11 +1174,12 @@ function populate(b) {
   const coverSrc = b.coverBase64
     ? `data:${b.coverMime||'image/jpeg'};base64,${b.coverBase64}`
     : b.coverUrl || null;
+  const safeCoverSrc = sanitizeUri(coverSrc);
   // If meta panel is visible on wide screens, show artwork there instead of duplicating in hero
   const preferMeta = D.metaPanel && window.innerWidth>900;
-  if(coverSrc && !preferMeta){
-    D.eCover.src = coverSrc; D.eCover.style.display = 'block'; D.eCoverPh.style.display = 'none';
-    D.eBg.style.backgroundImage = `url('${coverSrc}')`;
+  if(safeCoverSrc && !preferMeta){
+    D.eCover.src = safeCoverSrc; D.eCover.style.display = 'block'; D.eCoverPh.style.display = 'none';
+    D.eBg.style.backgroundImage = `url('${safeCoverSrc}')`;
   } else {
     D.eCover.style.display = 'none'; D.eCoverPh.style.display = 'flex';
     D.eBg.style.backgroundImage = '';
@@ -1208,21 +1210,35 @@ function populate(b) {
     const partsEl = D.partsList;
     if(partsEl){
       if(Array.isArray(b.parts) && b.parts.length){
-        partsEl.innerHTML = b.parts.map((p,i)=>{
-          const name = esc(p.name||p.fileName||`Part ${i+1}`);
-          const fmt = esc((p.format||'').toUpperCase());
-          const playBtn = AUDIO_FMTS.has((p.format||'').toLowerCase()) ? `<button class="ibtn part-play" data-uri="${p.uri||''}" title="Play" style="margin-right:8px">▶</button>` : '';
-          const dl = p.uri ? `<a class="gbtn" href="${p.uri}" download="${name}" style="padding:6px 10px;margin-left:8px">Download</a>` : '';
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:13px">${name}</div><div style="font-size:11px;color:var(--t3)">${fmt}</div></div><div style="display:flex;align-items:center">${playBtn}${dl}</div></div>`;
-        }).join('');
-        // Attach play handlers
-        partsEl.querySelectorAll('.part-play').forEach(btn=>{
-          btn.addEventListener('click',()=>{
-            const uri = btn.dataset.uri; if(!uri) return; try{ const a = new Audio(uri); a.play(); }catch{};
-          });
+        partsEl.innerHTML = '';
+        b.parts.forEach((p,i)=>{
+          const name = p.name||p.fileName||`Part ${i+1}`;
+          const fmt = (p.format||'').toUpperCase();
+          const wrapper = document.createElement('div');
+          wrapper.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px';
+          const left = document.createElement('div'); left.style.cssText = 'display:flex;align-items:center;gap:12px';
+          const titleDiv = document.createElement('div'); titleDiv.style.fontSize='13px'; titleDiv.textContent = name;
+          const fmtDiv = document.createElement('div'); fmtDiv.style.cssText = 'font-size:11px;color:var(--t3)'; fmtDiv.textContent = fmt;
+          left.appendChild(titleDiv); left.appendChild(fmtDiv);
+          const right = document.createElement('div'); right.style.display='flex'; right.style.alignItems='center';
+          // play button (only for audio formats and safe URIs)
+          const candidateUri = sanitizeUri(p.uri||'');
+          if(AUDIO_FMTS.has((p.format||'').toLowerCase()) && candidateUri){
+            const playBtn = document.createElement('button'); playBtn.className='ibtn part-play'; playBtn.title='Play'; playBtn.style.marginRight='8px';
+            playBtn.textContent = '▶'; playBtn.dataset.uri = candidateUri;
+            playBtn.addEventListener('click',()=>{ try{ const a=new Audio(playBtn.dataset.uri); a.play(); }catch(e){} });
+            right.appendChild(playBtn);
+          }
+          // download link (only if uri is safe)
+          if(candidateUri){
+            const dl = document.createElement('a'); dl.className='gbtn'; dl.href = candidateUri; dl.download = name; dl.style.cssText='padding:6px 10px;margin-left:8px'; dl.textContent='Download';
+            right.appendChild(dl);
+          }
+          wrapper.appendChild(left); wrapper.appendChild(right);
+          partsEl.appendChild(wrapper);
         });
       } else {
-        partsEl.innerHTML = '<div style="color:var(--t3);font-size:13px">No extra parts</div>';
+        const nod = document.createElement('div'); nod.style.color='var(--t3)'; nod.style.fontSize='13px'; nod.textContent='No extra parts'; partsEl.innerHTML=''; partsEl.appendChild(nod);
       }
     }
   } catch(e){ console.warn('Render parts failed', e); }
@@ -1234,14 +1250,29 @@ function populate(b) {
       D.mpTitle.textContent = b.title||b.fileName||'—';
       D.mpAuthor.textContent = b.author||'—';
       const csrc = b.coverBase64 ? `data:${b.coverMime||'image/jpeg'};base64,${b.coverBase64}` : b.coverUrl || null;
-      if(csrc){ D.mpCoverImg.src = csrc; D.mpCoverImg.style.display='block'; D.mpCoverPh.style.display='none'; }
+      const safeCsrc = sanitizeUri(csrc);
+      if(safeCsrc){ D.mpCoverImg.src = safeCsrc; D.mpCoverImg.style.display='block'; D.mpCoverPh.style.display='none'; }
       else { D.mpCoverImg.style.display='none'; D.mpCoverPh.style.display='block'; }
       // parts in meta panel
       const mpParts = D.mpParts; if(mpParts){
         if(Array.isArray(b.parts) && b.parts.length){
-          mpParts.innerHTML = b.parts.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px">${esc(p.name||p.fileName||`Part ${i+1}`)}</div><div><button class="gbtn" data-uri="${p.uri||''}" style="padding:6px 10px">Play</button></div></div>`).join('');
-          mpParts.querySelectorAll('button[data-uri]').forEach(btn=>btn.addEventListener('click',()=>{ const u=btn.dataset.uri; if(u) try{ (new Audio(u)).play(); }catch{} }));
-        } else mpParts.innerHTML = '<div style="color:var(--t3)">No extra parts</div>';
+          mpParts.innerHTML = '';
+          b.parts.forEach((p,i)=>{
+            const row = document.createElement('div'); row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:6px 0';
+            const left = document.createElement('div'); left.style.fontSize='13px'; left.textContent = p.name||p.fileName||`Part ${i+1}`;
+            const right = document.createElement('div');
+            const u = sanitizeUri(p.uri||'');
+            if(u){
+              const btn = document.createElement('button'); btn.className='gbtn'; btn.style.padding='6px 10px'; btn.dataset.uri = u; btn.textContent='Play';
+              btn.addEventListener('click',()=>{ try{ (new Audio(u)).play(); }catch(e){} });
+              right.appendChild(btn);
+            }
+            row.appendChild(left); row.appendChild(right); mpParts.appendChild(row);
+          });
+        } else {
+          mpParts.innerHTML = '';
+          const n = document.createElement('div'); n.style.color='var(--t3)'; n.textContent='No extra parts'; mpParts.appendChild(n);
+        }
       }
       if(window.innerWidth>900) mp.style.display='block'; else mp.style.display='none';
     }
@@ -1499,7 +1530,8 @@ function renderResults(results, container, onApply){
   results.forEach((r,i)=>{
     const card=document.createElement('div');
     card.className='rcard fu'; card.style.animationDelay=`${Math.min(i*35,250)}ms`;
-    const th=r.coverUrl?`<img class="rthumb" src="${r.coverUrl}" alt="" loading="lazy" onerror="this.style.display='none'"/>`:`<div class="rthumb-ph"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`;
+    const safeRcover = sanitizeUri(r.coverUrl||'');
+    const th = safeRcover ? `<img class="rthumb" src="${safeRcover}" alt="" loading="lazy" onerror="this.style.display='none'"/>` : `<div class="rthumb-ph"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`;
     card.innerHTML=`${th}<div class="rinfo"><div class="rtitle">${esc(r.title||'—')}</div><div class="rauthor">${esc(r.author||'—')}</div><div class="rmeta">${r.year?`<span style="font-size:11px;color:var(--t3)">${esc(r.year)}</span>`:''}<span class="stag ${SC[r.source]||'sg'}">${esc(r.source)}</span></div></div>`;
     card.addEventListener('click',()=>onApply(r));
     container.appendChild(card);
@@ -1547,6 +1579,32 @@ $('btnClearLib').addEventListener('click', async ()=>{
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+// Return a sanitized URI or null if unsafe. Allows relative URLs, http(s), blob, and safe data: types (image/audio/pdf/octet-stream).
+function sanitizeUri(u){
+  if(!u) return null;
+  try{
+    const s = String(u).trim();
+    if(!s) return null;
+    // reject javascript: and other potentially dangerous schemes
+    if(/^\s*javascript:/i.test(s)) return null;
+    // Absolute scheme (e.g., https:, data:, blob:)
+    const m = s.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
+    if(m){
+      const scheme = m[1].toLowerCase();
+      if(['http','https','blob','file'].includes(scheme)) return s;
+      if(scheme==='data'){
+        // allow data:audio/, data:image/, data:application/pdf, data:application/octet-stream
+        if(/^data:(audio|image)\//i.test(s)) return s;
+        if(/^data:application\/(pdf|octet-stream)/i.test(s)) return s;
+        return null;
+      }
+      return null;
+    }
+    // Relative URLs (start with / or no scheme) — allow
+    if(/^[./]/.test(s) || !/[:\/\\]/.test(s)) return s;
+    return null;
+  }catch(e){return null}
+}
 function sh(s){return s.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()}
 function guessTitle(n){
   if(!n) return '';
