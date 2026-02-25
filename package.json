@@ -23,7 +23,7 @@
     "@capacitor/haptics":         "^5.0.0",
     "@capacitor/preferences":     "^5.0.0",
     "@capacitor/browser":         "^5.0.0",
-    "@ffmpeg/ffmpeg": "^0.11.8",
+    "@ffmpeg/ffmpeg": "^0.11.0",
     "music-metadata-browser": "^2.5.10",
     "pdfjs-dist": "^4.0.379",
     "jszip": "^3.10.1",
