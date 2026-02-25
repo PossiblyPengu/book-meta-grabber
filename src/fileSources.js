@@ -25,7 +25,7 @@ export async function pickFromFiles() {
 
   try {
     const result = await FilePicker.pickFiles({
-      multiple:  true,
+      multiple: true,
       types: [
         'application/epub+zip',
         'application/pdf',
@@ -37,9 +37,9 @@ export async function pickFromFiles() {
       ],
     });
 
-    return (result.files || []).map(f => ({
-      uri:    f.path || f.uri,
-      name:   f.name || (f.path && f.path.split('/').pop().split('?')[0]),
+    return (result.files || []).map((f) => ({
+      uri: f.path || f.uri,
+      name: f.name || (f.path && f.path.split('/').pop().split('?')[0]),
       format: getFormat(f.name || f.path || ''),
       source: 'local',
     }));
@@ -60,7 +60,13 @@ export async function pickFolder() {
       const res = await FilePicker.getDirectory();
       // Expected: res.files or similar; normalize conservatively.
       const files = res.files || [];
-      return groupFilesAsFolders(files.map(f => ({ uri: f.uri || f.path, name: f.name || (f.path && f.path.split('/').pop()), file: null })));
+      return groupFilesAsFolders(
+        files.map((f) => ({
+          uri: f.uri || f.path,
+          name: f.name || (f.path && f.path.split('/').pop()),
+          file: null,
+        }))
+      );
     }
   } catch (e) {
     // ignore and fall back to browser behavior
@@ -84,8 +90,10 @@ try {
 export function buildGooglePickerUrl(clientId, redirectUri) {
   // Google Drive OAuth2 → Picker API flow
   // The web app at redirectUri receives the file info and deep-links back
-  const scopes     = encodeURIComponent('https://www.googleapis.com/auth/drive.readonly');
-  const state      = encodeURIComponent(JSON.stringify({ action: 'gdrive-pick' }));
+  const scopes = encodeURIComponent(
+    'https://www.googleapis.com/auth/drive.readonly'
+  );
+  const state = encodeURIComponent(JSON.stringify({ action: 'gdrive-pick' }));
   return (
     `https://accounts.google.com/o/oauth2/v2/auth` +
     `?client_id=${encodeURIComponent(clientId)}` +
@@ -104,7 +112,7 @@ export async function openGoogleDrivePicker(clientId) {
   }
   // The redirect URI is the in-app page that hosts the Google Picker widget
   const redirectUri = `${window.location.origin}/gdrive-picker.html`;
-  const url         = buildGooglePickerUrl(clientId, redirectUri);
+  const url = buildGooglePickerUrl(clientId, redirectUri);
   await Browser.open({ url, presentationStyle: 'popover' });
   // Actual file receipt handled via App.addListener('appUrlOpen') in app.js
   return [];
@@ -112,16 +120,16 @@ export async function openGoogleDrivePicker(clientId) {
 
 // Called from app.js when the app URL scheme fires after Google auth
 export async function downloadGoogleFile(accessToken, fileId, fileName) {
-  const url  = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
   const resp = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!resp.ok) throw new Error(`Drive download failed: ${resp.status}`);
-  const blob    = await resp.blob();
+  const blob = await resp.blob();
   const dataUrl = await blobToDataUrl(blob);
   return {
-    uri:    dataUrl,      // data URL used as the "uri" for in-memory processing
-    name:   fileName,
+    uri: dataUrl, // data URL used as the "uri" for in-memory processing
+    name: fileName,
     format: getFormat(fileName),
     source: 'gdrive',
     blob,
@@ -129,7 +137,16 @@ export async function downloadGoogleFile(accessToken, fileId, fileName) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const SUPPORTED_EXTS = new Set(['epub','pdf','mp3','m4b','m4a','flac','ogg','opus']);
+const SUPPORTED_EXTS = new Set([
+  'epub',
+  'pdf',
+  'mp3',
+  'm4b',
+  'm4a',
+  'flac',
+  'ogg',
+  'opus',
+]);
 
 export function getFormat(nameOrUri) {
   return (nameOrUri.split('.').pop().split('?')[0] || '').toLowerCase();
@@ -142,34 +159,40 @@ export function isSupportedFormat(name) {
 function blobToDataUrl(blob) {
   return new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload  = () => res(r.result);
+    r.onload = () => res(r.result);
     r.onerror = rej;
     r.readAsDataURL(blob);
   });
 }
 
 function showGDriveSetupHint() {
-  window.dispatchEvent(new CustomEvent('app:toast', {
-    detail: { msg: 'Add your Google Client ID in Settings to enable Drive', type: 'info', ms: 5000 },
-  }));
+  window.dispatchEvent(
+    new CustomEvent('app:toast', {
+      detail: {
+        msg: 'Add your Google Client ID in Settings to enable Drive',
+        type: 'info',
+        ms: 5000,
+      },
+    })
+  );
 }
 
 // Dev/browser simulation when Capacitor APIs unavailable
 async function simulateFilePick() {
-  return new Promise(resolve => {
-    const input     = document.createElement('input');
-    input.type      = 'file';
-    input.multiple  = true;
-    input.accept    = '.epub,.pdf,.mp3,.m4b,.m4a,.flac,.ogg,.opus';
-    input.onchange  = () => {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.epub,.pdf,.mp3,.m4b,.m4a,.flac,.ogg,.opus';
+    input.onchange = () => {
       const files = Array.from(input.files || [])
-        .filter(f => isSupportedFormat(f.name))
-        .map(f => ({
-          uri:    URL.createObjectURL(f),
-          name:   f.name,
+        .filter((f) => isSupportedFormat(f.name))
+        .map((f) => ({
+          uri: URL.createObjectURL(f),
+          name: f.name,
           format: getFormat(f.name),
           source: 'local',
-          file:   f,
+          file: f,
         }));
       resolve(files);
     };
@@ -179,7 +202,7 @@ async function simulateFilePick() {
 }
 
 function simulateFolderPick() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.webkitdirectory = true;
@@ -187,7 +210,14 @@ function simulateFolderPick() {
     input.accept = '.mp3,.m4b,.m4a,.flac,.ogg,.opus';
     input.onchange = () => {
       const files = Array.from(input.files || []);
-      const folderEntries = groupFilesAsFolders(files.map(f => ({ file: f, name: f.name, uri: URL.createObjectURL(f), relativePath: f.webkitRelativePath || f.name })));
+      const folderEntries = groupFilesAsFolders(
+        files.map((f) => ({
+          file: f,
+          name: f.name,
+          uri: URL.createObjectURL(f),
+          relativePath: f.webkitRelativePath || f.name,
+        }))
+      );
       resolve(folderEntries);
     };
     input.oncancel = () => resolve([]);
@@ -201,26 +231,38 @@ function groupFilesAsFolders(items) {
   for (const it of items) {
     const rel = it.relativePath || it.name || '';
     const parts = rel.split('/').filter(Boolean);
-    const folder = parts.length > 1 ? parts[0] : (it.name || 'root');
+    const folder = parts.length > 1 ? parts[0] : it.name || 'root';
     byFolder[folder] = byFolder[folder] || [];
-    byFolder[folder].push({ name: it.name, uri: it.uri, file: it.file || null, format: getFormat(it.name) });
+    byFolder[folder].push({
+      name: it.name,
+      uri: it.uri,
+      file: it.file || null,
+      format: getFormat(it.name),
+    });
   }
 
   // Convert to array of folder entries. If folder contains mostly audio files,
   // treat it as an audiobook with `parts` array.
   const out = [];
   for (const [folderName, files] of Object.entries(byFolder)) {
-    const audioCount = files.filter(f => SUPPORTED_EXTS.has(f.format)).length;
+    const audioCount = files.filter((f) => SUPPORTED_EXTS.has(f.format)).length;
     if (audioCount >= 2) {
       out.push({
         name: folderName,
         source: 'local-folder',
         format: 'audiobook-folder',
-        parts: files.sort((a,b) => a.name.localeCompare(b.name)),
+        parts: files.sort((a, b) => a.name.localeCompare(b.name)),
       });
     } else {
       // Not a multi-part audiobook: expose individual files instead
-      for (const f of files) out.push({ uri: f.uri, name: f.name, format: f.format, source: 'local', file: f.file });
+      for (const f of files)
+        out.push({
+          uri: f.uri,
+          name: f.name,
+          format: f.format,
+          source: 'local',
+          file: f.file,
+        });
     }
   }
   return out;

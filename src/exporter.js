@@ -7,9 +7,13 @@
 export async function exportWithMetadata(source, metadata) {
   // `source` can be a Blob/File or a data/object URL string
   const blob = await fetchBlob(source);
-  const fmt = (metadata.format || (metadata.fileName || '').split('.').pop() || '').toLowerCase();
+  const fmt = (
+    metadata.format ||
+    (metadata.fileName || '').split('.').pop() ||
+    ''
+  ).toLowerCase();
   if (fmt === 'epub') return exportEpub(blob, metadata);
-  if (fmt === 'mp3')  return exportMp3(blob, metadata);
+  if (fmt === 'mp3') return exportMp3(blob, metadata);
   // Fallback: return original file as download with a metadata JSON sidecar
   return downloadBlob(blob, metadata.fileName || `file.${fmt}`);
 }
@@ -30,7 +34,8 @@ async function exportEpub(blob, metadata) {
   const JSZip = (await import('jszip')).default;
   const zip = await JSZip.loadAsync(blob);
 
-  const containerXml = await zip.file('META-INF/container.xml')?.async('string') || '';
+  const containerXml =
+    (await zip.file('META-INF/container.xml')?.async('string')) || '';
   const opfPathMatch = containerXml.match(/full-path="([^"]+\.opf)"/i);
   if (!opfPathMatch) {
     // cannot locate OPF — download original
@@ -42,15 +47,21 @@ async function exportEpub(blob, metadata) {
   // Parse OPF XML and update common fields
   const parser = new DOMParser();
   const doc = parser.parseFromString(opfContent, 'application/xml');
-  const nsResolver = doc.createNSResolver(doc.documentElement);
 
   function ensureDc(tag, value) {
     if (!value) return;
-    const el = doc.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', tag)[0];
+    const el = doc.getElementsByTagNameNS(
+      'http://purl.org/dc/elements/1.1/',
+      tag
+    )[0];
     if (el) el.textContent = value;
     else {
-      const metadataEl = doc.getElementsByTagName('metadata')[0] || doc.documentElement;
-      const newEl = doc.createElementNS('http://purl.org/dc/elements/1.1/', `dc:${tag}`);
+      const metadataEl =
+        doc.getElementsByTagName('metadata')[0] || doc.documentElement;
+      const newEl = doc.createElementNS(
+        'http://purl.org/dc/elements/1.1/',
+        `dc:${tag}`
+      );
       newEl.textContent = value;
       metadataEl.appendChild(newEl);
     }
@@ -64,7 +75,9 @@ async function exportEpub(blob, metadata) {
 
   // If cover present, embed it and ensure manifest/meta entries
   if (metadata.coverBase64) {
-    const opfDir = opfPath.includes('/') ? opfPath.split('/').slice(0, -1).join('/') + '/' : '';
+    const opfDir = opfPath.includes('/')
+      ? opfPath.split('/').slice(0, -1).join('/') + '/'
+      : '';
     const coverRelPath = opfDir + 'images/cover.jpg';
     const coverData = base64ToUint8Array(metadata.coverBase64);
     zip.file(coverRelPath, coverData);
@@ -72,7 +85,9 @@ async function exportEpub(blob, metadata) {
     // add manifest item
     const manifest = doc.getElementsByTagName('manifest')[0];
     if (manifest) {
-      const exists = Array.from(manifest.getElementsByTagName('item')).some(i => i.getAttribute('href') === 'images/cover.jpg');
+      const exists = Array.from(manifest.getElementsByTagName('item')).some(
+        (i) => i.getAttribute('href') === 'images/cover.jpg'
+      );
       if (!exists) {
         const id = 'cover-image';
         const item = doc.createElement('item');
@@ -112,11 +127,17 @@ async function exportMp3(blob, metadata) {
   if (metadata.series) writer.setFrame('TALB', metadata.series);
   if (metadata.year) writer.setFrame('TYER', metadata.year);
   if (metadata.genre) writer.setFrame('TCON', [metadata.genre]);
-  if (metadata.description) writer.setFrame('COMM', { description: '', text: metadata.description });
+  if (metadata.description)
+    writer.setFrame('COMM', { description: '', text: metadata.description });
   if (metadata.coverBase64) {
     const mime = metadata.coverMime || 'image/jpeg';
     const imageBytes = base64ToUint8Array(metadata.coverBase64);
-    writer.setFrame('APIC', { type: 3, data: imageBytes, description: '' , mimeType: mime});
+    writer.setFrame('APIC', {
+      type: 3,
+      data: imageBytes,
+      description: '',
+      mimeType: mime,
+    });
   }
   writer.addTag();
   const outBlob = writer.getBlob();

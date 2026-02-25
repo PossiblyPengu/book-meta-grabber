@@ -5,29 +5,38 @@
 
 import { fetchAll } from '../../src/apis/index.js';
 import { extractMetadata } from '../../src/extractors/index.js';
-import { loadLibrary, saveLibrary, loadSettings, saveSettings } from '../../src/storage.js';
+import {
+  loadLibrary,
+  saveLibrary,
+  loadSettings,
+  saveSettings,
+} from '../../src/storage.js';
 
 // ─── Capacitor Plugins (graceful fallback in browser) ────────────────────────
 let Haptics, HapticsImpactStyle;
 try {
   const h = await import('@capacitor/haptics');
-  Haptics  = h.Haptics;
+  Haptics = h.Haptics;
   HapticsImpactStyle = h.ImpactStyle;
-} catch { Haptics = null; }
+} catch {
+  Haptics = null;
+}
 
 async function haptic(style = 'Medium') {
   if (!Haptics) return;
-  try { await Haptics.impact({ style: HapticsImpactStyle?.[style] || style }); } catch {}
+  try {
+    await Haptics.impact({ style: HapticsImpactStyle?.[style] || style });
+  } catch {}
 }
 
 // Persistence handled by `src/storage.js` (uses Capacitor Preferences or localStorage fallback)
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  library:         [],   // Array of book entries
-  activeBookIndex: -1,   // Which book is open in editor
-  activeTab:       'Library',
-  filterFmt:       'all',
+  library: [], // Array of book entries
+  activeBookIndex: -1, // Which book is open in editor
+  activeTab: 'Library',
+  filterFmt: 'all',
   settings: {
     googleDriveClientId: '',
     autoFetch: true,
@@ -60,100 +69,102 @@ async function persistSettings() {
 }
 
 // ─── DOM ──────────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
 const dom = {
   // Screens
-  screenLibrary:  $('screenLibrary'),
-  screenSearch:   $('screenSearch'),
+  screenLibrary: $('screenLibrary'),
+  screenSearch: $('screenSearch'),
   screenSettings: $('screenSettings'),
-  editorScreen:   $('editorScreen'),
+  editorScreen: $('editorScreen'),
 
   // Library
-  bookGrid:     $('bookGrid'),
-  emptyState:   $('emptyState'),
-  filterStrip:  $('filterStrip'),
+  bookGrid: $('bookGrid'),
+  emptyState: $('emptyState'),
+  filterStrip: $('filterStrip'),
 
   // Source picker sheet
   sourcePickerBackdrop: $('sourcePickerBackdrop'),
-  sourcePickerSheet:    $('sourcePickerSheet'),
-  srcLocal:   $('srcLocal'),
-  srcICloud:  $('srcICloud'),
-  srcFolder:  $('srcFolder'),
-  srcGDrive:  $('srcGDrive'),
+  sourcePickerSheet: $('sourcePickerSheet'),
+  srcLocal: $('srcLocal'),
+  srcICloud: $('srcICloud'),
+  srcFolder: $('srcFolder'),
+  srcGDrive: $('srcGDrive'),
 
   // Editor
-  heroFormat:    $('heroFormat'),
-  heroTitle:     $('heroTitle'),
-  heroAuthor:    $('heroAuthor'),
-  heroCover:     $('heroCover'),
-  heroBg:        $('heroBg'),
-  audioStrip:    $('audioStrip'),
-  astDuration:   $('astDuration'),
-  astBitrate:    $('astBitrate'),
+  heroFormat: $('heroFormat'),
+  heroTitle: $('heroTitle'),
+  heroAuthor: $('heroAuthor'),
+  heroCover: $('heroCover'),
+  heroBg: $('heroBg'),
+  audioStrip: $('audioStrip'),
+  astDuration: $('astDuration'),
+  astBitrate: $('astBitrate'),
   astSampleRate: $('astSampleRate'),
-  astChannels:   $('astChannels'),
+  astChannels: $('astChannels'),
 
   // Form fields
-  fTitle:    $('fTitle'),
-  fAuthor:   $('fAuthor'),
+  fTitle: $('fTitle'),
+  fAuthor: $('fAuthor'),
   fNarrator: $('fNarrator'),
-  fSeries:   $('fSeries'),
-  fYear:     $('fYear'),
-  fPublisher:$('fPublisher'),
-  fGenre:    $('fGenre'),
-  fISBN:     $('fISBN'),
+  fSeries: $('fSeries'),
+  fYear: $('fYear'),
+  fPublisher: $('fPublisher'),
+  fGenre: $('fGenre'),
+  fISBN: $('fISBN'),
   fLanguage: $('fLanguage'),
   fDescription: $('fDescription'),
 
   // Results sheet
   resultsBackdrop: $('resultsBackdrop'),
-  resultsSheet:    $('resultsSheet'),
-  resultsList:     $('resultsList'),
+  resultsSheet: $('resultsSheet'),
+  resultsList: $('resultsList'),
   resultsSheetTitle: $('resultsSheetTitle'),
 
   // Search tab
   globalSearchInput: $('globalSearchInput'),
   searchResultsWrap: $('searchResultsWrap'),
-  btnSearchClear:    $('btnSearchClear'),
+  btnSearchClear: $('btnSearchClear'),
 
   // Settings
   settingGDriveId: $('settingGDriveId'),
   settingAutoFetch: $('settingAutoFetch'),
 
   // Global UI
-  toast:        $('toast'),
-  loadingPill:  $('loadingPill'),
-  loadingMsg:   $('loadingMsg'),
+  toast: $('toast'),
+  loadingPill: $('loadingPill'),
+  loadingMsg: $('loadingMsg'),
   // Folder/concat UI
   folderConfirmBackdrop: $('folderConfirmBackdrop'),
-  folderConfirm:         $('folderConfirm'),
-  folderConfirmTitle:    $('folderConfirmTitle'),
-  folderConfirmBody:     $('folderConfirmBody'),
-  folderConfirmConcat:   $('folderConfirmConcat'),
-  folderConfirmParts:    $('folderConfirmParts'),
-  folderConfirmCancel:   $('folderConfirmCancel'),
+  folderConfirm: $('folderConfirm'),
+  folderConfirmTitle: $('folderConfirmTitle'),
+  folderConfirmBody: $('folderConfirmBody'),
+  folderConfirmConcat: $('folderConfirmConcat'),
+  folderConfirmParts: $('folderConfirmParts'),
+  folderConfirmCancel: $('folderConfirmCancel'),
   concatProgressBackdrop: $('concatProgressBackdrop'),
-  concatProgress:         $('concatProgress'),
-  concatProgressBar:      $('concatProgressBar'),
-  concatProgressMsg:      $('concatProgressMsg'),
-  concatCancel:           $('concatCancel'),
-  partsListWrap:          $('partsListWrap'),
-  partsList:              $('partsList'),
+  concatProgress: $('concatProgress'),
+  concatProgressBar: $('concatProgressBar'),
+  concatProgressMsg: $('concatProgressMsg'),
+  concatCancel: $('concatCancel'),
+  partsListWrap: $('partsListWrap'),
+  partsList: $('partsList'),
   // Generic confirm
   confirmBackdrop: $('confirmBackdrop'),
-  confirmModal:    $('confirmModal'),
-  confirmTitle:    $('confirmTitle'),
-  confirmBody:     $('confirmBody'),
-  confirmOk:       $('confirmOk'),
-  confirmCancel:   $('confirmCancel'),
+  confirmModal: $('confirmModal'),
+  confirmTitle: $('confirmTitle'),
+  confirmBody: $('confirmBody'),
+  confirmOk: $('confirmOk'),
+  confirmCancel: $('confirmCancel'),
 };
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg, type = '', ms = 3000) {
   dom.toast.textContent = msg;
-  dom.toast.className = `toast${state.activeTab === 'editor' ? ' in-editor' : ''}${type ? ` ${type}` : ''}`;
+  dom.toast.className = `toast${
+    state.activeTab === 'editor' ? ' in-editor' : ''
+  }${type ? ` ${type}` : ''}`;
   requestAnimationFrame(() => dom.toast.classList.add('show'));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => dom.toast.classList.remove('show'), ms);
@@ -169,9 +180,13 @@ function hideLoading() {
 }
 
 // ─── Tab Navigation ───────────────────────────────────────────────────────────
-const TAB_SCREENS = { Library: 'screenLibrary', Search: 'screenSearch', Settings: 'screenSettings' };
+const TAB_SCREENS = {
+  Library: 'screenLibrary',
+  Search: 'screenSearch',
+  Settings: 'screenSettings',
+};
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
+document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
     if (tab === state.activeTab) return;
@@ -183,15 +198,17 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function switchTab(tab) {
   state.activeTab = tab;
 
-  document.querySelectorAll('.tab-screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
+  document
+    .querySelectorAll('.tab-screen')
+    .forEach((s) => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach((b) => {
     const active = b.dataset.tab === tab;
     b.classList.toggle('active', active);
     b.setAttribute('aria-selected', active);
   });
 
   const screenId = TAB_SCREENS[tab];
-  if (screenId) $( screenId)?.classList.add('active');
+  if (screenId) $(screenId)?.classList.add('active');
 }
 
 // ─── Source Picker Sheet ──────────────────────────────────────────────────────
@@ -209,7 +226,10 @@ function closeSourcePicker() {
 $('btnAddMain').addEventListener('click', openSourcePicker);
 $('btnAddEmpty').addEventListener('click', openSourcePicker);
 dom.sourcePickerBackdrop.addEventListener('click', closeSourcePicker);
-$('btnSheetCancel').addEventListener('click', () => { haptic('Light'); closeSourcePicker(); });
+$('btnSheetCancel').addEventListener('click', () => {
+  haptic('Light');
+  closeSourcePicker();
+});
 
 // ─── File Import ──────────────────────────────────────────────────────────────
 
@@ -254,14 +274,25 @@ async function importFromFolder() {
     showLoading('Importing folder…');
     for (const item of picked) {
       try {
-        if (item.format === 'audiobook-folder' && item.parts && item.parts.length) {
-          const choice = await showFolderImportConfirm(item.name, item.parts.length);
+        if (
+          item.format === 'audiobook-folder' &&
+          item.parts &&
+          item.parts.length
+        ) {
+          const choice = await showFolderImportConfirm(
+            item.name,
+            item.parts.length
+          );
           if (choice === 'concat') {
             try {
               // show concat progress UI and allow cancellation
               const controller = createConcatController();
               showConcatProgressUI();
-              const outBlob = await concatenateAudioParts(item.parts, item.name, controller);
+              const outBlob = await concatenateAudioParts(
+                item.parts,
+                item.name,
+                controller
+              );
               hideConcatProgressUI();
               const meta = await extractMetadata(outBlob, `${item.name}.m4b`);
               const entry = {
@@ -271,7 +302,7 @@ async function importFromFolder() {
                 format: 'm4b',
                 source: 'local-folder',
                 status: 'imported',
-                parts: item.parts.map(p => ({ name: p.name, uri: p.uri })),
+                parts: item.parts.map((p) => ({ name: p.name, uri: p.uri })),
                 ...meta,
               };
               state.library.push(entry);
@@ -282,7 +313,7 @@ async function importFromFolder() {
                 const entry = makeFolderEntry(item);
                 state.library.push(entry);
               } else {
-                console.error('[concat]', e);
+                console.error('[concat]', e); // eslint-disable-line no-console
                 toast('Concatenation failed; importing as multi-part', 'error');
                 const entry = makeFolderEntry(item);
                 state.library.push(entry);
@@ -298,7 +329,7 @@ async function importFromFolder() {
           await processPickedFiles([item]);
         }
       } catch (e) {
-        console.error('[importFolder]', e);
+        console.error('[importFolder]', e); // eslint-disable-line no-console
       }
     }
     hideLoading();
@@ -321,7 +352,7 @@ function makeFolderEntry(item) {
     format: 'audiobook-folder',
     source: 'local-folder',
     status: 'imported',
-    parts: item.parts.map(p => ({ name: p.name, uri: p.uri })),
+    parts: item.parts.map((p) => ({ name: p.name, uri: p.uri })),
     title: item.name,
   };
   return entry;
@@ -329,12 +360,16 @@ function makeFolderEntry(item) {
 
 async function concatenateAudioParts(parts, outName, controller) {
   // Use background worker to run FFmpeg off the main thread
-  return new Promise(async (res, rej) => {
-    const worker = new Worker(new URL('../../src/workers/ffmpegWorker.js', import.meta.url), { type: 'module' });
-    let aborted = false;
+  return new Promise((res, rej) => {
+    const worker = new Worker(
+      new URL('../../src/workers/ffmpegWorker.js', import.meta.url),
+      { type: 'module' }
+    );
+    let _aborted = false; // eslint-disable-line no-unused-vars
     worker.addEventListener('message', (ev) => {
       const d = ev.data || {};
-      if (d.event === 'progress') updateConcatProgress(d.pct || 0, `Processing... ${d.pct || 0}%`);
+      if (d.event === 'progress')
+        updateConcatProgress(d.pct || 0, `Processing... ${d.pct || 0}%`);
       else if (d.event === 'done') {
         const ab = d.buffer;
         const blob = new Blob([ab], { type: 'audio/mp4' });
@@ -343,47 +378,61 @@ async function concatenateAudioParts(parts, outName, controller) {
       } else if (d.event === 'error') {
         worker.terminate();
         if (d.name === 'FFMPEG_ABORT') {
-          const err = new Error('FFMPEG aborted'); err.name = 'FFMPEG_ABORT'; rej(err);
+          const err = new Error('FFMPEG aborted');
+          err.name = 'FFMPEG_ABORT';
+          rej(err);
         } else rej(new Error(d.message || 'FFMPEG error'));
       } else if (d.event === 'aborted') {
-        aborted = true;
+        _aborted = true;
         worker.terminate();
-        const err = new Error('FFMPEG aborted'); err.name = 'FFMPEG_ABORT'; rej(err);
+        const err = new Error('FFMPEG aborted');
+        err.name = 'FFMPEG_ABORT';
+        rej(err);
       }
     });
 
     // wire controller to worker for aborts
     if (controller) controller.setWorker && controller.setWorker(worker);
 
-    try {
-      const prepared = [];
-      for (let i = 0; i < parts.length; i++) {
-        const p = parts[i];
-        let ab;
-        if (p.file instanceof File) ab = await p.file.arrayBuffer();
-        else {
-          const r = await fetch(p.uri);
-          ab = await r.arrayBuffer();
+    (async () => {
+      try {
+        const prepared = [];
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i];
+          let ab;
+          if (p.file instanceof File) ab = await p.file.arrayBuffer();
+          else {
+            const r = await fetch(p.uri);
+            ab = await r.arrayBuffer();
+          }
+          const ext = (p.name || '').split('.').pop() || 'mp3';
+          prepared.push({ arrayBuffer: ab, ext });
         }
-        const ext = (p.name || '').split('.').pop() || 'mp3';
-        prepared.push({ arrayBuffer: ab, ext });
+        // Transfer buffers to worker
+        const transfer = prepared.map((p) => p.arrayBuffer);
+        const partsForWorker = prepared.map((p, _i) => ({
+          data: p.arrayBuffer,
+          ext: p.ext,
+        }));
+        worker.postMessage(
+          { cmd: 'concat', parts: partsForWorker, outName },
+          transfer
+        );
+      } catch (e) {
+        worker.terminate();
+        rej(e);
       }
-      // Transfer buffers to worker
-      const transfer = prepared.map(p => p.arrayBuffer);
-      const partsForWorker = prepared.map((p, i) => ({ data: p.arrayBuffer, ext: p.ext }));
-      worker.postMessage({ cmd: 'concat', parts: partsForWorker, outName }, transfer);
-    } catch (e) {
-      worker.terminate();
-      rej(e);
-    }
+    })();
   });
 }
 
 // --- Folder import confirmation UI helpers ---
 function showFolderImportConfirm(name, partCount) {
-  return new Promise(res => {
+  return new Promise((res) => {
     dom.folderConfirmTitle.textContent = `Import “${name}”`;
-    dom.folderConfirmBody.textContent = `This folder contains ${partCount} part${partCount>1?'s':''}. Concatenate into a single file or import as parts?`;
+    dom.folderConfirmBody.textContent = `This folder contains ${partCount} part${
+      partCount > 1 ? 's' : ''
+    }. Concatenate into a single file or import as parts?`;
     dom.folderConfirmBackdrop.style.display = 'block';
     dom.folderConfirm.style.display = 'block';
 
@@ -394,9 +443,18 @@ function showFolderImportConfirm(name, partCount) {
       dom.folderConfirmParts.removeEventListener('click', onParts);
       dom.folderConfirmCancel.removeEventListener('click', onCancel);
     };
-    const onConcat = () => { clear(); res('concat'); };
-    const onParts  = () => { clear(); res('parts'); };
-    const onCancel = () => { clear(); res('cancel'); };
+    const onConcat = () => {
+      clear();
+      res('concat');
+    };
+    const onParts = () => {
+      clear();
+      res('parts');
+    };
+    const onCancel = () => {
+      clear();
+      res('cancel');
+    };
 
     dom.folderConfirmConcat.addEventListener('click', onConcat);
     dom.folderConfirmParts.addEventListener('click', onParts);
@@ -425,26 +483,36 @@ function createConcatController() {
   let workerInst = null;
   const controller = {
     aborted: false,
-    setWorker(w) { workerInst = w; },
+    setWorker(w) {
+      workerInst = w;
+    },
     abort() {
       controller.aborted = true;
-      try { workerInst && workerInst.postMessage && workerInst.postMessage({ cmd: 'abort' }); } catch (e) {}
-    }
+      try {
+        workerInst &&
+          workerInst.postMessage &&
+          workerInst.postMessage({ cmd: 'abort' });
+      } catch (e) {}
+    },
   };
 
   // Wire cancel button
-  const onCancel = () => { controller.abort(); };
+  const onCancel = () => {
+    controller.abort();
+  };
   dom.concatCancel.addEventListener('click', onCancel, { once: true });
   return controller;
 }
 
 function createPartsListHtml(parts) {
-  return parts.map((p, i) => `<div class="part-row">${i+1}. ${esc(p.name)}</div>`).join('');
+  return parts
+    .map((p, i) => `<div class="part-row">${i + 1}. ${esc(p.name)}</div>`)
+    .join('');
 }
 
 // --- Generic confirm modal ---
 function showConfirm(title, body) {
-  return new Promise(res => {
+  return new Promise((res) => {
     dom.confirmTitle.textContent = title || 'Confirm';
     dom.confirmBody.textContent = body || '';
     dom.confirmBackdrop.style.display = 'block';
@@ -456,8 +524,14 @@ function showConfirm(title, body) {
       dom.confirmOk.removeEventListener('click', onOk);
       dom.confirmCancel.removeEventListener('click', onCancel);
     };
-    const onOk = () => { clear(); res(true); };
-    const onCancel = () => { clear(); res(false); };
+    const onOk = () => {
+      clear();
+      res(true);
+    };
+    const onCancel = () => {
+      clear();
+      res(false);
+    };
 
     dom.confirmOk.addEventListener('click', onOk);
     dom.confirmCancel.addEventListener('click', onCancel);
@@ -466,7 +540,9 @@ function showConfirm(title, body) {
 
 // ─── Process Picked Files ─────────────────────────────────────────────────────
 async function processPickedFiles(picked) {
-  showLoading(`Importing ${picked.length} file${picked.length > 1 ? 's' : ''}…`);
+  showLoading(
+    `Importing ${picked.length} file${picked.length > 1 ? 's' : ''}…`
+  );
 
   for (const item of picked) {
     try {
@@ -481,15 +557,19 @@ async function processPickedFiles(picked) {
       // Extract metadata
       const meta = blob
         ? await extractMetadata(blob, item.name)
-        : { title: guessTitle(item.name), format: item.format, fileName: item.name };
+        : {
+            title: guessTitle(item.name),
+            format: item.format,
+            fileName: item.name,
+          };
 
       const entry = {
-        id:       Date.now() + Math.random(),
-        uri:      item.uri,
+        id: Date.now() + Math.random(),
+        uri: item.uri,
         fileName: item.name,
-        format:   item.format,
-        source:   item.source,
-        status:   'imported',
+        format: item.format,
+        source: item.source,
+        status: 'imported',
         ...meta,
       };
 
@@ -500,31 +580,41 @@ async function processPickedFiles(picked) {
         fetchAndEnrichEntry(state.library.length - 1);
       }
     } catch (e) {
-      console.error('[import]', item.name, e);
+      console.error('[import]', item.name, e); // eslint-disable-line no-console
     }
   }
 
   hideLoading();
   await persistLibrary();
   renderLibrary();
-  toast(`Added ${picked.length} book${picked.length > 1 ? 's' : ''}`, 'success');
+  toast(
+    `Added ${picked.length} book${picked.length > 1 ? 's' : ''}`,
+    'success'
+  );
 }
 
 // ─── Library Render ───────────────────────────────────────────────────────────
 const FORMAT_LABELS = {
-  epub: 'EPUB', pdf: 'PDF', mp3: 'MP3', m4b: 'M4B',
-  m4a: 'M4A', flac: 'FLAC', ogg: 'OGG', opus: 'OPUS',
+  epub: 'EPUB',
+  pdf: 'PDF',
+  mp3: 'MP3',
+  m4b: 'M4B',
+  m4a: 'M4A',
+  flac: 'FLAC',
+  ogg: 'OGG',
+  opus: 'OPUS',
 };
 
 const AUDIO_FMTS = new Set(['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus']);
 
 function renderLibrary() {
-  const filtered = state.filterFmt === 'all'
-    ? state.library
-    : state.library.filter(b => b.format === state.filterFmt);
+  const filtered =
+    state.filterFmt === 'all'
+      ? state.library
+      : state.library.filter((b) => b.format === state.filterFmt);
 
   // Remove old cards, keep empty state
-  dom.bookGrid.querySelectorAll('.book-card').forEach(el => el.remove());
+  dom.bookGrid.querySelectorAll('.book-card').forEach((el) => el.remove());
 
   if (filtered.length === 0) {
     dom.emptyState.style.display = 'flex';
@@ -536,33 +626,43 @@ function renderLibrary() {
 
   filtered.forEach((book, i) => {
     const realIdx = state.library.indexOf(book);
-    const card    = document.createElement('div');
+    const card = document.createElement('div');
     card.className = 'book-card fade-up';
     card.style.animationDelay = `${Math.min(i * 40, 300)}ms`;
     card.dataset.index = realIdx;
 
     const gradClass = `cover-grad-${i % 6}`;
     const coverHtml = book.coverBase64
-      ? `<img class="book-cover-img" src="data:${book.coverMime || 'image/jpeg'};base64,${book.coverBase64}" alt="" loading="lazy" />`
+      ? `<img class="book-cover-img" src="data:${
+          book.coverMime || 'image/jpeg'
+        };base64,${book.coverBase64}" alt="" loading="lazy" />`
       : `<div class="book-cover-placeholder ${gradClass}">
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
          </div>`;
 
     // Parts badge for audiobook-folder entries
-    const partsBadge = (book.format === 'audiobook-folder' && Array.isArray(book.parts) && book.parts.length)
-      ? `<span class="parts-badge">${book.parts.length}</span>`
-      : '';
+    const partsBadge =
+      book.format === 'audiobook-folder' &&
+      Array.isArray(book.parts) &&
+      book.parts.length
+        ? `<span class="parts-badge">${book.parts.length}</span>`
+        : '';
 
     card.innerHTML = `
       <div class="book-cover-wrap">
         ${coverHtml}
-        <span class="book-fmt-badge fmt-${book.format}">${FORMAT_LABELS[book.format] || book.format.toUpperCase()}</span>
+        <span class="book-fmt-badge fmt-${book.format}">${
+      FORMAT_LABELS[book.format] || book.format.toUpperCase()
+    }</span>
         ${partsBadge}
       </div>
       <div class="book-title">${esc(book.title || book.fileName)}</div>
       <div class="book-author">${esc(book.author || '—')}</div>`;
 
-    card.addEventListener('click', () => { haptic('Light'); openEditor(realIdx); });
+    card.addEventListener('click', () => {
+      haptic('Light');
+      openEditor(realIdx);
+    });
     frag.appendChild(card);
   });
 
@@ -570,11 +670,13 @@ function renderLibrary() {
 }
 
 // ─── Filter Pills ─────────────────────────────────────────────────────────────
-dom.filterStrip.addEventListener('click', e => {
+dom.filterStrip.addEventListener('click', (e) => {
   const pill = e.target.closest('.filter-pill');
   if (!pill) return;
   haptic('Light');
-  dom.filterStrip.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  dom.filterStrip
+    .querySelectorAll('.filter-pill')
+    .forEach((p) => p.classList.remove('active'));
   pill.classList.add('active');
   state.filterFmt = pill.dataset.fmt;
   renderLibrary();
@@ -601,26 +703,39 @@ $('btnEditorBack').addEventListener('click', closeEditor);
 
 // Back gesture (swipe down from top)
 let touchStartY = 0;
-dom.editorScreen.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
-dom.editorScreen.addEventListener('touchend', e => {
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  if (dy > 80 && touchStartY < 80) closeEditor();
-}, { passive: true });
+dom.editorScreen.addEventListener(
+  'touchstart',
+  (e) => {
+    touchStartY = e.touches[0].clientY;
+  },
+  { passive: true }
+);
+dom.editorScreen.addEventListener(
+  'touchend',
+  (e) => {
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (dy > 80 && touchStartY < 80) closeEditor();
+  },
+  { passive: true }
+);
 
 function populateEditor(book) {
-  const fmtLabel = FORMAT_LABELS[book.format] || book.format?.toUpperCase() || '—';
+  const fmtLabel =
+    FORMAT_LABELS[book.format] || book.format?.toUpperCase() || '—';
   dom.heroFormat.textContent = fmtLabel;
-  dom.heroTitle.textContent  = book.title  || book.fileName || '—';
+  dom.heroTitle.textContent = book.title || book.fileName || '—';
   dom.heroAuthor.textContent = book.author || '—';
 
   // Cover hero
   if (book.coverBase64) {
-    const src = `data:${book.coverMime || 'image/jpeg'};base64,${book.coverBase64}`;
-    dom.heroCover.src   = src;
+    const src = `data:${book.coverMime || 'image/jpeg'};base64,${
+      book.coverBase64
+    }`;
+    dom.heroCover.src = src;
     dom.heroCover.style.display = 'block';
     dom.heroBg.style.backgroundImage = `url('${src}')`;
   } else {
-    dom.heroCover.src   = '';
+    dom.heroCover.src = '';
     dom.heroCover.style.display = 'none';
     dom.heroBg.style.backgroundImage = '';
   }
@@ -629,28 +744,37 @@ function populateEditor(book) {
   const isAudio = AUDIO_FMTS.has(book.format);
   dom.audioStrip.style.display = isAudio ? 'flex' : 'none';
   if (isAudio) {
-    dom.astDuration.textContent   = fmtDuration(book.duration);
-    dom.astBitrate.textContent    = book.bitrate    ? `${book.bitrate} kbps` : '—';
-    dom.astSampleRate.textContent = book.sampleRate ? `${(book.sampleRate/1000).toFixed(1)} kHz` : '—';
-    dom.astChannels.textContent   = book.channels   ? (book.channels === 1 ? 'Mono' : 'Stereo') : '—';
+    dom.astDuration.textContent = fmtDuration(book.duration);
+    dom.astBitrate.textContent = book.bitrate ? `${book.bitrate} kbps` : '—';
+    dom.astSampleRate.textContent = book.sampleRate
+      ? `${(book.sampleRate / 1000).toFixed(1)} kHz`
+      : '—';
+    dom.astChannels.textContent = book.channels
+      ? book.channels === 1
+        ? 'Mono'
+        : 'Stereo'
+      : '—';
   }
 
   // Form
-  dom.fTitle.value       = book.title       || '';
-  dom.fAuthor.value      = book.author      || '';
-  dom.fNarrator.value    = book.narrator    || '';
-  dom.fSeries.value      = book.series      || '';
-  dom.fYear.value        = book.year        || '';
-  dom.fPublisher.value   = book.publisher   || '';
-  dom.fGenre.value       = book.genre       || '';
-  dom.fISBN.value        = book.isbn        || '';
-  dom.fLanguage.value    = book.language    || '';
+  dom.fTitle.value = book.title || '';
+  dom.fAuthor.value = book.author || '';
+  dom.fNarrator.value = book.narrator || '';
+  dom.fSeries.value = book.series || '';
+  dom.fYear.value = book.year || '';
+  dom.fPublisher.value = book.publisher || '';
+  dom.fGenre.value = book.genre || '';
+  dom.fISBN.value = book.isbn || '';
+  dom.fLanguage.value = book.language || '';
   dom.fDescription.value = book.description || '';
 
   // Live update hero as user types
-  dom.fTitle.oninput  = () => { dom.heroTitle.textContent  = dom.fTitle.value  || '—'; };
-  dom.fAuthor.oninput = () => { dom.heroAuthor.textContent = dom.fAuthor.value || '—'; };
-}
+  dom.fTitle.oninput = () => {
+    dom.heroTitle.textContent = dom.fTitle.value || '—';
+  };
+  dom.fAuthor.oninput = () => {
+    dom.heroAuthor.textContent = dom.fAuthor.value || '—';
+  };
 
   // Show parts list for audiobook-folder entries
   if (book.format === 'audiobook-folder' && Array.isArray(book.parts)) {
@@ -660,20 +784,21 @@ function populateEditor(book) {
     dom.partsListWrap.style.display = 'none';
     dom.partsList.innerHTML = '';
   }
+}
 
 function collectEditorValues() {
   const book = state.library[state.activeBookIndex] || {};
   return {
     ...book,
-    title:       dom.fTitle.value,
-    author:      dom.fAuthor.value,
-    narrator:    dom.fNarrator.value,
-    series:      dom.fSeries.value,
-    year:        dom.fYear.value,
-    publisher:   dom.fPublisher.value,
-    genre:       dom.fGenre.value,
-    isbn:        dom.fISBN.value,
-    language:    dom.fLanguage.value,
+    title: dom.fTitle.value,
+    author: dom.fAuthor.value,
+    narrator: dom.fNarrator.value,
+    series: dom.fSeries.value,
+    year: dom.fYear.value,
+    publisher: dom.fPublisher.value,
+    genre: dom.fGenre.value,
+    isbn: dom.fISBN.value,
+    language: dom.fLanguage.value,
     description: dom.fDescription.value,
   };
 }
@@ -692,7 +817,10 @@ $('btnEditorSave').addEventListener('click', async () => {
 $('btnEditorFetch').addEventListener('click', () => {
   haptic('Medium');
   const query = dom.fTitle.value || dom.fAuthor.value;
-  if (!query) { toast('Enter a title or author first', ''); return; }
+  if (!query) {
+    toast('Enter a title or author first', '');
+    return;
+  }
   fetchAndShowResults(query);
 });
 
@@ -701,7 +829,10 @@ async function fetchAndShowResults(query) {
   try {
     const results = await fetchAll(query);
     hideLoading();
-    if (!results.length) { toast('No results found', ''); return; }
+    if (!results.length) {
+      toast('No results found', '');
+      return;
+    }
     dom.resultsSheetTitle.textContent = `${results.length} Results`;
     renderResultCards(results, dom.resultsList, applyResultToEditor);
     openResultsSheet();
@@ -715,24 +846,25 @@ async function fetchAndEnrichEntry(index) {
   const book = state.library[index];
   if (!book) return;
   try {
-    const query   = book.title || book.author || book.fileName;
+    const query = book.title || book.author || book.fileName;
     const results = await fetchAll(query);
     if (!results.length) return;
     const best = results[0];
     // Merge only missing fields
-    if (!book.description && best.description) book.description = best.description;
-    if (!book.genre       && best.genre)       book.genre       = best.genre;
-    if (!book.publisher   && best.publisher)   book.publisher   = best.publisher;
-    if (!book.year        && best.year)        book.year        = best.year;
-    if (!book.isbn        && best.isbn)        book.isbn        = best.isbn;
+    if (!book.description && best.description)
+      book.description = best.description;
+    if (!book.genre && best.genre) book.genre = best.genre;
+    if (!book.publisher && best.publisher) book.publisher = best.publisher;
+    if (!book.year && best.year) book.year = best.year;
+    if (!book.isbn && best.isbn) book.isbn = best.isbn;
     // Fetch cover if none
     if (!book.coverBase64 && best.coverUrl) {
       try {
-        const r   = await fetch(best.coverUrl);
-        const bl  = await r.blob();
+        const r = await fetch(best.coverUrl);
+        const bl = await r.blob();
         const b64 = await blobToB64(bl);
         book.coverBase64 = b64.split(',')[1];
-        book.coverMime   = bl.type;
+        book.coverMime = bl.type;
       } catch {}
     }
     await persistLibrary();
@@ -741,20 +873,23 @@ async function fetchAndEnrichEntry(index) {
 }
 
 // Cover actions
-$('btnHeroCoverChange').addEventListener('click', () => { haptic('Light'); pickNewCover(); });
+$('btnHeroCoverChange').addEventListener('click', () => {
+  haptic('Light');
+  pickNewCover();
+});
 
 function pickNewCover() {
-  const input   = document.createElement('input');
-  input.type    = 'file';
-  input.accept  = 'image/*';
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
   input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
-    const b64  = await blobToB64(file);
+    const b64 = await blobToB64(file);
     const book = state.library[state.activeBookIndex];
     if (book) {
       book.coverBase64 = b64.split(',')[1];
-      book.coverMime   = file.type;
+      book.coverMime = file.type;
     }
     dom.heroCover.src = b64;
     dom.heroCover.style.display = 'block';
@@ -766,11 +901,10 @@ function pickNewCover() {
   input.click();
 }
 
-
 // ─── Results Sheet ────────────────────────────────────────────────────────────
 function openResultsSheet() {
   dom.resultsBackdrop.style.display = 'block';
-  dom.resultsSheet.style.display    = 'flex';
+  dom.resultsSheet.style.display = 'flex';
   requestAnimationFrame(() => dom.resultsSheet.classList.add('open'));
 }
 
@@ -778,28 +912,31 @@ function closeResultsSheet() {
   dom.resultsSheet.classList.remove('open');
   setTimeout(() => {
     dom.resultsBackdrop.style.display = 'none';
-    dom.resultsSheet.style.display    = 'none';
+    dom.resultsSheet.style.display = 'none';
   }, 400);
 }
 
-$('btnCloseResults').addEventListener('click', () => { haptic('Light'); closeResultsSheet(); });
+$('btnCloseResults').addEventListener('click', () => {
+  haptic('Light');
+  closeResultsSheet();
+});
 dom.resultsBackdrop.addEventListener('click', closeResultsSheet);
 
 async function applyResultToEditor(r) {
   haptic('Medium');
   closeResultsSheet();
 
-  if (r.title)       dom.fTitle.value       = r.title;
-  if (r.author)      dom.fAuthor.value      = r.author;
-  if (r.narrator)    dom.fNarrator.value    = r.narrator;
-  if (r.publisher)   dom.fPublisher.value   = r.publisher;
-  if (r.year)        dom.fYear.value        = r.year;
-  if (r.isbn)        dom.fISBN.value        = r.isbn;
-  if (r.genre)       dom.fGenre.value       = r.genre;
-  if (r.language)    dom.fLanguage.value    = r.language;
+  if (r.title) dom.fTitle.value = r.title;
+  if (r.author) dom.fAuthor.value = r.author;
+  if (r.narrator) dom.fNarrator.value = r.narrator;
+  if (r.publisher) dom.fPublisher.value = r.publisher;
+  if (r.year) dom.fYear.value = r.year;
+  if (r.isbn) dom.fISBN.value = r.isbn;
+  if (r.genre) dom.fGenre.value = r.genre;
+  if (r.language) dom.fLanguage.value = r.language;
   if (r.description) dom.fDescription.value = r.description;
 
-  dom.heroTitle.textContent  = dom.fTitle.value  || '—';
+  dom.heroTitle.textContent = dom.fTitle.value || '—';
   dom.heroAuthor.textContent = dom.fAuthor.value || '—';
 
   if (r.coverUrl) {
@@ -807,9 +944,12 @@ async function applyResultToEditor(r) {
     try {
       const resp = await fetch(r.coverUrl);
       const blob = await resp.blob();
-      const b64  = await blobToB64(blob);
+      const b64 = await blobToB64(blob);
       const book = state.library[state.activeBookIndex];
-      if (book) { book.coverBase64 = b64.split(',')[1]; book.coverMime = blob.type; }
+      if (book) {
+        book.coverBase64 = b64.split(',')[1];
+        book.coverMime = blob.type;
+      }
       dom.heroCover.src = b64;
       dom.heroCover.style.display = 'block';
       dom.heroBg.style.backgroundImage = `url('${b64}')`;
@@ -828,20 +968,25 @@ dom.globalSearchInput.addEventListener('input', () => {
   dom.btnSearchClear.classList.toggle('hidden', !q);
   clearTimeout(searchDebounce);
   if (!q) {
-    dom.searchResultsWrap.innerHTML = '<div class="search-placeholder"><p>Search all sources at once<br/>and tap a result to apply it</p></div>';
+    dom.searchResultsWrap.innerHTML =
+      '<div class="search-placeholder"><p>Search all sources at once<br/>and tap a result to apply it</p></div>';
     return;
   }
   searchDebounce = setTimeout(() => runGlobalSearch(q), 600);
 });
 
-dom.globalSearchInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { clearTimeout(searchDebounce); runGlobalSearch(dom.globalSearchInput.value.trim()); }
+dom.globalSearchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(searchDebounce);
+    runGlobalSearch(dom.globalSearchInput.value.trim());
+  }
 });
 
 dom.btnSearchClear.addEventListener('click', () => {
   dom.globalSearchInput.value = '';
   dom.btnSearchClear.classList.add('hidden');
-  dom.searchResultsWrap.innerHTML = '<div class="search-placeholder"><p>Search all sources at once<br/>and tap a result to apply it</p></div>';
+  dom.searchResultsWrap.innerHTML =
+    '<div class="search-placeholder"><p>Search all sources at once<br/>and tap a result to apply it</p></div>';
 });
 
 async function runGlobalSearch(query) {
@@ -852,10 +997,11 @@ async function runGlobalSearch(query) {
     const results = await fetchAll(query);
     hideLoading();
     if (!results.length) {
-      dom.searchResultsWrap.innerHTML = '<div class="search-placeholder"><p>No results found</p></div>';
+      dom.searchResultsWrap.innerHTML =
+        '<div class="search-placeholder"><p>No results found</p></div>';
       return;
     }
-    renderResultCards(results, dom.searchResultsWrap, r => {
+    renderResultCards(results, dom.searchResultsWrap, (r) => {
       toast('Opening editor to apply…', '', 2000);
       setTimeout(() => {
         if (state.activeBookIndex >= 0) {
@@ -868,7 +1014,8 @@ async function runGlobalSearch(query) {
     });
   } catch (e) {
     hideLoading();
-    dom.searchResultsWrap.innerHTML = '<div class="search-placeholder"><p>Search failed</p></div>';
+    dom.searchResultsWrap.innerHTML =
+      '<div class="search-placeholder"><p>Search failed</p></div>';
   }
 }
 
@@ -876,10 +1023,10 @@ async function runGlobalSearch(query) {
 function renderResultCards(results, container, onApply) {
   container.innerHTML = '';
   const srcClass = {
-    'Google Books':     'src-google',
-    'Open Library':     'src-open',
+    'Google Books': 'src-google',
+    'Open Library': 'src-open',
     'iTunes / Audible': 'src-itunes',
-    'MusicBrainz':      'src-musicbrainz',
+    MusicBrainz: 'src-musicbrainz',
   };
 
   results.forEach((r, i) => {
@@ -897,12 +1044,23 @@ function renderResultCards(results, container, onApply) {
         <div class="result-title">${esc(r.title || '—')}</div>
         <div class="result-author">${esc(r.author || '—')}</div>
         <div class="result-meta">
-          ${r.year ? `<span style="font-size:11px;color:var(--t3)">${esc(r.year)}</span>` : ''}
-          <span class="source-tag ${srcClass[r.source] || ''}">${esc(r.source)}</span>
+          ${
+            r.year
+              ? `<span style="font-size:11px;color:var(--t3)">${esc(
+                  r.year
+                )}</span>`
+              : ''
+          }
+          <span class="source-tag ${srcClass[r.source] || ''}">${esc(
+      r.source
+    )}</span>
         </div>
       </div>`;
 
-    card.addEventListener('click', () => { haptic('Medium'); onApply(r); });
+    card.addEventListener('click', () => {
+      haptic('Medium');
+      onApply(r);
+    });
     container.appendChild(card);
   });
 }
@@ -927,7 +1085,10 @@ dom.settingAutoFetch.addEventListener('click', async () => {
 
 // Clear library (use modal)
 $('btnClearLibrary').addEventListener('click', async () => {
-  const ok = await showConfirm('Remove all books from library?', 'This will permanently remove all items from your library.');
+  const ok = await showConfirm(
+    'Remove all books from library?',
+    'This will permanently remove all items from your library.'
+  );
   if (!ok) return;
   haptic('Heavy');
   state.library = [];
@@ -939,11 +1100,19 @@ $('btnClearLibrary').addEventListener('click', async () => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function guessTitle(name) {
-  return name.replace(/\.[^.]+$/, '').replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_\-.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function fmtDuration(secs) {
@@ -952,14 +1121,14 @@ function fmtDuration(secs) {
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
   return h > 0
-    ? `${h}h ${String(m).padStart(2,'0')}m`
-    : `${m}m ${String(s).padStart(2,'0')}s`;
+    ? `${h}h ${String(m).padStart(2, '0')}m`
+    : `${m}m ${String(s).padStart(2, '0')}s`;
 }
 
 function blobToB64(blob) {
   return new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload  = () => res(r.result);
+    r.onload = () => res(r.result);
     r.onerror = rej;
     r.readAsDataURL(blob);
   });

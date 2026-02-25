@@ -11,6 +11,7 @@
   },
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-    "no-console": "warn"
+    "no-console": "warn",
+    "no-empty": ["error", { "allowEmptyCatch": true }]
   }
 }

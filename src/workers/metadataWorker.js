@@ -5,9 +5,13 @@ self.addEventListener('message', async (ev) => {
   if (cmd === 'parse') {
     try {
       const blob = new Blob([buffer]);
-      const meta = await parseBlob(blob, { skipPostHeaders: true, includeChapters: true });
+      const meta = await parseBlob(blob, {
+        skipPostHeaders: true,
+        includeChapters: true,
+      });
       const { common, format } = meta;
-      let coverBase64 = null, coverMime = null;
+      let coverBase64 = null,
+        coverMime = null;
       if (common.picture?.[0]) {
         const pic = common.picture[0];
         const b64 = arrayBufferToBase64(pic.data);
@@ -51,7 +55,12 @@ function arrayBufferToBase64(buf) {
 }
 
 function guessTitle(name) {
-  return (name || '').toString().replace(/\.[^.]+$/, '').replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return (name || '')
+    .toString()
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_\-.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export {};
