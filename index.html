@@ -19,7 +19,9 @@
   --g-border: rgba(255,255,255,0.04);
   --accent: #2563eb; /* simple blue accent */
   --t1: #e6eefc; --t2: #a8b6d8; --t3: #7f8aa6;
-  --safe-top: 16px; --safe-bottom: 12px;
+  /* account for iOS notch / Dynamic Island and bottom home indicator */
+  --safe-top: calc(env(safe-area-inset-top, 16px) + 6px);
+  --safe-bottom: calc(env(safe-area-inset-bottom, 12px) + 6px);
   --tab-h: calc(56px + var(--safe-bottom));
   --r-lg: 12px; --r-md: 10px; --r-sm: 8px; --r-pill: 999px;
   --touch: 48px;
