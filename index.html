@@ -510,6 +510,13 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
       <div class="src-info"><span class="src-name">Files / Local Storage</span><span class="src-sub">Browse on-device files</span></div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
+
+    <button class="src-opt" id="srcLocalMulti">
+      <div class="src-icon" style="background:linear-gradient(135deg,#3B82F6,#06B6D4)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="src-info"><span class="src-name">Files (multiple)</span><span class="src-sub">Select several files and import as one entry</span></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+
     <button class="src-opt" id="srcICloud">
       <div class="src-icon" style="background:linear-gradient(135deg,#06B6D4,#3B82F6)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
       <div class="src-info"><span class="src-name">iCloud Drive</span><span class="src-sub">Open from iCloud</span></div>
@@ -740,11 +747,81 @@ function makeFilePicker() {
 
 $('srcLocal').addEventListener('click',()=>makeFilePicker().click());
 $('srcICloud').addEventListener('click',()=>makeFilePicker().click());
+$('srcLocalMulti').addEventListener('click',()=>makeGroupedFilePicker().click());
 $('srcGDrive').addEventListener('click',()=>{
   closePicker();
   if(!S.settings.gDriveId){ toast('Add your Google Client ID in Settings first','',5000); setTimeout(()=>switchTab('Settings'),800); return; }
   toast('Google Drive requires the native app','',4000);
 });
+
+// Grouped file picker: cluster similarly-named files into one multi-part entry
+function makeGroupedFilePicker() {
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='.epub,.pdf,.mp3,.m4b,.m4a,.flac,.ogg,.opus'; inp.multiple=true;
+  inp.onchange = async()=>{
+    closePicker();
+    const files = Array.from(inp.files||[]);
+    if(!files.length) return;
+    showLoad(`Importing ${files.length} file${files.length>1?'s':''}…`);
+
+    const audioExts = new Set(['mp3','m4b','m4a','flac','ogg','opus']);
+
+    const normalizeBase = (name)=>{
+      if(!name) return '';
+      let base = name.split(/\\|\//).pop();
+      base = base.replace(/\.[^/.]+$/,'');
+      base = base.replace(/\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i,'');
+      base = base.replace(/[\s._-]*\(?\d{1,3}\)?$/i,'');
+      base = base.replace(/[\s._-]+/g,' ');
+      return base.trim().toLowerCase();
+    };
+
+    const items = files.map(f=>({file:f,name:f.name,uri:URL.createObjectURL(f),format:(f.name.split('.').pop()||'').toLowerCase()}));
+    const groups = {};
+    for(const it of items){
+      const b = normalizeBase(it.name||it.uri||'');
+      (groups[b]=groups[b]||[]).push(it);
+    }
+
+    for(const gKey of Object.keys(groups)){
+      const g = groups[gKey];
+      if(g.length>1){
+        const parts = g.map(p=>({name:p.name,uri:p.uri,file:p.file,format:p.format}));
+        const allAudio = parts.every(p=>audioExts.has(p.format));
+        const entry = {
+          id: Date.now()+Math.random(),
+          uri: parts[0]?.uri || null,
+          fileName: parts[0]?.name || 'Multiple files',
+          format: allAudio ? 'audiobook-folder' : 'multi-file',
+          source: 'local', status: 'imported', parts, title: guessTitle(parts[0]?.name || 'Multiple files')
+        };
+        S.library.unshift(entry);
+        if(S.settings.autoFetch && entry.title) fetchAndEnrich(0);
+      } else {
+        const f = g[0];
+        const fmt = f.name.split('.').pop().toLowerCase();
+        const entry = {
+          id: Date.now()+Math.random(), fileName:f.name, format:fmt,
+          title: guessTitle(f.name), author:'', narrator:'', series:'', year:'',
+          publisher:'', genre:'', isbn:'', description:'', language:'',
+          coverBase64:null, coverMime:null, duration:null, bitrate:null, sampleRate:null, channels:null,
+        };
+        try{
+          const ab = await f.file.arrayBuffer();
+          if(fmt==='epub') { Object.assign(entry, await parseEpub(ab, f.name)); }
+        }catch(e){}
+        S.library.unshift(entry);
+        if(S.settings.autoFetch && entry.title) fetchAndEnrich(0);
+      }
+    }
+
+    hideLoad();
+    saveLibrary();
+    renderLibrary();
+    toast(`Added ${files.length} book${files.length>1?'s':''}`, 'success');
+  };
+  return inp;
+}
 
 // ── EPUB parser (minimal) ─────────────────────────────────────────────────────
 async function parseEpub(ab, fileName) {
