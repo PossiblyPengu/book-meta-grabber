@@ -93,6 +93,7 @@ const dom = {
   sourcePickerSheet: $('sourcePickerSheet'),
   srcLocal: $('srcLocal'),
   srcICloud: $('srcICloud'),
+  srcLocalMulti: $('srcLocalMulti'),
   srcFolder: $('srcFolder'),
   srcGDrive: $('srcGDrive'),
 
@@ -253,6 +254,18 @@ async function importFromFilePicker() {
   }
 }
 
+// Import from file picker but force grouping multiple files into one entry
+async function importFromFilePickerGrouped() {
+  closeSourcePicker();
+  try {
+    const picked = await pickFromFiles();
+    if (!picked.length) return;
+    await processPickedFiles(picked, { forceGroup: true });
+  } catch (e) {
+    toast(`Import failed: ${e.message}`, 'error');
+  }
+}
+
 // Google Drive
 async function importFromGoogleDrive() {
   closeSourcePicker();
@@ -269,6 +282,7 @@ async function importFromGoogleDrive() {
 
 dom.srcLocal.addEventListener('click', importFromFilePicker);
 dom.srcICloud.addEventListener('click', importFromFilePicker);
+dom.srcLocalMulti.addEventListener('click', importFromFilePickerGrouped);
 dom.srcFolder.addEventListener('click', importFromFolder);
 dom.srcGDrive.addEventListener('click', importFromGoogleDrive);
 
@@ -546,14 +560,49 @@ function showConfirm(title, body) {
 }
 
 // ─── Process Picked Files ─────────────────────────────────────────────────────
-async function processPickedFiles(picked) {
+async function processPickedFiles(picked, { forceGroup = false } = {}) {
   showLoading(
     `Importing ${picked.length} file${picked.length > 1 ? 's' : ''}…`
   );
 
+  // Smart grouping: if user selects many files but didn't explicitly force
+  // grouping, try to cluster files that share a base filename (e.g. "My Book
+  // - Part 1", "My Book - Part 2") and import those clusters as single
+  // entries while leaving unrelated files as singles.
+  if (picked.length > 1 && !forceGroup && !state.settings.groupMultiImport) {
+    const normalizeBase = (name) => {
+      if (!name) return '';
+      // strip extension
+      let base = name.replace(/\.[^/.]+$/, '');
+      // remove common part/disc/volume markers like "part 1", "pt.1", "disc 01"
+      base = base.replace(/\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i, '');
+      // remove trailing numeric suffixes like " - 01" or " (1)"
+      base = base.replace(/[\s._-]*\(?\d{1,3}\)?$/i, '');
+      return base.trim().toLowerCase();
+    };
+
+    const groups = {};
+    for (const it of picked) {
+      const b = normalizeBase(it.name || it.uri || '');
+      (groups[b] = groups[b] || []).push(it);
+    }
+
+    const clustered = Object.values(groups);
+    const multiClusters = clustered.filter((g) => g.length > 1);
+    if (multiClusters.length) {
+      // Process each cluster: grouped for clusters with >1, single otherwise
+      for (const g of clustered) {
+        if (g.length > 1) await processPickedFiles(g, { forceGroup: true });
+        else await processPickedFiles(g);
+      }
+      hideLoading();
+      return;
+    }
+  }
+
   // If user enabled grouping and multiple files selected, create a single
   // library entry with `parts` instead of individual entries.
-  if (picked.length > 1 && state.settings.groupMultiImport) {
+  if (picked.length > 1 && (forceGroup || state.settings.groupMultiImport)) {
     try {
       const audioExts = new Set(['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus']);
       const parts = picked.map((item) => {
