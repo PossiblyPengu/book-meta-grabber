@@ -735,13 +735,21 @@ function makeFilePicker() {
         publisher:'', genre:'', isbn:'', description:'', language:'',
         coverBase64:null, coverMime:null, duration:null, bitrate:null, sampleRate:null, channels:null,
       };
+      // Attempt to parse author/title from filename
+      try{ const pa = parseTitleAuthor(f.name); if(pa){ if(pa.title) entry.title = pa.title; if(pa.author) entry.author = pa.author; } }catch(e){}
       // Try to read embedded metadata
       try {
         const ab = await f.arrayBuffer();
         if(fmt==='epub') { Object.assign(entry, await parseEpub(ab, f.name)); }
       } catch(e){}
       S.library.unshift(entry);
-      if(S.settings.autoFetch && entry.title) fetchAndEnrich(0);
+      if(S.settings.autoFetch && entry.title){
+        try{
+          const q = `${entry.title}${entry.author? ' '+entry.author : ''}`;
+          const results = await fetchAll(q);
+          await applyBestMetadata(S.library[0], results);
+        }catch(e){}
+      }
     }
     hideLoad();
     saveLibrary();
@@ -801,8 +809,16 @@ function makeGroupedFilePicker() {
           format: allAudio ? 'audiobook-folder' : 'multi-file',
           source: 'local', status: 'imported', parts, title: guessTitle(parts[0]?.name || 'Multiple files')
         };
+        // Attempt to parse author/title from first part filename
+        try{ const pa = parseTitleAuthor(parts[0]?.name); if(pa){ if(pa.title) entry.title = pa.title; if(pa.author) entry.author = pa.author; } }catch(e){}
         S.library.unshift(entry);
-        if(S.settings.autoFetch && entry.title) fetchAndEnrich(0);
+        if(S.settings.autoFetch && entry.title){
+          try{
+            const q = `${entry.title}${entry.author? ' '+entry.author : ''}`;
+            const results = await fetchAll(q);
+            await applyBestMetadata(S.library[0], results);
+          }catch(e){}
+        }
       } else {
         const f = g[0];
         const fmt = f.name.split('.').pop().toLowerCase();
@@ -812,12 +828,19 @@ function makeGroupedFilePicker() {
           publisher:'', genre:'', isbn:'', description:'', language:'',
           coverBase64:null, coverMime:null, duration:null, bitrate:null, sampleRate:null, channels:null,
         };
+        try{ const pa = parseTitleAuthor(f.name); if(pa){ if(pa.title) entry.title = pa.title; if(pa.author) entry.author = pa.author; } }catch(e){}
         try{
           const ab = await f.file.arrayBuffer();
           if(fmt==='epub') { Object.assign(entry, await parseEpub(ab, f.name)); }
         }catch(e){}
         S.library.unshift(entry);
-        if(S.settings.autoFetch && entry.title) fetchAndEnrich(0);
+        if(S.settings.autoFetch && entry.title){
+          try{
+            const q = `${entry.title}${entry.author? ' '+entry.author : ''}`;
+            const results = await fetchAll(q);
+            await applyBestMetadata(S.library[0], results);
+          }catch(e){}
+        }
       }
     }
 
@@ -1138,6 +1161,34 @@ async function fetchAndEnrich(idx){
   }catch{}
 }
 
+// Apply best metadata result to an entry (title/author/cover/etc.)
+async function applyBestMetadata(entry, results){
+  if(!entry || !Array.isArray(results) || !results.length) return false;
+  const best = results[0];
+  try{
+    if(best.title) entry.title = best.title;
+    if(best.author) entry.author = best.author;
+    if(best.narrator) entry.narrator = best.narrator;
+    if(best.publisher) entry.publisher = best.publisher;
+    if(best.year) entry.year = entry.year || best.year;
+    if(best.isbn) entry.isbn = entry.isbn || best.isbn;
+    if(best.genre) entry.genre = entry.genre || best.genre;
+    if(best.language) entry.language = entry.language || best.language;
+    if(best.description) entry.description = entry.description || best.description;
+    if(best.coverUrl && !entry.coverBase64){
+      try{
+        const r = await fetch(best.coverUrl);
+        const bl = await r.blob();
+        const b64 = await blobToB64(bl);
+        entry.coverBase64 = b64.split(',')[1];
+        entry.coverMime = bl.type;
+        entry.coverUrl = best.coverUrl;
+      }catch(e){}
+    }
+    return true;
+  }catch(e){return false}
+}
+
 // ── Result renderer ───────────────────────────────────────────────────────────
 function renderResults(results, container, onApply){
   container.innerHTML='';
@@ -1203,6 +1254,35 @@ function guessTitle(n){
   // Remove trailing numeric sequence like " - 01" or " (01)"
   s = s.replace(/[\s._-]*\(?\d{1,4}\)?$/,'');
   return s.trim();
+}
+// Try to parse "Author - Title" or "Title - Author" style filenames
+function isNameLike(s){
+  if(!s) return false;
+  if(/\d/.test(s)) return false;
+  const words = s.split(/\s+/).filter(Boolean);
+  if(words.length>6) return false;
+  const cap = words.filter(w=>/^[A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ'`.-]*/.test(w)).length;
+  return (cap/words.length) >= 0.5;
+}
+function parseTitleAuthor(filename){
+  if(!filename) return null;
+  let name = String(filename).replace(/\.[^.]+$/,'');
+  // remove part markers and trailing numbers for analysis
+  name = name.replace(/\s*\(?\b(?:part|pt|disc|cd|volume|vol|v)\b\s*\.?\s*\(?\d+\)?$/i,'');
+  name = name.replace(/[\s._-]*\(?\d{1,4}\)?$/,'');
+  // split on common separators
+  const parts = name.split(/\s[-–—|]\s/).map(p=>p.trim()).filter(Boolean);
+  if(parts.length>=2){
+    const left = parts[0], right = parts.slice(1).join(' - ');
+    // if left looks like a name, treat left=author, right=title
+    if(isNameLike(left) && !isNameLike(right)) return {author:left, title:right};
+    // if right looks like a name, treat right=author
+    if(isNameLike(right) && !isNameLike(left)) return {author:right, title:left};
+    // fallback: prefer shorter side as author
+    if(left.length <= right.length) return {author:left, title:right};
+    return {author:right, title:left};
+  }
+  return null;
 }
 function fmtDur(s){if(!s) return'—';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h ${String(m).padStart(2,'0')}m`:`${m}m`}
 function blobToB64(blob){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=j;fr.readAsDataURL(blob)})}
