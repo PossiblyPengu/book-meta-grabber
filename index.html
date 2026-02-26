@@ -1451,6 +1451,91 @@ html,body{
   filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
+/* Enhanced form styling to match theme */
+.finput, .ftarea {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: var(--r-lg);
+  padding: 14px 18px;
+  color: #ffffff;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.finput:focus, .ftarea:focus {
+  border-color: rgba(99,102,241,0.6);
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05));
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2), 0 8px 24px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+}
+
+.finput::placeholder, .ftarea::placeholder {
+  color: rgba(255,255,255,0.5);
+  font-weight: 400;
+  opacity: 1;
+}
+
+.finput:hover, .ftarea:hover {
+  border-color: rgba(255,255,255,0.25);
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.ftarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: var(--font);
+  line-height: 1.5;
+}
+
+/* Form labels styling */
+.flabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Form groups styling */
+.fgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Form dividers */
+.fdiv {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  margin: 8px 0;
+}
+
+/* Form cards styling */
+.fcard {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fcard:hover {
+  border-color: rgba(99,102,241,0.3);
+  box-shadow: 0 12px 40px rgba(99,102,241,0.2), 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
 @media (max-width: 480px) {
   .scr-title { 
     font-size:26px; 
