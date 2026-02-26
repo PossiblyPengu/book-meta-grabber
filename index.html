@@ -1128,7 +1128,7 @@ html {
 
 /* ── Hero ── */
 /* Detail panel redesign */
-.hero{position:relative;height:56vh;min-height:320px;max-height:420px;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);border-radius:var(--card-radius);box-shadow:0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1);}
+.hero{position:relative;height:65vh;min-height:380px;max-height:500px;flex-shrink:0;overflow:visible;background:linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);border-radius:var(--card-radius);box-shadow:0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1);}
 .hero-bg{position:absolute;inset:-40px;background-size:cover;background-position:center;
   filter:blur(60px) saturate(180%);opacity:.7;transform:scale(1.13);}
 .hero-cover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:88%;
@@ -1373,10 +1373,10 @@ html,body{
 }
 
 .hero-title{
-  font-size:clamp(28px,6vw,42px);
+  font-size:clamp(24px,5vw,38px);
   font-weight:900;
   color:#ffffff;
-  line-height:1.1;
+  line-height:1.2;
   letter-spacing:-1.2px;
   margin-bottom:12px;
   text-shadow:0 4px 12px rgba(0,0,0,0.4), 0 0 8px rgba(99,102,241,0.2);
@@ -1384,16 +1384,27 @@ html,body{
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .hero-author{
-  font-size:clamp(18px,4vw,24px);
+  font-size:clamp(16px,3.5vw,22px);
   font-weight:600;
   color:#cbd5e1;
-  line-height:1.3;
+  line-height:1.4;
   margin-bottom:20px;
   text-shadow:0 2px 8px rgba(0,0,0,0.3);
   letter-spacing:-0.3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-wrap: break-word;
 }
 
 /* Enhanced hero change cover button */
@@ -1584,6 +1595,8 @@ html,body{
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 120px;
+  overflow: visible;
 }
 
 .book-actions {
@@ -1598,14 +1611,15 @@ html,body{
   position: relative;
   z-index: 4;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(24px,6vw,48px);
   padding-top: calc(24px + env(safe-area-inset-top,6px));
   padding-left: calc(24px + env(safe-area-inset-left,12px));
   padding-right: calc(24px + env(safe-area-inset-right,12px));
-  padding-bottom: 24px;
+  padding-bottom: 32px;
   max-width: 1400px;
   margin: 0 auto;
+  overflow: visible;
 }
 
 /* Enhanced cover frame positioning */
@@ -2183,6 +2197,12 @@ document.querySelectorAll('.tbtn').forEach(b=>{
 });
 function switchTab(tab) {
   S.activeTab=tab;
+  // Save active tab to localStorage
+  try {
+    localStorage.setItem('bmg_active_tab', tab);
+  } catch(e) {
+    console.warn('Failed to save active tab:', e);
+  }
   document.querySelectorAll('.tab-screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $(TAB_MAP[tab])?.classList.add('active');
@@ -2629,16 +2649,33 @@ $('btnMetaClose')?.addEventListener('click',()=>{
 const _openEditor = openEditor;
 openEditor = function(idx, opts={push:true}){
   _openEditor(idx);
+  // Save editor state to localStorage
+  try {
+    localStorage.setItem('bmg_editor_state', JSON.stringify({
+      activeIdx: idx,
+      timestamp: Date.now()
+    }));
+  } catch(e) {
+    console.warn('Failed to save editor state:', e);
+  }
   if(window.innerWidth<=900){ D.metaPanel.style.display='none'; D.editorScr.classList.remove('meta-open'); }
-  if(opts.push!==false){ try{ history.pushState({page:'editor', idx}, '', '#editor'); }catch(e){} }
+  if(opts.push){
+    try{ history.pushState({page:'editor', idx}, '', location.pathname + location.search); }catch(e){}
+  }
 };
 const _closeEditor = closeEditor;
 closeEditor = function(opts={back:true}){
+  // Clear editor state from localStorage
+  try {
+    localStorage.removeItem('bmg_editor_state');
+  } catch(e) {
+    console.warn('Failed to clear editor state:', e);
+  }
   // If caller wants to navigate back in history, prefer history.back() so the browser back behaves naturally
   if(opts.back && history.state && history.state.page==='editor'){
     try{ history.back(); return; }catch(e){}
   }
-  _closeEditor(); D.editorScr.classList.remove('meta-open'); D.metaPanel.style.display = 'none'; document.body.style.overflow='';
+  _closeEditor(); D.editorScr.classList.remove('meta-open'); D.metaPanel.style.display='none'; document.body.style.overflow='';
 };
 
 // Handle browser / home-screen back behavior
@@ -2938,6 +2975,42 @@ function loadLibrary(){try{const d=localStorage.getItem('bmg_library');return d?
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 S.library = loadLibrary();
+
+// Restore active tab from localStorage
+try {
+  const savedTab = localStorage.getItem('bmg_active_tab');
+  if (savedTab && ['Library', 'Search', 'Settings'].includes(savedTab)) {
+    S.activeTab = savedTab;
+  }
+} catch(e) {
+  console.warn('Failed to load active tab:', e);
+}
+
+// Initialize with restored tab
+switchTab(S.activeTab);
+
+// Restore editor state if available
+try {
+  const editorState = localStorage.getItem('bmg_editor_state');
+  if (editorState) {
+    const state = JSON.parse(editorState);
+    // Only restore if state is less than 30 minutes old to avoid stale data
+    if (state.timestamp && (Date.now() - state.timestamp) < 30 * 60 * 1000) {
+      const book = S.library[state.activeIdx];
+      if (book) {
+        // Open editor without pushing history state
+        openEditor(state.activeIdx, {push: false});
+      }
+    } else {
+      // Clear stale editor state
+      localStorage.removeItem('bmg_editor_state');
+    }
+  }
+} catch(e) {
+  console.warn('Failed to restore editor state:', e);
+  localStorage.removeItem('bmg_editor_state');
+}
+
 renderLibrary();
 </script>
 <script>
