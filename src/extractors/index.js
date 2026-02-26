@@ -9,27 +9,66 @@
 async function extractAudio(fileOrBlob, fileName) {
   // Offload to metadata worker to avoid blocking UI
   return new Promise((res, rej) => {
+    let worker = null;
+    let timeoutId = null;
+
     try {
-      const worker = new Worker(
+      worker = new Worker(
         new URL('../workers/metadataWorker.js', import.meta.url),
         { type: 'module' }
       );
+
+      // Set up timeout to prevent hanging
+      timeoutId = setTimeout(() => {
+        if (worker) {
+          worker.terminate();
+          worker = null;
+        }
+        rej(new Error('Metadata extraction timeout'));
+      }, 30000); // 30 second timeout
+
+      const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (worker) {
+          worker.terminate();
+          worker = null;
+        }
+      };
+
       worker.addEventListener('message', (ev) => {
         const d = ev.data || {};
         if (d.event === 'result') {
-          worker.terminate();
+          cleanup();
           res(d.result);
         } else if (d.event === 'error') {
-          worker.terminate();
+          cleanup();
           rej(new Error(d.message || 'metadata parse error'));
         }
       });
+
+      worker.addEventListener('error', (error) => {
+        cleanup();
+        rej(new Error(`Worker error: ${error.message}`));
+      });
+
       // send ArrayBuffer to worker
       (async () => {
-        const ab = await fileOrBlob.arrayBuffer();
-        worker.postMessage({ cmd: 'parse', buffer: ab, fileName }, [ab]);
+        try {
+          const ab = await fileOrBlob.arrayBuffer();
+          if (worker) {
+            worker.postMessage({ cmd: 'parse', buffer: ab, fileName }, [ab]);
+          }
+        } catch (error) {
+          cleanup();
+          rej(error);
+        }
       })();
     } catch (e) {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (worker) worker.terminate();
       rej(e);
     }
   });

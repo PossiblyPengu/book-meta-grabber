@@ -579,6 +579,7 @@ html {
   display:-webkit-box;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
+  line-clamp:2;
   line-height:1.3;
   letter-spacing: -0.02em;
 }
@@ -970,6 +971,7 @@ html {
   font-weight:500;
   outline:none;
   -webkit-appearance:none;
+  appearance:none;
 }
 
 .sinput::placeholder{
@@ -1075,7 +1077,7 @@ html {
 .srow:active{background:rgba(255,255,255,.04)}
 .sinp{margin:0 12px 12px;border-radius:var(--r-md);padding:11px 14px;font-size:14px;
   width:calc(100% - 24px);background:rgba(255,255,255,.06);border:1px solid var(--g-border);
-  color:var(--t1);font-family:var(--font);outline:none;-webkit-appearance:none}
+  color:var(--t1);font-family:var(--font);outline:none;-webkit-appearance:none;appearance:none}
 .sinp:focus{background:rgba(96,165,250,.08);border-color:rgba(96,165,250,.45);
   box-shadow:0 0 0 3px rgba(96,165,250,.12),0 0 12px rgba(96,165,250,.10)}
 .shint{font-size:12px;color:var(--t3);padding:0 16px 14px;line-height:1.5}
@@ -1382,6 +1384,7 @@ html,body{
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  line-clamp:3;
   overflow: hidden;
   word-wrap: break-word;
   hyphens: auto;
@@ -1398,6 +1401,7 @@ html,body{
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  line-clamp: 2;
   overflow: hidden;
   word-wrap: break-word;
 }
@@ -2155,26 +2159,34 @@ const D = {
 // ── Metadata Change Detection ─────────────────────────────────────────────────
 let originalFormData = null;
 let hasUnsavedChanges = false;
+let activeRequestController = null;
 
 function getFormData() {
   return {
-    title: D.fTitle.value,
-    author: D.fAuthor.value,
-    narrator: D.fNarrator.value,
-    series: D.fSeries.value,
-    year: D.fYear.value,
-    publisher: D.fPub.value,
-    genre: D.fGenre.value,
-    isbn: D.fISBN.value,
-    language: D.fLang.value,
-    description: D.fDesc.value
+    title: D.fTitle?.value || '',
+    author: D.fAuthor?.value || '',
+    narrator: D.fNarrator?.value || '',
+    series: D.fSeries?.value || '',
+    year: D.fYear?.value || '',
+    publisher: D.fPub?.value || '',
+    genre: D.fGenre?.value || '',
+    isbn: D.fISBN?.value || '',
+    language: D.fLang?.value || '',
+    description: D.fDesc?.value || ''
   };
 }
 
 function hasChanges() {
   if (!originalFormData) return false;
   const current = getFormData();
-  return Object.keys(current).some(key => current[key] !== originalFormData[key]);
+  return Object.keys(current).some(key => {
+    const oldVal = originalFormData[key];
+    const newVal = current[key];
+    // Handle different types properly
+    if (typeof oldVal !== typeof newVal) return true;
+    if (typeof oldVal === 'string') return oldVal.trim() !== newVal.trim();
+    return oldVal !== newVal;
+  });
 }
 
 function updateSaveCancelVisibility() {
@@ -2398,21 +2410,38 @@ async function parseEpub(ab, fileName) {
     const { ZipReader, BlobReader, TextWriter, BlobWriter } = await import('https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.7.32/+esm');
     const zr      = new ZipReader(new BlobReader(new Blob([ab])));
     const entries = await zr.getEntries();
+    
+    // Security: limit number of entries to prevent DoS
+    if (entries.length > 1000) {
+      console.warn('EPUB has too many entries, potential DoS');
+      await zr.close();
+      return {};
+    }
+    
     const byName  = {};
     entries.forEach(e=>byName[e.filename]=e);
 
     const containerEntry = byName['META-INF/container.xml'];
-    if(!containerEntry) return {};
+    if(!containerEntry) {
+      await zr.close();
+      return {};
+    }
     const containerXml = await containerEntry.getData(new TextWriter());
     const opfMatch = containerXml.match(/full-path="([^"]+\.opf)"/i);
-    if(!opfMatch) return {};
+    if(!opfMatch) {
+      await zr.close();
+      return {};
+    }
 
     const opfEntry = byName[opfMatch[1]];
-    if(!opfEntry) return {};
+    if(!opfEntry) {
+      await zr.close();
+      return {};
+    }
     const opf = await opfEntry.getData(new TextWriter());
     await zr.close();
 
-    const get = tag=>{const m=opf.match(new RegExp(`<dc:${tag}[^>]*>([^<]+)<\/dc:${tag}>','i'`));return m?m[1].trim():''};
+    const get = tag=>{const m=opf.match(new RegExp(`<dc:${tag}[^>]*>([^<]+)</dc:${tag}>`,'i'));return m?m[1].trim():''};
     const title       = opf.match(/<dc:title[^>]*>([^<]+)<\/dc:title>/i)?.[1]?.trim() || '';
     const author      = opf.match(/<dc:creator[^>]*>([^<]+)<\/dc:creator>/i)?.[1]?.trim() || '';
     const publisher   = opf.match(/<dc:publisher[^>]*>([^<]+)<\/dc:publisher>/i)?.[1]?.trim() || '';
@@ -2421,7 +2450,10 @@ async function parseEpub(ab, fileName) {
     const language    = opf.match(/<dc:language[^>]*>([^<]+)<\/dc:language>/i)?.[1]?.trim() || '';
     const identifier  = opf.match(/<dc:identifier[^>]*>([^<]+)<\/dc:identifier>/i)?.[1]?.trim() || '';
     return { title, author, publisher, year:date.slice(0,4), description, language, isbn:identifier };
-  } catch { return {}; }
+  } catch (error) {
+    console.warn('EPUB parsing failed:', error);
+    return {};
+  }
 }
 
 // ── Library ───────────────────────────────────────────────────────────────────
@@ -2827,12 +2859,24 @@ async function applyResult(r) {
     const book=S.library[S.activeIdx];
     if(book){ book.coverUrl=r.coverUrl; }
     renderLibrary();
-    // Attempt blob conversion in background for local saving
-    fetch(r.coverUrl).then(res=>res.blob()).then(async blob=>{
-      const b64=await blobToB64(blob);
-      if(book){ book.coverBase64=b64.split(',')[1]; book.coverMime=blob.type; }
-      renderLibrary();
-    }).catch(()=>{});
+    // Attempt blob conversion in background for local saving with proper CORS handling
+    fetch(r.coverUrl, { mode: 'cors' })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then(async blob=>{
+        const b64=await blobToB64(blob);
+        if(book){ 
+          book.coverBase64=b64.split(',')[1]; 
+          book.coverMime=blob.type; 
+        }
+        renderLibrary();
+      })
+      .catch(error => {
+        console.warn('Failed to fetch cover image:', error);
+        // Silently fail - remote URL still works for display
+      });
   }
   // Trigger change detection after applying metadata
   updateSaveCancelVisibility();
@@ -2846,60 +2890,119 @@ function ft(url,opts={}){
   return fetch(url,{...opts,signal:c.signal}).finally(()=>clearTimeout(t));
 }
 
-async function fetchAll(query) {
-  const q=encodeURIComponent(query);
-  const [g,ol,it,mb]=await Promise.allSettled([fetchGB(q),fetchOL(q),fetchIT(q),fetchMB(q)]);
-  return [...(g.status==='fulfilled'?g.value:[]),...(ol.status==='fulfilled'?ol.value:[]),
-    ...(it.status==='fulfilled'?it.value:[]),...(mb.status==='fulfilled'?mb.value:[])];
+// Enhanced fetch with proper error handling and cancellation
+function fetchWithErrorHandling(url, opts = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  
+  return fetch(url, { ...opts, signal: controller.signal })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response;
+    })
+    .catch(error => {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('Network error');
+      }
+      throw error;
+    })
+    .finally(() => {
+      clearTimeout(timeoutId);
+    });
 }
 
-async function fetchGB(q){
+async function fetchAll(query) {
+  // Cancel any existing request
+  if (activeRequestController) {
+    activeRequestController.abort();
+  }
+  activeRequestController = new AbortController();
+  
+  try {
+    const q=encodeURIComponent(query);
+    const [g,ol,it,mb]=await Promise.allSettled([
+      fetchGB(q, activeRequestController.signal),
+      fetchOL(q, activeRequestController.signal), 
+      fetchIT(q, activeRequestController.signal),
+      fetchMB(q, activeRequestController.signal)
+    ]);
+    
+    // Only return results if this request wasn't cancelled
+    if (activeRequestController.signal.aborted) {
+      return [];
+    }
+    
+    return [...(g.status==='fulfilled'?g.value:[]),...(ol.status==='fulfilled'?ol.value:[]),
+      ...(it.status==='fulfilled'?it.value:[]),...(mb.status==='fulfilled'?mb.value:[])];
+  } finally {
+    activeRequestController = null;
+  }
+}
+
+async function fetchGB(q, signal = null){
   try{
-    const d=await (await ft(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5`)).json();
+    const d=await (await ft(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5`, { signal })).json();
     return (d.items||[]).map(it=>{const v=it.volumeInfo||{};return{source:'Google Books',
       title:v.title||'',author:(v.authors||[]).join(', '),publisher:v.publisher||'',
       year:(v.publishedDate||'').slice(0,4),isbn:(v.industryIdentifiers||[]).find(i=>i.type==='ISBN_13')?.identifier||'',
       description:sh(v.description||''),genre:(v.categories||[]).join(', '),language:v.language||'',
       coverUrl:v.imageLinks?.extraLarge||v.imageLinks?.large||v.imageLinks?.thumbnail||null};});
-  }catch{return[]}
+  }catch(error){
+    console.warn('Google Books API error:', error);
+    return [];
+  }
 }
 
-async function fetchOL(q){
+async function fetchOL(q, signal = null){
   try{
-    const d=await(await ft(`https://openlibrary.org/search.json?q=${q}&limit=5`)).json();
+    const d=await(await ft(`https://openlibrary.org/search.json?q=${q}&limit=5`, { signal })).json();
     return(d.docs||[]).slice(0,5).map(doc=>({source:'Open Library',title:doc.title||'',
       author:(doc.author_name||[]).join(', '),publisher:(doc.publisher||[]).join(', ').slice(0,80),
       year:doc.first_publish_year?String(doc.first_publish_year):'',isbn:(doc.isbn||[])[0]||'',
       language:(doc.language||[])[0]||'',genre:(doc.subject||[]).slice(0,3).join(', '),
       coverUrl:doc.cover_i?`https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`:null}));
-  }catch{return[]}
+  }catch(error){
+    console.warn('Open Library API error:', error);
+    return [];
+  }
 }
 
-async function fetchIT(q){
+async function fetchIT(q, signal = null){
   try{
     const [a,e]=await Promise.allSettled([
-      ft(`https://itunes.apple.com/search?term=${q}&media=audiobook&limit=4&entity=audiobook`).then(r=>r.json()),
-      ft(`https://itunes.apple.com/search?term=${q}&media=ebook&limit=3&entity=ebook`).then(r=>r.json())]);
+      ft(`https://itunes.apple.com/search?term=${q}&media=audiobook&limit=4&entity=audiobook`, { signal }).then(r=>r.json()),
+      ft(`https://itunes.apple.com/search?term=${q}&media=ebook&limit=3&entity=ebook`, { signal }).then(r=>r.json())]);
     return [...(a.status==='fulfilled'?a.value.results:[]),...(e.status==='fulfilled'?e.value.results:[])].slice(0,6).map(item=>({
       source:'iTunes / Audible',title:item.collectionName||item.trackName||'',author:item.artistName||'',
       narrator:item.authorName||'',publisher:item.publisherName||'',year:(item.releaseDate||'').slice(0,4),
       description:sh(item.description||item.longDescription||''),genre:item.primaryGenreName||'',
       coverUrl:(item.artworkUrl600||item.artworkUrl100||'').replace('100x100bb','600x600bb')}));
-  }catch{return[]}
+  }catch(error){
+    console.warn('iTunes API error:', error);
+    return [];
+  }
 }
 
-async function fetchMB(q){
+async function fetchMB(q, signal = null){
   try{
     const d=await(await ft(`https://musicbrainz.org/ws/2/release/?query=release:${encodeURIComponent(`"${q}"`)}&limit=5&fmt=json`,
-      {headers:{'User-Agent':'BookMetaGrabber/1.0 (test)'}})).json();
+      {headers:{'User-Agent':'BookMetaGrabber/1.0 (test)'}, signal})).json();
     const results=[];
     for(const rel of(d.releases||[]).slice(0,4)){
       let coverUrl=null;
-      try{const cr=await ft(`https://coverartarchive.org/release/${rel.id}`,{headers:{Accept:'application/json'}});const crd=await cr.json();coverUrl=crd?.images?.[0]?.image||null;}catch{}
+      try{const cr=await ft(`https://coverartarchive.org/release/${rel.id}`,{headers:{Accept:'application/json'}, signal});const crd=await cr.json();coverUrl=crd?.images?.[0]?.image||null;}catch{}
       results.push({source:'MusicBrainz',title:rel.title||'',author:rel['artist-credit']?.map(a=>a.artist?.name).join(', ')||'',year:(rel.date||'').slice(0,4),publisher:rel['label-info']?.[0]?.label?.name||'',coverUrl});
     }
     return results;
-  }catch{return[]}
+  }catch(error){
+    console.warn('MusicBrainz API error:', error);
+    return [];
+  }
 }
 
 async function fetchAndEnrich(idx){
@@ -3098,8 +3201,189 @@ async function showChoiceDialog(title, message, options) {
   });
 }
 
+// ── Input Validation ───────────────────────────────────────────────────────────
+function validateInput(value, type, maxLength = 1000) {
+  if (typeof value !== 'string') return '';
+  
+  // Remove potentially dangerous content
+  const sanitized = value
+    .replace(/[<>]/g, '') // Remove HTML tags
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
+    .trim();
+  
+  // Apply length limits
+  if (sanitized.length > maxLength) {
+    return sanitized.substring(0, maxLength);
+  }
+  
+  // Type-specific validation
+  switch (type) {
+    case 'isbn':
+      // Basic ISBN format validation
+      const isbn = sanitized.replace(/[-\s]/g, '');
+      return (isbn.length === 10 || isbn.length === 13) ? isbn : sanitized;
+    case 'year':
+      // Year should be 4 digits and reasonable
+      const year = sanitized.match(/\d{4}/)?.[0];
+      return year && (year >= '1800' && year <= '2100') ? year : sanitized;
+    case 'number':
+      return sanitized.replace(/[^0-9]/g, '');
+    default:
+      return sanitized;
+  }
+}
+
+// Add input validation to form fields
+function setupInputValidation() {
+  const fields = [
+    { element: D.fTitle, type: 'text', maxLength: 500 },
+    { element: D.fAuthor, type: 'text', maxLength: 200 },
+    { element: D.fNarrator, type: 'text', maxLength: 200 },
+    { element: D.fSeries, type: 'text', maxLength: 200 },
+    { element: D.fYear, type: 'year', maxLength: 4 },
+    { element: D.fPub, type: 'text', maxLength: 200 },
+    { element: D.fGenre, type: 'text', maxLength: 100 },
+    { element: D.fISBN, type: 'isbn', maxLength: 20 },
+    { element: D.fLang, type: 'text', maxLength: 10 },
+    { element: D.fDesc, type: 'text', maxLength: 2000 }
+  ];
+  
+  fields.forEach(({ element, type, maxLength }) => {
+    if (!element) return;
+    
+    element.addEventListener('input', (e) => {
+      const validated = validateInput(e.target.value, type, maxLength);
+      if (validated !== e.target.value) {
+        e.target.value = validated;
+      }
+    });
+    
+    element.addEventListener('blur', (e) => {
+      e.target.value = validateInput(e.target.value, type, maxLength);
+    });
+  });
+}
+// ── Accessibility Improvements ─────────────────────────────────────────────────────
+function setupAccessibility() {
+  // Add ARIA labels to interactive elements
+  const buttons = document.querySelectorAll('button:not([aria-label])');
+  buttons.forEach(button => {
+    if (button.textContent.trim()) {
+      button.setAttribute('aria-label', button.textContent.trim());
+    }
+  });
+  
+  // Add proper roles to form inputs
+  const inputs = document.querySelectorAll('input, textarea');
+  inputs.forEach(input => {
+    if (!input.getAttribute('aria-describedby') && input.id) {
+      const label = document.querySelector(`label[for="${input.id}"]`);
+      if (label) {
+        label.setAttribute('id', `${input.id}-label`);
+        input.setAttribute('aria-labelledby', `${input.id}-label`);
+      }
+    }
+  });
+  
+  // Add keyboard navigation for cards
+  const cards = document.querySelectorAll('.bcard');
+  cards.forEach(card => {
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.click();
+      }
+    });
+  });
+  
+  // Announce dynamic content changes
+  const announcer = document.createElement('div');
+  announcer.setAttribute('aria-live', 'polite');
+  announcer.setAttribute('aria-atomic', 'true');
+  announcer.style.position = 'absolute';
+  announcer.style.left = '-10000px';
+  announcer.style.width = '1px';
+  announcer.style.height = '1px';
+  announcer.style.overflow = 'hidden';
+  document.body.appendChild(announcer);
+  
+  // Override toast function to announce changes
+  const originalToast = window.toast;
+  window.toast = function(msg, cls = '', ms = 3000) {
+    originalToast(msg, cls, ms);
+    announcer.textContent = msg;
+    setTimeout(() => { announcer.textContent = ''; }, ms);
+  };
+}
+
+// ── Performance Optimization ───────────────────────────────────────────────────────
+function optimizePerformance() {
+  // Implement virtual scrolling for large libraries
+  let visibleCards = [];
+  let cardHeight = 120; // Approximate card height
+  let buffer = 5; // Number of cards to render outside viewport
+  
+  function updateVisibleCards() {
+    const scrollTop = D.bookGrid.scrollTop;
+    const viewportHeight = D.bookGrid.clientHeight;
+    const startIndex = Math.max(0, Math.floor(scrollTop / cardHeight) - buffer);
+    const endIndex = Math.min(S.library.length, Math.ceil((scrollTop + viewportHeight) / cardHeight) + buffer);
+    
+    // Remove cards that are no longer visible
+    visibleCards.forEach(card => {
+      if (card.index < startIndex || card.index >= endIndex) {
+        card.element.remove();
+      }
+    });
+    
+    // Add newly visible cards
+    for (let i = startIndex; i < endIndex; i++) {
+      if (!visibleCards.find(c => c.index === i)) {
+        const book = S.library[i];
+        if (book) {
+          const card = createBookCard(book, i);
+          D.bookGrid.appendChild(card);
+          visibleCards.push({ index: i, element: card });
+        }
+      }
+    }
+    
+    // Clean up visible cards array
+    visibleCards = visibleCards.filter(c => c.index >= startIndex && c.index < endIndex);
+  }
+  
+  // Throttled scroll handler
+  let scrollTimeout;
+  D.bookGrid.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(updateVisibleCards, 16); // ~60fps
+  });
+  
+  // Use Intersection Observer for lazy loading images
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+            imageObserver.unobserve(img);
+          }
+        }
+      });
+    });
+    
+    // Observe all lazy images
+    document.querySelectorAll('img[data-src]').forEach(img => {
+      imageObserver.observe(img);
+    });
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 // Return a sanitized URI or null if unsafe. Allows relative URLs, http(s), blob, and safe data: types (image/audio/pdf/octet-stream).
 function sanitizeUri(u){
   if(!u) return null;
@@ -3107,19 +3391,27 @@ function sanitizeUri(u){
     const s = String(u).trim();
     if(!s) return null;
     // reject javascript: and other potentially dangerous schemes
-    if(/^\s*javascript:/i.test(s)) return null;
+    if(/^\s*(javascript|data:text\/html|data:text\/javascript|data:application\/javascript):/i.test(s)) return null;
     // Absolute scheme (e.g., https:, data:, blob:)
     const m = s.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
     if(m){
       const scheme = m[1].toLowerCase();
       if(['http','https','blob','file'].includes(scheme)) return s;
       if(scheme==='data'){
-        // allow data:audio/, data:image/, data:application/pdf, data:application/octet-stream
-        if(/^data:(audio|image)\//i.test(s)) return s;
-        if(/^data:application\/(pdf|octet-stream)/i.test(s)) return s;
+        // Strict data: URI validation with size limits
+        if(/^data:(audio|image)\/[^;]+;base64,[a-zA-Z0-9+/=]{100,}/i.test(s)) {
+          // Approximate size check (base64 length * 0.75 = bytes)
+          const base64Data = s.split(',')[1];
+          if(base64Data && base64Data.length > 2000000) return null; // ~1.5MB limit
+          return s;
+        }
+        if(/^data:application\/(pdf|octet-stream);base64,[a-zA-Z0-9+/=]{100,}/i.test(s)) {
+          const base64Data = s.split(',')[1];
+          if(base64Data && base64Data.length > 5000000) return null; // ~3.75MB limit
+          return null;
+        }
         return null;
       }
-      return null;
     }
     // Relative URLs (start with / or no scheme) — allow
     if(/^[./]/.test(s) || !/[:\/\\]/.test(s)) return s;
@@ -3173,8 +3465,27 @@ function saveLibrary(){
     // Strip base64 covers before saving — they blow the 5MB localStorage limit.
     // coverUrl is kept so the image can be re-displayed from the remote URL.
     const slim=S.library.map(b=>({...b,coverBase64:null,coverMime:null}));
-    localStorage.setItem('bmg_library',JSON.stringify(slim));
-  }catch(e){console.warn('Save failed:',e);}
+    const data = JSON.stringify(slim);
+    
+    // Check localStorage quota before saving
+    try {
+      localStorage.setItem('bmg_library', data);
+    } catch(e) {
+      if (e.name === 'QuotaExceededError') {
+        // Emergency cleanup: remove oldest entries
+        const sorted = S.library.sort((a,b) => (a.id||0) - (b.id||0));
+        const toKeep = sorted.slice(-Math.floor(sorted.length * 0.7))
+        const emergencySlim = toKeep.map(b=>({...b,coverBase64:null,coverMime:null}));
+        localStorage.setItem('bmg_library', JSON.stringify(emergencySlim));
+        toast('Library size reduced due to storage limits', 'warning');
+      } else {
+        throw e;
+      }
+    }
+  }catch(e){
+    console.warn('Save failed:', e);
+    toast('Failed to save library', 'error');
+  }
 }
 function loadLibrary(){try{const d=localStorage.getItem('bmg_library');return d?JSON.parse(d):[];}catch{return[];}}
 

@@ -4,6 +4,17 @@ self.addEventListener('message', async (ev) => {
   const { cmd, buffer, fileName } = ev.data || {};
   if (cmd === 'parse') {
     try {
+      // Validate input
+      if (!buffer || !fileName) {
+        throw new Error('Invalid input: buffer and fileName required');
+      }
+
+      // Check file size to prevent DoS
+      if (buffer.byteLength > 100 * 1024 * 1024) {
+        // 100MB limit
+        throw new Error('File too large for processing');
+      }
+
       const blob = new Blob([buffer]);
       const meta = await parseBlob(blob, {
         skipPostHeaders: true,
@@ -14,9 +25,13 @@ self.addEventListener('message', async (ev) => {
         coverMime = null;
       if (common.picture?.[0]) {
         const pic = common.picture[0];
-        const b64 = arrayBufferToBase64(pic.data);
-        coverBase64 = b64;
-        coverMime = pic.format || 'image/jpeg';
+        // Validate cover image size
+        if (pic.data && pic.data.length < 10 * 1024 * 1024) {
+          // 10MB limit
+          const b64 = arrayBufferToBase64(pic.data);
+          coverBase64 = b64;
+          coverMime = pic.format || 'image/jpeg';
+        }
       }
 
       const result = {
@@ -39,6 +54,7 @@ self.addEventListener('message', async (ev) => {
 
       self.postMessage({ event: 'result', result });
     } catch (e) {
+      // Use self.postMessage instead of console for worker errors
       self.postMessage({ event: 'error', message: e?.message || String(e) });
     }
   }

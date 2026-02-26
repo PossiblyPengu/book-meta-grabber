@@ -8,7 +8,7 @@ Built with vanilla JS, styled with a lightweight glass aesthetic.
 ## Supported Formats
 
 | Format | Metadata Read | Cover Read |
-|--------|:---:|:---:|
+|--------|:-------------:|:----------:|
 | EPUB   | ✅ OPF/DCTerms | ✅ |
 | PDF    | ✅ PDF Info dict | — |
 | MP3    | ✅ ID3v2 | ✅ |
@@ -69,7 +69,7 @@ npm run build
 
 ## Project Structure
 
-```
+```bash
 book-meta-grabber/
 ├── index.html               ← Web app shell (Library / Search / Settings)
 ├── vite.config.js          ← Vite build config (builds root → dist/)
@@ -77,7 +77,7 @@ book-meta-grabber/
 │   ├── apis/index.js       ← Google Books, Open Library, iTunes, MusicBrainz
 │   ├── extractors/index.js ← Browser-safe EPUB/PDF/audio parsers (CDN libs)
 │   ├── fileSources.js      ← Local picker, Google Drive OAuth
-+│   └── storage.js          ← Persistence wrapper (localStorage / Preferences)
+│   └── storage.js          ← Persistence wrapper (localStorage / Preferences)
 └── README.md
 ```
 
