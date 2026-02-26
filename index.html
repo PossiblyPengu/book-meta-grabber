@@ -207,7 +207,6 @@ html, body {
 .cover-zoom { z-index: 5 }
 
 /* Navigation layer: 300-499 */
-.editor-scr { z-index: 300 }
 #metaPanel { z-index: 450 }
 
 /* Overlay layer: 500-899 */
@@ -829,7 +828,7 @@ html {
 .backdrop.vis{opacity:1;pointer-events:auto}
 
 /* ── Enhanced Bottom Sheet ── */
-.bsheet{position:fixed;bottom:0;left:0;right:0;background:var(--gradient-surface);border-top:1px solid var(--g-border);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:16px 20px calc(20px + var(--safe-bottom));transform:translateY(110%);transition:transform .36s cubic-bezier(.2,.9,.2,1),opacity .25s;}
+.bsheet{position:fixed;bottom:0;left:0;right:0;background:var(--gradient-surface);border-top:1px solid var(--g-border);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:16px 20px calc(20px + var(--safe-bottom));transform:translateY(110%);transition:transform .36s cubic-bezier(.2,.9,.2,1),opacity .25s;z-index:201;}
 
 .sh-handle{
   width:40px;
