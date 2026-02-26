@@ -1122,9 +1122,10 @@ html {
 
 /* Mobile meta panel (bottom sheet) */
 #metaPanel{display:none;transition:transform .36s cubic-bezier(.2,.9,.2,1),opacity .25s;z-index:450}
-.editor-scr.meta-open #metaPanel{position:fixed;left:12px;right:12px;bottom:12px;margin:0;border-radius:16px;padding:12px 14px;display:block;max-height:64vh;overflow:auto;box-shadow:var(--elev-shadow);background:var(--gradient-surface);border:1px solid var(--g-border)}
+.editor-scr.meta-open #metaPanel{position:fixed;left:12px;right:12px;bottom:calc(12px + var(--safe-bottom));margin:0;border-radius:16px;padding:12px 14px;display:block;max-height:64vh;overflow:auto;box-shadow:var(--elev-shadow);background:var(--gradient-surface);border:1px solid var(--g-border)}
 .meta-handle{width:36px;height:4px;border-radius:4px;background:var(--g-border);margin:6px auto}
 .editor-scr.meta-open{overflow:hidden}
+.editor-scr.meta-open #eScroll{padding-bottom:calc(100px + var(--safe-bottom))}
 
 /* ── Hero ── */
 /* Detail panel redesign */
@@ -1196,6 +1197,10 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
   .editor-scr .cover-frame{width:clamp(80px,24vw,120px)}
   .editor-scr .hero-title{font-size:clamp(16px,5vw,22px)}
   .editor-scr .hero-author{font-size:12px}
+  
+  /* Meta panel adjustments for small devices */
+  .editor-scr.meta-open #metaPanel{max-height:60vh;bottom:calc(8px + var(--safe-bottom))}
+  .editor-scr.meta-open #eScroll{padding-bottom:calc(90px + var(--safe-bottom))}
 }
 
 @media (max-width:330px){
@@ -1212,6 +1217,10 @@ img, .cover-img, .bcover-img {max-width:100%;height:auto;display:block}
   .editor-scr .hero-title{font-size:18px}
   .editor-scr .hero-author{font-size:11px}
   .editor-scr .cover-frame{width:clamp(70px,20vw,100px)}
+  
+  /* Meta panel adjustments for tiny phones */
+  .editor-scr.meta-open #metaPanel{max-height:55vh;bottom:calc(6px + var(--safe-bottom));left:8px;right:8px}
+  .editor-scr.meta-open #eScroll{padding-bottom:calc(80px + var(--safe-bottom))}
 }
 
 /* Enhanced tablet and mobile breakpoints */
