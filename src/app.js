@@ -549,6 +549,7 @@ async function processImportedEntries(entries) {
       'success'
     );
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error(e);
     showToast('Error processing files', 'error');
   } finally {
@@ -565,6 +566,7 @@ async function createBookFromSource(source) {
       const r = await fetch(source.uri);
       fileOrBlob = await r.blob();
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Failed to fetch blob for', source.name);
     }
   }
@@ -769,6 +771,7 @@ async function combineAudioBookEntry(entry) {
             new File([blob], part.name, { type: blob.type || 'audio/mp3' })
           );
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error('Failed to fetch part', part.name, e);
           throw new Error(`Failed to load ${part.name}`);
         }
@@ -809,6 +812,7 @@ async function combineAudioBookEntry(entry) {
     showToast('Merge complete!', 'success');
     return baseBook;
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Merge failed', e);
     showToast(`Merge failed: ${e.message}`, 'error');
     return null;
@@ -1216,6 +1220,7 @@ async function applyEditorSearchResult(result) {
       };
       reader.readAsDataURL(blob);
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.warn('Failed to fetch cover', e);
     }
   }
@@ -1473,6 +1478,7 @@ async function batchUpdateCovers() {
           });
         }
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Cover update failed for', book.title);
       }
     }
@@ -1863,6 +1869,7 @@ async function performSearch() {
         });
       });
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Search failed', e);
     elements.searchResults.innerHTML =
       '<p style="color: var(--error); padding: var(--spacing-md);">Error searching. Please try again.</p>';
@@ -1910,6 +1917,7 @@ async function createBookFromMetadata(metadata) {
       reader.readAsDataURL(blob);
       return; // Exit and let reader finish
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.warn('Failed to fetch cover during import', e);
     }
   }
