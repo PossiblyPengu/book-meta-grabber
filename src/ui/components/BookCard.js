@@ -24,8 +24,12 @@ export function BookCard(book, { selected = false, covers = {} } = {}) {
         ${progress}
       </div>
       <div class="book-card-info">
-        <div class="book-card-title">${escapeHtml(book.title || 'Untitled')}</div>
-        <div class="book-card-author">${escapeHtml(book.author || 'Unknown')}</div>
+        <div class="book-card-title">${escapeHtml(
+          book.title || 'Untitled'
+        )}</div>
+        <div class="book-card-author">${escapeHtml(
+          book.author || 'Unknown'
+        )}</div>
       </div>
     </div>
   `;

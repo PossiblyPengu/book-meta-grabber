@@ -3,7 +3,11 @@
     "allow": [
       "Bash(d:/CODE/book-meta-grabber/index.html:*)",
       "Bash(npx vite build)",
-      "Bash(timeout 5 npx vite)"
+      "Bash(timeout 5 npx vite)",
+      "Bash(npx eslint . --ext .js --fix)",
+      "Bash(npx prettier --write \"src/**/*.js\")",
+      "Bash(npx prettier --write src/main.js src/services/storage.js src/ui/components/CommandPalette.js)",
+      "Bash(npx eslint . --ext .js --max-warnings=0)"
     ]
   }
 }

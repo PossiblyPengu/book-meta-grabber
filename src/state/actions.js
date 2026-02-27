@@ -4,8 +4,14 @@ import { saveBooks, saveShelves, saveSettings } from '../services/storage.js';
 import { debounce } from '../utils/debounce.js';
 
 const debouncedSaveBooks = debounce(() => saveBooks(getState().books), 500);
-const debouncedSaveShelves = debounce(() => saveShelves(getState().shelves), 500);
-const debouncedSaveSettings = debounce(() => saveSettings(getState().settings), 500);
+const debouncedSaveShelves = debounce(
+  () => saveShelves(getState().shelves),
+  500
+);
+const debouncedSaveSettings = debounce(
+  () => saveSettings(getState().settings),
+  500
+);
 
 // ── Books ────────────────────────────────────────────────────────────────────
 
@@ -42,7 +48,9 @@ export function removeBooks(ids) {
   setState({
     books: books.filter((b) => !idSet.has(b.id)),
     shelves: shelves.map((s) =>
-      s.isSystem ? s : { ...s, bookIds: s.bookIds.filter((bid) => !idSet.has(bid)) }
+      s.isSystem
+        ? s
+        : { ...s, bookIds: s.bookIds.filter((bid) => !idSet.has(bid)) }
     ),
   });
   debouncedSaveBooks();
@@ -118,7 +126,10 @@ export function setView(view) {
 }
 
 export function setActiveShelf(shelfId) {
-  setState({ activeShelfId: shelfId, activeView: shelfId ? 'shelf' : 'library' });
+  setState({
+    activeShelfId: shelfId,
+    activeView: shelfId ? 'shelf' : 'library',
+  });
 }
 
 export function setFilter(format) {

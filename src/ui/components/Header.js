@@ -16,8 +16,12 @@ export function Header() {
         <span class="header-search-kbd">Ctrl+K</span>
       </div>
       <div class="header-actions">
-        <button class="btn-icon" data-action="toggle-sort" aria-label="Sort">${icons.sort}</button>
-        <button class="btn-icon" data-action="cycle-grid" aria-label="Grid size">${icons.grid}</button>
+        <button class="btn-icon" data-action="toggle-sort" aria-label="Sort">${
+          icons.sort
+        }</button>
+        <button class="btn-icon" data-action="cycle-grid" aria-label="Grid size">${
+          icons.grid
+        }</button>
         <button class="btn-icon" data-action="toggle-select" aria-label="Select mode"
           ${ui.selectMode ? 'style="color:var(--accent)"' : ''}>
           ${icons.check}

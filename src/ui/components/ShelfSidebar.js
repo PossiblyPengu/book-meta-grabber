@@ -7,10 +7,16 @@ export function ShelfSidebar() {
 
   const shelfItems = shelves
     .map((s) => {
-      const count = s.id === 'shelf-all' ? getState().books.length : getShelfBooks(s.id).length;
-      const active = activeShelfId === s.id || (!activeShelfId && s.id === 'shelf-all');
+      const count =
+        s.id === 'shelf-all'
+          ? getState().books.length
+          : getShelfBooks(s.id).length;
+      const active =
+        activeShelfId === s.id || (!activeShelfId && s.id === 'shelf-all');
       return `
-        <div class="shelf-item ${active ? 'active' : ''}" data-action="select-shelf" data-shelf-id="${s.id}">
+        <div class="shelf-item ${
+          active ? 'active' : ''
+        }" data-action="select-shelf" data-shelf-id="${s.id}">
           <span class="shelf-dot" style="background:${s.color}"></span>
           <span class="truncate">${s.name}</span>
           <span class="shelf-count">${count}</span>
@@ -35,11 +41,15 @@ export function ShelfSidebar() {
       </button>
 
       <div class="sidebar-nav">
-        <div class="nav-item ${activeView === 'search' ? 'active' : ''}" data-action="nav" data-view="search">
+        <div class="nav-item ${
+          activeView === 'search' ? 'active' : ''
+        }" data-action="nav" data-view="search">
           ${icons.search}
           <span>Discover</span>
         </div>
-        <div class="nav-item ${activeView === 'settings' ? 'active' : ''}" data-action="nav" data-view="settings">
+        <div class="nav-item ${
+          activeView === 'settings' ? 'active' : ''
+        }" data-action="nav" data-view="settings">
           ${icons.settings}
           <span>Settings</span>
         </div>

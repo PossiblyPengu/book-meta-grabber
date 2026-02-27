@@ -24,7 +24,7 @@ function setJSON(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    console.warn('localStorage write failed:', e);
+    void e; // localStorage write failed
   }
 }
 
@@ -55,7 +55,7 @@ export async function saveCover(bookId, base64, mime) {
       tx.onerror = rej;
     });
   } catch (e) {
-    console.warn('IndexedDB cover save failed:', e);
+    void e; // IndexedDB cover save failed
   }
 }
 
@@ -113,17 +113,43 @@ export function loadBooks() {
 
 export function saveBooks(books) {
   // Strip cover data from localStorage (stored in IndexedDB)
-  const stripped = books.map(({ coverBase64, coverMime, ...rest }) => rest);
+  const stripped = books.map(
+    ({ coverBase64: _cb, coverMime: _cm, ...rest }) => rest
+  );
   setJSON(BOOKS_KEY, stripped);
 }
 
 // ── Shelves ──────────────────────────────────────────────────────────────────
 
 const DEFAULT_SHELVES = [
-  { id: 'shelf-all', name: 'All Books', isSystem: true, bookIds: [], color: '#6b7280' },
-  { id: 'shelf-to-read', name: 'To Read', isSystem: true, bookIds: [], color: '#3b82f6' },
-  { id: 'shelf-reading', name: 'Reading', isSystem: true, bookIds: [], color: '#f59e0b' },
-  { id: 'shelf-finished', name: 'Finished', isSystem: true, bookIds: [], color: '#10b981' },
+  {
+    id: 'shelf-all',
+    name: 'All Books',
+    isSystem: true,
+    bookIds: [],
+    color: '#6b7280',
+  },
+  {
+    id: 'shelf-to-read',
+    name: 'To Read',
+    isSystem: true,
+    bookIds: [],
+    color: '#3b82f6',
+  },
+  {
+    id: 'shelf-reading',
+    name: 'Reading',
+    isSystem: true,
+    bookIds: [],
+    color: '#f59e0b',
+  },
+  {
+    id: 'shelf-finished',
+    name: 'Finished',
+    isSystem: true,
+    bookIds: [],
+    color: '#10b981',
+  },
 ];
 
 export function loadShelves() {

@@ -2,7 +2,16 @@
  * Browser-only file picker for books and audiobook folders.
  */
 
-const SUPPORTED_EXTS = new Set(['epub', 'pdf', 'mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus']);
+const SUPPORTED_EXTS = new Set([
+  'epub',
+  'pdf',
+  'mp3',
+  'm4b',
+  'm4a',
+  'flac',
+  'ogg',
+  'opus',
+]);
 const ACCEPT = '.epub,.pdf,.mp3,.m4b,.m4a,.flac,.ogg,.opus';
 
 function getFormat(name) {

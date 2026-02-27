@@ -13,11 +13,15 @@ export function SettingsView() {
         <div class="settings-row">
           <label>Theme</label>
           <div class="theme-toggle">
-            <button class="theme-toggle-btn ${settings.theme === 'light' ? 'active' : ''}"
+            <button class="theme-toggle-btn ${
+              settings.theme === 'light' ? 'active' : ''
+            }"
               data-action="set-theme" data-theme="light">
               ${icons.sun} Light
             </button>
-            <button class="theme-toggle-btn ${settings.theme === 'dark' ? 'active' : ''}"
+            <button class="theme-toggle-btn ${
+              settings.theme === 'dark' ? 'active' : ''
+            }"
               data-action="set-theme" data-theme="dark">
               ${icons.moon} Dark
             </button>
@@ -29,8 +33,12 @@ export function SettingsView() {
             ${['small', 'medium', 'large']
               .map(
                 (s) =>
-                  `<button class="theme-toggle-btn ${settings.gridSize === s ? 'active' : ''}"
-                    data-action="set-grid-size" data-size="${s}">${s[0].toUpperCase() + s.slice(1)}</button>`
+                  `<button class="theme-toggle-btn ${
+                    settings.gridSize === s ? 'active' : ''
+                  }"
+                    data-action="set-grid-size" data-size="${s}">${
+                    s[0].toUpperCase() + s.slice(1)
+                  }</button>`
               )
               .join('')}
           </div>
@@ -40,23 +48,33 @@ export function SettingsView() {
       <div class="settings-card">
         <h3>Library</h3>
         <div class="settings-btn-group">
-          <button class="btn" data-action="import-library">${icons.upload} Import Library</button>
-          <button class="btn" data-action="export-json">${icons.download} Export JSON</button>
-          <button class="btn" data-action="export-csv">${icons.download} Export CSV</button>
+          <button class="btn" data-action="import-library">${
+            icons.upload
+          } Import Library</button>
+          <button class="btn" data-action="export-json">${
+            icons.download
+          } Export JSON</button>
+          <button class="btn" data-action="export-csv">${
+            icons.download
+          } Export CSV</button>
         </div>
       </div>
 
       <div class="settings-card">
         <h3>Tools</h3>
         <div class="settings-btn-group">
-          <button class="btn" data-action="enrich-all">${icons.zap} Enrich All Books</button>
+          <button class="btn" data-action="enrich-all">${
+            icons.zap
+          } Enrich All Books</button>
         </div>
       </div>
 
       <div class="settings-card">
         <h3>Danger Zone</h3>
         <div class="settings-btn-group">
-          <button class="btn btn-danger" data-action="clear-library">${icons.trash} Clear All Books</button>
+          <button class="btn btn-danger" data-action="clear-library">${
+            icons.trash
+          } Clear All Books</button>
         </div>
       </div>
 

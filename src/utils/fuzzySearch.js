@@ -44,7 +44,13 @@ export function searchBooks(books, query) {
 
   return books
     .map((book) => {
-      const fields = [book.title, book.author, book.series, book.isbn, book.genre];
+      const fields = [
+        book.title,
+        book.author,
+        book.series,
+        book.isbn,
+        book.genre,
+      ];
       const best = Math.max(...fields.map((f) => fuzzyScore(q, f || '')));
       return { book, score: best };
     })

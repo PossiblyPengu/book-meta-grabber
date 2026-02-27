@@ -4,7 +4,7 @@ import { escapeHtml } from '../../utils/escapeHtml.js';
 import { icons } from '../icons.js';
 
 export function CommandPalette() {
-  const { ui, books } = getState();
+  const { ui } = getState();
   if (!ui.commandPaletteOpen) return '';
 
   return `
@@ -41,10 +41,16 @@ export function renderCommandPaletteResults(query) {
     html += matches
       .map(
         ({ book }) => `
-        <div class="command-palette-item" data-action="command-open-book" data-book-id="${book.id}">
+        <div class="command-palette-item" data-action="command-open-book" data-book-id="${
+          book.id
+        }">
           <span class="command-palette-item-icon">${icons.book}</span>
-          <span class="command-palette-item-text">${escapeHtml(book.title)}</span>
-          <span class="command-palette-item-hint">${escapeHtml(book.author || '')}</span>
+          <span class="command-palette-item-text">${escapeHtml(
+            book.title
+          )}</span>
+          <span class="command-palette-item-hint">${escapeHtml(
+            book.author || ''
+          )}</span>
         </div>`
       )
       .join('');
@@ -54,16 +60,24 @@ export function renderCommandPaletteResults(query) {
 
   if (isbnLike) {
     html += `
-      <div class="command-palette-item" data-action="command-isbn-lookup" data-isbn="${escapeHtml(query.trim())}">
+      <div class="command-palette-item" data-action="command-isbn-lookup" data-isbn="${escapeHtml(
+        query.trim()
+      )}">
         <span class="command-palette-item-icon">${icons.search}</span>
-        <span class="command-palette-item-text">Look up ISBN ${escapeHtml(query.trim())}</span>
+        <span class="command-palette-item-text">Look up ISBN ${escapeHtml(
+          query.trim()
+        )}</span>
       </div>`;
   }
 
   html += `
-    <div class="command-palette-item" data-action="command-search-apis" data-query="${escapeHtml(query)}">
+    <div class="command-palette-item" data-action="command-search-apis" data-query="${escapeHtml(
+      query
+    )}">
       <span class="command-palette-item-icon">${icons.search}</span>
-      <span class="command-palette-item-text">Search APIs for "${escapeHtml(query)}"</span>
+      <span class="command-palette-item-text">Search APIs for "${escapeHtml(
+        query
+      )}"</span>
     </div>`;
 
   return html;

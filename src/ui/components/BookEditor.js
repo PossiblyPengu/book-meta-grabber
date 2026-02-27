@@ -17,7 +17,9 @@ export function BookEditor(covers = {}) {
     ? `<img src="data:${cover.mime};base64,${cover.base64}" alt="">`
     : `<div class="book-card-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">${icons.image}</div>`;
 
-  const isAudio = ['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus'].includes(book.format);
+  const isAudio = ['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus'].includes(
+    book.format
+  );
 
   // Shelf pills
   const customShelves = shelves.filter((s) => !s.isSystem);
@@ -31,14 +33,22 @@ export function BookEditor(covers = {}) {
     .join('');
 
   return `
-    <div class="editor-overlay ${open ? 'open' : ''}" data-action="close-editor"></div>
+    <div class="editor-overlay ${
+      open ? 'open' : ''
+    }" data-action="close-editor"></div>
     <div class="editor-panel ${open ? 'open' : ''}">
       <div class="editor-header">
         <h2>Edit Metadata</h2>
         <div class="editor-header-actions">
-          <button class="btn" data-action="editor-search">${icons.search} Enrich</button>
-          <button class="btn btn-primary" data-action="editor-save">${icons.check} Save</button>
-          <button class="btn-icon" data-action="close-editor">${icons.x}</button>
+          <button class="btn" data-action="editor-search">${
+            icons.search
+          } Enrich</button>
+          <button class="btn btn-primary" data-action="editor-save">${
+            icons.check
+          } Save</button>
+          <button class="btn-icon" data-action="close-editor">${
+            icons.x
+          }</button>
         </div>
       </div>
       <div class="editor-body">
@@ -52,40 +62,56 @@ export function BookEditor(covers = {}) {
 
         <div class="editor-form-group">
           <label class="editor-label">Title</label>
-          <input class="editor-input" id="editTitle" value="${escapeHtml(book.title)}" placeholder="Book title">
+          <input class="editor-input" id="editTitle" value="${escapeHtml(
+            book.title
+          )}" placeholder="Book title">
         </div>
         <div class="editor-form-group">
           <label class="editor-label">Author</label>
-          <input class="editor-input" id="editAuthor" value="${escapeHtml(book.author)}" placeholder="Author name">
+          <input class="editor-input" id="editAuthor" value="${escapeHtml(
+            book.author
+          )}" placeholder="Author name">
         </div>
         <div class="editor-row">
           <div class="editor-form-group">
             <label class="editor-label">Narrator</label>
-            <input class="editor-input" id="editNarrator" value="${escapeHtml(book.narrator || '')}" placeholder="Narrator">
+            <input class="editor-input" id="editNarrator" value="${escapeHtml(
+              book.narrator || ''
+            )}" placeholder="Narrator">
           </div>
           <div class="editor-form-group">
             <label class="editor-label">Series</label>
-            <input class="editor-input" id="editSeries" value="${escapeHtml(book.series || '')}" placeholder="Series">
+            <input class="editor-input" id="editSeries" value="${escapeHtml(
+              book.series || ''
+            )}" placeholder="Series">
           </div>
         </div>
         <div class="editor-row">
           <div class="editor-form-group">
             <label class="editor-label">Year</label>
-            <input class="editor-input" id="editYear" value="${escapeHtml(book.year || '')}" placeholder="2024">
+            <input class="editor-input" id="editYear" value="${escapeHtml(
+              book.year || ''
+            )}" placeholder="2024">
           </div>
           <div class="editor-form-group">
             <label class="editor-label">Publisher</label>
-            <input class="editor-input" id="editPublisher" value="${escapeHtml(book.publisher || '')}" placeholder="Publisher">
+            <input class="editor-input" id="editPublisher" value="${escapeHtml(
+              book.publisher || ''
+            )}" placeholder="Publisher">
           </div>
         </div>
         <div class="editor-row">
           <div class="editor-form-group">
             <label class="editor-label">Genre</label>
-            <input class="editor-input" id="editGenre" value="${escapeHtml(book.genre || '')}" placeholder="Genre">
+            <input class="editor-input" id="editGenre" value="${escapeHtml(
+              book.genre || ''
+            )}" placeholder="Genre">
           </div>
           <div class="editor-form-group">
             <label class="editor-label">ISBN</label>
-            <input class="editor-input" id="editIsbn" value="${escapeHtml(book.isbn || '')}" placeholder="978-...">
+            <input class="editor-input" id="editIsbn" value="${escapeHtml(
+              book.isbn || ''
+            )}" placeholder="978-...">
           </div>
         </div>
         <div class="editor-form-group">
@@ -96,7 +122,9 @@ export function BookEditor(covers = {}) {
         </div>
         <div class="editor-form-group">
           <label class="editor-label">Description</label>
-          <textarea class="editor-textarea" id="editDescription" rows="4" placeholder="Description">${escapeHtml(book.description || '')}</textarea>
+          <textarea class="editor-textarea" id="editDescription" rows="4" placeholder="Description">${escapeHtml(
+            book.description || ''
+          )}</textarea>
         </div>
 
         ${
@@ -105,11 +133,15 @@ export function BookEditor(covers = {}) {
                <div class="editor-row">
                  <div class="editor-form-group">
                    <label class="editor-label">Duration</label>
-                   <input class="editor-input" id="editDuration" value="${escapeHtml(book.duration || '')}" readonly>
+                   <input class="editor-input" id="editDuration" value="${escapeHtml(
+                     book.duration || ''
+                   )}" readonly>
                  </div>
                  <div class="editor-form-group">
                    <label class="editor-label">Bitrate</label>
-                   <input class="editor-input" id="editBitrate" value="${escapeHtml(book.bitrate || '')}" readonly>
+                   <input class="editor-input" id="editBitrate" value="${escapeHtml(
+                     book.bitrate || ''
+                   )}" readonly>
                  </div>
                </div>`
             : ''
@@ -120,34 +152,52 @@ export function BookEditor(covers = {}) {
           <div class="editor-form-group">
             <label class="editor-label">Status</label>
             <select class="editor-select" id="editStatus">
-              <option value="unread" ${book.status === 'unread' ? 'selected' : ''}>Unread</option>
-              <option value="reading" ${book.status === 'reading' ? 'selected' : ''}>Reading</option>
-              <option value="finished" ${book.status === 'finished' ? 'selected' : ''}>Finished</option>
-              <option value="abandoned" ${book.status === 'abandoned' ? 'selected' : ''}>Abandoned</option>
+              <option value="unread" ${
+                book.status === 'unread' ? 'selected' : ''
+              }>Unread</option>
+              <option value="reading" ${
+                book.status === 'reading' ? 'selected' : ''
+              }>Reading</option>
+              <option value="finished" ${
+                book.status === 'finished' ? 'selected' : ''
+              }>Finished</option>
+              <option value="abandoned" ${
+                book.status === 'abandoned' ? 'selected' : ''
+              }>Abandoned</option>
             </select>
           </div>
           <div class="editor-form-group">
             <label class="editor-label">Progress (%)</label>
-            <input class="editor-input" id="editProgress" type="number" min="0" max="100" value="${book.progress || 0}">
+            <input class="editor-input" id="editProgress" type="number" min="0" max="100" value="${
+              book.progress || 0
+            }">
           </div>
         </div>
         <div class="editor-form-group">
           <label class="editor-label">Current Page / Chapter</label>
-          <input class="editor-input" id="editCurrentPage" value="${escapeHtml(book.currentPage || '')}" placeholder="Page 1">
+          <input class="editor-input" id="editCurrentPage" value="${escapeHtml(
+            book.currentPage || ''
+          )}" placeholder="Page 1">
         </div>
         <div class="editor-row">
           <div class="editor-form-group">
             <label class="editor-label">Started</label>
-            <input class="editor-input" id="editStartDate" type="date" value="${book.startDate || ''}">
+            <input class="editor-input" id="editStartDate" type="date" value="${
+              book.startDate || ''
+            }">
           </div>
           <div class="editor-form-group">
             <label class="editor-label">Finished</label>
-            <input class="editor-input" id="editFinishDate" type="date" value="${book.finishDate || ''}">
+            <input class="editor-input" id="editFinishDate" type="date" value="${
+              book.finishDate || ''
+            }">
           </div>
         </div>
         <div class="editor-form-group">
           <label class="editor-label">Notes</label>
-          <textarea class="editor-textarea" id="editNotes" rows="3" placeholder="Personal notes...">${escapeHtml(book.notes || '')}</textarea>
+          <textarea class="editor-textarea" id="editNotes" rows="3" placeholder="Personal notes...">${escapeHtml(
+            book.notes || ''
+          )}</textarea>
         </div>
 
         ${
@@ -163,11 +213,23 @@ export function BookEditor(covers = {}) {
 
 function langOptions(selected) {
   const langs = [
-    ['en', 'English'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'],
-    ['it', 'Italian'], ['pt', 'Portuguese'], ['ru', 'Russian'], ['ja', 'Japanese'],
-    ['zh', 'Chinese'], ['ko', 'Korean'], ['ar', 'Arabic'], ['hi', 'Hindi'],
+    ['en', 'English'],
+    ['es', 'Spanish'],
+    ['fr', 'French'],
+    ['de', 'German'],
+    ['it', 'Italian'],
+    ['pt', 'Portuguese'],
+    ['ru', 'Russian'],
+    ['ja', 'Japanese'],
+    ['zh', 'Chinese'],
+    ['ko', 'Korean'],
+    ['ar', 'Arabic'],
+    ['hi', 'Hindi'],
   ];
   return langs
-    .map(([v, l]) => `<option value="${v}" ${selected === v ? 'selected' : ''}>${l}</option>`)
+    .map(
+      ([v, l]) =>
+        `<option value="${v}" ${selected === v ? 'selected' : ''}>${l}</option>`
+    )
     .join('');
 }

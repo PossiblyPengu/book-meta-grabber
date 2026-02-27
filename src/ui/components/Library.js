@@ -40,6 +40,8 @@ export function Library(covers = {}) {
     ${FilterBar()}
     ${batchBar}
     ${noResults}
-    <div class="book-grid" data-size="${settings.gridSize || 'medium'}">${cards}</div>
+    <div class="book-grid" data-size="${
+      settings.gridSize || 'medium'
+    }">${cards}</div>
   `;
 }

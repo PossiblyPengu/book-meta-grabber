@@ -11,25 +11,50 @@ import './styles/utilities.css';
 
 import { initState, getState, setState, subscribe } from './state/store.js';
 import {
-  addBooks, updateBook, removeBooks, toggleFavorite,
-  createShelf, deleteShelf, addBooksToShelf, removeBooksFromShelf,
-  setView, setActiveShelf, setFilter, setSearchQuery, setSort,
-  openEditor, closeEditor, toggleSelectMode, toggleBookSelection,
-  clearSelection, openCommandPalette, closeCommandPalette,
-  setBulkEnrichment, updateSettings, toggleTheme,
+  addBooks,
+  updateBook,
+  removeBooks,
+  createShelf,
+  addBooksToShelf,
+  removeBooksFromShelf,
+  setView,
+  setActiveShelf,
+  setFilter,
+  setSearchQuery,
+  setSort,
+  openEditor,
+  closeEditor,
+  toggleSelectMode,
+  toggleBookSelection,
+  clearSelection,
+  openCommandPalette,
+  closeCommandPalette,
+  setBulkEnrichment,
+  updateSettings,
+  toggleTheme,
 } from './state/actions.js';
-import { getFilteredBooks, getBookById, getSelectedBooks } from './state/selectors.js';
-import { loadBooks, loadShelves, loadSettings, saveCover, getCover, getAllCovers, deleteCover } from './services/storage.js';
+import { getBookById } from './state/selectors.js';
+import {
+  loadBooks,
+  loadShelves,
+  loadSettings,
+  saveCover,
+  getAllCovers,
+  deleteCover,
+} from './services/storage.js';
 import { pickFiles, pickFolder } from './services/filePicker.js';
 import { extractMetadata } from './services/extractors.js';
 import {
-  fetchGoogleBooks, fetchOpenLibrary, fetchItunes, fetchMusicBrainz,
+  fetchGoogleBooks,
+  fetchOpenLibrary,
+  fetchItunes,
+  fetchMusicBrainz,
 } from './services/apis.js';
 import { enrichBooks, cancelEnrichment } from './services/enrichment.js';
 import { debounce } from './utils/debounce.js';
 
 import { App } from './ui/components/App.js';
-import { render, $ } from './ui/renderer.js';
+import { render } from './ui/renderer.js';
 import { renderCommandPaletteResults } from './ui/components/CommandPalette.js';
 import { showToast } from './ui/components/Toast.js';
 
@@ -51,7 +76,10 @@ async function init() {
     activeView: 'library',
     activeShelfId: null,
     filters: { format: 'all', query: '' },
-    sort: { by: settings.sortBy || 'addedAt', order: settings.sortOrder || 'desc' },
+    sort: {
+      by: settings.sortBy || 'addedAt',
+      order: settings.sortOrder || 'desc',
+    },
     settings,
     ui: {
       editorBookId: null,
@@ -73,7 +101,10 @@ async function init() {
 
   // Subscribe to all state changes → re-render
   subscribe('*', () => {
-    document.documentElement.setAttribute('data-theme', getState().settings.theme || 'dark');
+    document.documentElement.setAttribute(
+      'data-theme',
+      getState().settings.theme || 'dark'
+    );
     renderApp();
   });
 
@@ -107,7 +138,11 @@ function setupEvents() {
 
   root.addEventListener('click', (e) => {
     // Don't propagate from elements that request stop
-    if (e.target.closest('[data-stop-propagation]') && !e.target.closest('[data-action]')) return;
+    if (
+      e.target.closest('[data-stop-propagation]') &&
+      !e.target.closest('[data-action]')
+    )
+      return;
 
     const el = e.target.closest('[data-action]');
     if (!el) return;
@@ -121,7 +156,10 @@ function setupEvents() {
     if (el.dataset.action === 'search-input') {
       debouncedSearch(el.value);
     }
-    if (el.dataset.action === 'command-palette-search' || el.id === 'commandPaletteInput') {
+    if (
+      el.dataset.action === 'command-palette-search' ||
+      el.id === 'commandPaletteInput'
+    ) {
       const results = document.getElementById('commandPaletteResults');
       if (results) results.innerHTML = renderCommandPaletteResults(el.value);
     }
@@ -136,11 +174,13 @@ function setupEvents() {
 
 const debouncedSearch = debounce((query) => setSearchQuery(query), 200);
 
-async function handleAction(action, el, e) {
+async function handleAction(action, el, _e) {
   switch (action) {
     // ── Navigation ──
     case 'select-shelf':
-      setActiveShelf(el.dataset.shelfId === 'shelf-all' ? null : el.dataset.shelfId);
+      setActiveShelf(
+        el.dataset.shelfId === 'shelf-all' ? null : el.dataset.shelfId
+      );
       closeCommandPalette();
       break;
 
@@ -214,7 +254,9 @@ async function handleAction(action, el, e) {
     case 'change-cover': {
       const input = document.getElementById('coverFileInput');
       if (input) input.click();
-      input?.addEventListener('change', () => handleCoverChange(input), { once: true });
+      input?.addEventListener('change', () => handleCoverChange(input), {
+        once: true,
+      });
       break;
     }
 
@@ -249,7 +291,9 @@ async function handleAction(action, el, e) {
     case 'batch-shelf': {
       const shelfName = prompt('Shelf name:');
       if (shelfName) {
-        let shelf = getState().shelves.find((s) => s.name === shelfName && !s.isSystem);
+        let shelf = getState().shelves.find(
+          (s) => s.name === shelfName && !s.isSystem
+        );
         if (!shelf) shelf = createShelf(shelfName);
         addBooksToShelf(shelf.id, [...getState().ui.selectedBookIds]);
         showToast(`Added to "${shelfName}"`, 'success');
@@ -295,7 +339,10 @@ async function handleAction(action, el, e) {
       setView('search');
       setTimeout(() => {
         const input = document.getElementById('apiSearchInput');
-        if (input) { input.value = el.dataset.query; handleApiSearch(); }
+        if (input) {
+          input.value = el.dataset.query;
+          handleApiSearch();
+        }
       }, 50);
       break;
 
@@ -304,7 +351,10 @@ async function handleAction(action, el, e) {
       setView('search');
       setTimeout(() => {
         const input = document.getElementById('apiSearchInput');
-        if (input) { input.value = el.dataset.isbn; handleApiSearch(); }
+        if (input) {
+          input.value = el.dataset.isbn;
+          handleApiSearch();
+        }
       }, 50);
       break;
 
@@ -413,16 +463,26 @@ async function importFiles(items) {
           partCount: item.parts.length,
         });
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Extract failed for folder:', item.name, e);
-        bookEntries.push({ title: item.name, format: 'audiobook-folder', partCount: item.parts?.length || 0 });
+        bookEntries.push({
+          title: item.name,
+          format: 'audiobook-folder',
+          partCount: item.parts?.length || 0,
+        });
       }
     } else if (item.file) {
       try {
         const meta = await extractMetadata(item.file, item.name);
         bookEntries.push({ ...meta, fileName: item.name });
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Extract failed:', item.name, e);
-        bookEntries.push({ title: item.name, format: item.format, fileName: item.name });
+        bookEntries.push({
+          title: item.name,
+          format: item.format,
+          fileName: item.name,
+        });
       }
     }
   }
@@ -435,8 +495,15 @@ async function importFiles(items) {
   for (let i = 0; i < newBooks.length; i++) {
     const entry = bookEntries[i];
     if (entry.coverBase64) {
-      await saveCover(newBooks[i].id, entry.coverBase64, entry.coverMime || 'image/jpeg');
-      covers[newBooks[i].id] = { base64: entry.coverBase64, mime: entry.coverMime || 'image/jpeg' };
+      await saveCover(
+        newBooks[i].id,
+        entry.coverBase64,
+        entry.coverMime || 'image/jpeg'
+      );
+      covers[newBooks[i].id] = {
+        base64: entry.coverBase64,
+        mime: entry.coverMime || 'image/jpeg',
+      };
     }
   }
 
@@ -508,7 +575,8 @@ async function handleEditorSearch() {
   if (!container) return;
 
   if (results.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-muted);font-size:var(--text-sm)">No results found.</p>';
+    container.innerHTML =
+      '<p style="color:var(--text-muted);font-size:var(--text-sm)">No results found.</p>';
     return;
   }
 
@@ -531,11 +599,17 @@ async function handleEditorSearch() {
           data-narrator="${attr(r.narrator || '')}"
           data-cover-url="${attr(r.coverUrl || '')}">
           <div class="editor-search-result-cover">
-            ${r.coverUrl ? `<img src="${r.coverUrl}" alt="" loading="lazy">` : ''}
+            ${
+              r.coverUrl
+                ? `<img src="${r.coverUrl}" alt="" loading="lazy">`
+                : ''
+            }
           </div>
           <div class="editor-search-result-info">
             <div class="editor-search-result-title">${esc(r.title)}</div>
-            <div class="editor-search-result-meta">${esc(r.author)} ${r.year ? `(${esc(r.year)})` : ''}</div>
+            <div class="editor-search-result-meta">${esc(r.author)} ${
+          r.year ? `(${esc(r.year)})` : ''
+        }</div>
             <div class="editor-search-result-source">${esc(r.source)}</div>
           </div>
         </div>`
@@ -645,18 +719,20 @@ function handleAddSearchResult(index) {
   const r = searchState.results[index];
   if (!r) return;
 
-  const newBooks = addBooks([{
-    title: r.title,
-    author: r.author,
-    narrator: r.narrator || '',
-    publisher: r.publisher || '',
-    year: r.year || '',
-    isbn: r.isbn || '',
-    description: r.description || '',
-    genre: r.genre || '',
-    language: r.language || '',
-    format: 'manual',
-  }]);
+  const newBooks = addBooks([
+    {
+      title: r.title,
+      author: r.author,
+      narrator: r.narrator || '',
+      publisher: r.publisher || '',
+      year: r.year || '',
+      isbn: r.isbn || '',
+      description: r.description || '',
+      genre: r.genre || '',
+      language: r.language || '',
+      format: 'manual',
+    },
+  ]);
 
   // Fetch cover if available
   if (r.coverUrl && newBooks[0]) {
@@ -682,7 +758,10 @@ function handleAddSearchResult(index) {
 
 async function handleBulkEnrich(bookIds) {
   const books = bookIds.map((id) => getBookById(id)).filter(Boolean);
-  if (!books.length) { showToast('No books to enrich', 'info'); return; }
+  if (!books.length) {
+    showToast('No books to enrich', 'info');
+    return;
+  }
 
   await enrichBooks(books, {
     onProgress(p) {
@@ -730,9 +809,21 @@ function handleExport(bookIds = null, format = 'json') {
   let content, filename, mimeType;
 
   if (format === 'csv') {
-    const headers = ['title', 'author', 'format', 'year', 'publisher', 'isbn', 'genre', 'status', 'progress'];
+    const headers = [
+      'title',
+      'author',
+      'format',
+      'year',
+      'publisher',
+      'isbn',
+      'genre',
+      'status',
+      'progress',
+    ];
     const rows = toExport.map((b) =>
-      headers.map((h) => `"${String(b[h] || '').replace(/"/g, '""')}"`).join(',')
+      headers
+        .map((h) => `"${String(b[h] || '').replace(/"/g, '""')}"`)
+        .join(',')
     );
     content = [headers.join(','), ...rows].join('\n');
     filename = 'library.csv';
@@ -752,7 +843,10 @@ function handleExport(bookIds = null, format = 'json') {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-  showToast(`Exported ${toExport.length} book(s) as ${format.toUpperCase()}`, 'success');
+  showToast(
+    `Exported ${toExport.length} book(s) as ${format.toUpperCase()}`,
+    'success'
+  );
 }
 
 function handleImportLibrary() {
@@ -801,7 +895,16 @@ function setupDragDrop() {
 
     const files = [...(e.dataTransfer?.files || [])].filter((f) => {
       const ext = f.name.split('.').pop()?.toLowerCase();
-      return ['epub', 'pdf', 'mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus'].includes(ext);
+      return [
+        'epub',
+        'pdf',
+        'mp3',
+        'm4b',
+        'm4a',
+        'flac',
+        'ogg',
+        'opus',
+      ].includes(ext);
     });
 
     if (files.length > 0) {
@@ -820,7 +923,8 @@ function showDropZone() {
   if (document.querySelector('.drop-zone')) return;
   const dz = document.createElement('div');
   dz.className = 'drop-zone';
-  dz.innerHTML = '<span class="drop-zone-text">Drop files here to import</span>';
+  dz.innerHTML =
+    '<span class="drop-zone-text">Drop files here to import</span>';
   document.body.appendChild(dz);
 }
 
@@ -835,7 +939,9 @@ function setupKeyboard() {
     // Ctrl+K: Command palette
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      getState().ui.commandPaletteOpen ? closeCommandPalette() : openCommandPalette();
+      getState().ui.commandPaletteOpen
+        ? closeCommandPalette()
+        : openCommandPalette();
     }
 
     // Ctrl+N: Add files
@@ -870,7 +976,11 @@ function setupKeyboard() {
     }
 
     // Delete: Remove selected
-    if (e.key === 'Delete' && getState().ui.selectMode && getState().ui.selectedBookIds.size > 0) {
+    if (
+      e.key === 'Delete' &&
+      getState().ui.selectMode &&
+      getState().ui.selectedBookIds.size > 0
+    ) {
       const ids = [...getState().ui.selectedBookIds];
       if (confirm(`Delete ${ids.length} book(s)?`)) {
         removeBooks(ids);
@@ -885,17 +995,26 @@ function setupKeyboard() {
 
 function esc(s) {
   if (!s) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function attr(s) {
   if (!s) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 
 init().catch((e) => {
+  // eslint-disable-next-line no-console
   console.error('Init failed:', e);
   document.getElementById('app').innerHTML = `
     <div style="padding:40px;color:#f44;font-family:monospace">

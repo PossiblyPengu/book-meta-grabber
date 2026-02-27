@@ -30,9 +30,13 @@ export function BulkEnrichment() {
       <div class="enrichment-header">
         <div>
           <div class="enrichment-title">Enriching metadata...</div>
-          <div class="enrichment-subtitle">${e.completed} of ${e.total} books</div>
+          <div class="enrichment-subtitle">${e.completed} of ${
+    e.total
+  } books</div>
         </div>
-        <button class="btn" data-action="cancel-enrichment">${icons.x} Cancel</button>
+        <button class="btn" data-action="cancel-enrichment">${
+          icons.x
+        } Cancel</button>
       </div>
       <div class="enrichment-progress">
         <div class="enrichment-progress-fill" style="width:${pct}%"></div>

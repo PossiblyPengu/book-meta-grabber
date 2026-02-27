@@ -26,7 +26,10 @@ export function cancelEnrichment() {
  * @param {Function} opts.onBookUpdate - Called with (bookId, updates) to apply changes
  * @returns {Promise<{ updated, skipped, failed }>}
  */
-export async function enrichBooks(books, { overwrite = false, onProgress, onBookUpdate } = {}) {
+export async function enrichBooks(
+  books,
+  { overwrite = false, onProgress, onBookUpdate } = {}
+) {
   cancelled = false;
   const results = { updated: 0, skipped: 0, failed: 0 };
 
@@ -131,7 +134,17 @@ function pickBest(results, book) {
 
 function buildUpdates(book, match, overwrite) {
   const updates = {};
-  const fields = ['title', 'author', 'narrator', 'publisher', 'year', 'isbn', 'description', 'genre', 'language'];
+  const fields = [
+    'title',
+    'author',
+    'narrator',
+    'publisher',
+    'year',
+    'isbn',
+    'description',
+    'genre',
+    'language',
+  ];
 
   for (const field of fields) {
     const val = match[field];
