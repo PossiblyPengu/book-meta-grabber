@@ -1,9 +1,7 @@
 /* ===== PREMIUM DESIGN SYSTEM v3 ===== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 :root {
-  /* ── Color Palette ── */
+  /* -- Color Palette -- */
   --primary: #7c5cfc;
   --primary-dark: #6344e0;
   --primary-light: #a78bfa;
@@ -21,7 +19,7 @@
   --info: #60a5fa;
   --info-light: #93c5fd;
 
-  /* ── Backgrounds ── */
+  /* -- Backgrounds -- */
   --bg-primary: #0c0c18;
   --bg-secondary: #12122a;
   --bg-tertiary: #1a1a38;
@@ -31,33 +29,33 @@
   --surface-hover: rgba(40, 40, 85, 0.6);
   --surface-active: rgba(50, 50, 100, 0.6);
 
-  /* ── Text ── */
+  /* -- Text -- */
   --text-primary: #f0f0ff;
   --text-secondary: #a0a0c8;
   --text-muted: #6a6a90;
   --text-dim: #454568;
   --text-inverse: #0c0c18;
 
-  /* ── Borders ── */
+  /* -- Borders -- */
   --border: rgba(255, 255, 255, 0.07);
   --border-subtle: rgba(255, 255, 255, 0.04);
   --border-focus: var(--primary);
   --border-glow: rgba(124, 92, 252, 0.35);
 
-  /* ── Gradients ── */
+  /* -- Gradients -- */
   --gradient-primary: linear-gradient(135deg, #7c5cfc 0%, #a78bfa 50%, #c084fc 100%);
   --gradient-accent: linear-gradient(135deg, #38bdf8 0%, #7c5cfc 100%);
   --gradient-surface: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
   --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 252, 0.18) 0%, transparent 100%);
   --gradient-card: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
 
-  /* ── Safe Areas ── */
+  /* -- Safe Areas -- */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 
-  /* ── Spacing (8px base) ── */
+  /* -- Spacing (8px base) -- */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -65,15 +63,15 @@
   --spacing-xl: 40px;
   --spacing-2xl: 64px;
 
-  /* ── Touch ── */
+  /* -- Touch -- */
   --touch-min: 44px;
   --touch-comfortable: 48px;
 
-  /* ── Typography ── */
+  /* -- Typography -- */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
 
-  /* ── Shadows ── */
+  /* -- Shadows -- */
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.25);
   --shadow-sm: 0 2px 4px rgb(0 0 0 / 0.25), 0 1px 2px rgb(0 0 0 / 0.15);
   --shadow-md: 0 4px 12px rgb(0 0 0 / 0.35), 0 2px 4px rgb(0 0 0 / 0.2);
@@ -84,7 +82,7 @@
   --shadow-card: 0 2px 8px rgb(0 0 0 / 0.3), 0 0 1px rgb(0 0 0 / 0.2);
   --shadow-card-hover: 0 16px 40px rgb(0 0 0 / 0.45), 0 0 1px rgb(0 0 0 / 0.2), var(--shadow-glow);
 
-  /* ── Transitions ── */
+  /* -- Transitions -- */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-fast: 120ms var(--ease-out);
@@ -92,7 +90,7 @@
   --transition-slow: 350ms var(--ease-out);
   --transition-bounce: 500ms var(--ease-bounce);
 
-  /* ── Radii ── */
+  /* -- Radii -- */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -568,7 +566,7 @@ body::before {
 
 .book-card:hover::after { opacity: 1; }
 
-/* ── Cover ── */
+/* -- Cover -- */
 
 .book-cover {
   width: 72px;
@@ -595,7 +593,7 @@ body::before {
   transform: scale(1.04);
 }
 
-/* ── Info ── */
+/* -- Info -- */
 
 .book-info {
   flex: 1;
@@ -1410,7 +1408,7 @@ body::before {
 
 .editor-cover-btn svg { width: 14px; height: 14px; }
 
-/* ── Editor content & form ── */
+/* -- Editor content & form -- */
 
 .editor-content {
   flex: 1;
@@ -1466,7 +1464,7 @@ body::before {
   gap: 8px;
 }
 
-/* ── Editor search results ── */
+/* -- Editor search results -- */
 
 .editor-search-results {
   background: var(--surface);
@@ -1562,7 +1560,7 @@ body::before {
   white-space: nowrap;
 }
 
-/* ── Editor form ── */
+/* -- Editor form -- */
 
 .editor-form {
   display: flex;
@@ -1629,7 +1627,7 @@ body::before {
   background: white;
 }
 
-/* ── Responsive editor ── */
+/* -- Responsive editor -- */
 
 @media (max-width: 767px) {
   .editor-form-row { grid-template-columns: 1fr; }

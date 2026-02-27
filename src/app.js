@@ -3,6 +3,7 @@
  * Main application logic
  */
 
+import './styles.css';
 import { extractMetadata } from './extractors/index.js';
 import {
   fetchGoogleBooks,
