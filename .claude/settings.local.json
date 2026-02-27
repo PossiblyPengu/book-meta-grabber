@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(d:/CODE/book-meta-grabber/index.html:*)",
+      "Bash(npx vite build)",
+      "Bash(timeout 5 npx vite)"
+    ]
+  }
+}

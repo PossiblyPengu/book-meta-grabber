@@ -1,8 +1,8 @@
 {
   "name": "book-meta-grabber",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Web metadata + cover grabber for books and audiobooks",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev":        "vite",
     "build":      "vite build",
@@ -14,10 +14,9 @@
     "ci":         "npm run lint && npm run build"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.11.0",
-    "music-metadata-browser": "^2.5.10",
-    "pdfjs-dist": "^4.0.379",
     "jszip": "^3.10.1",
+    "pdfjs-dist": "^4.0.379",
+    "music-metadata-browser": "^2.5.10",
     "browser-id3-writer": "^4.0.0"
   },
   "devDependencies": {
