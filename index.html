@@ -2111,26 +2111,16 @@ html,body{
 .clean .cover-zoom{background:rgba(15,23,36,0.04)}
 .clean .backdrop{background:rgba(15,23,36,0.45)}
 </style>
-/* Mobile-only enforcement overrides */
+/* Mobile-only enforcement overrides - REMOVED to allow responsive design */
 <style>
-  /* Force the app to behave like a native mobile app */
-  html,body{height:100%;width:100%;}
   /* Editor overlay is full screen and scrolls normally */
   .editor-scr{position:fixed;inset:0;z-index:300;display:block;overflow-y:auto;background:var(--ct-bg, var(--g-bg));}
   .editor-scr.open{transform:none}
   /* Meta panel acts as a bottom sheet when toggled */
   #metaPanel{display:none;position:fixed;left:10px;right:10px;bottom:10px;margin:0;border-radius:12px;padding:12px 14px;max-height:70vh;overflow:auto;box-shadow:0 18px 48px rgba(0,0,0,0.28);z-index:450}
   .editor-scr.meta-open #metaPanel{display:block}
-  /* Ensure the library is a single column list */
-  .book-grid{display:flex;flex-direction:column;padding:12px;gap:12px}
-  .bcard{width:100%}
-  /* Bigger touch targets */
-  .ibtn, .gbtn, .tbtn{min-height:48px;padding:10px}
+  /* Tab bar respects safe areas */
   .tab-bar{left:0;right:0;width:100%;border-radius:0;height:var(--tab-h);padding-bottom:env(safe-area-inset-bottom,12px)}
-  /* Constrain width on large screens but keep mobile layout */
-  @media(min-width:700px){
-    body{max-width:460px;margin:0 auto}
-  }
 </style>
 <style>
 /* Standalone vs browser mode helper classes toggled by JS */
@@ -2471,13 +2461,78 @@ html.ios, html.ios body{overscroll-behavior-y:contain}
 
 <script>
 'use strict';
-// enable new clean theme by default
-document.documentElement.classList.add('clean');
+// enable new clean theme by default (but preserve mobile optimizations)
+// document.documentElement.classList.add('clean');
 // Ensure a known base history state for mobile PWA navigation
 try{ if(!history.state || history.state.page!=='library') history.replaceState({page:'library'}, '', location.pathname + location.search); }catch(e){}
 // ── State ────────────────────────────────────────────────────────────────────
 const S = {
-  library: [],
+  library: [
+    // Sample test data for mobile UI verification
+    {
+      id: 1,
+      fileName: 'The Great Gatsby.epub',
+      format: 'epub',
+      title: 'The Great Gatsby',
+      author: 'F. Scott Fitzgerald',
+      narrator: '',
+      series: '',
+      year: '1925',
+      publisher: 'Scribner',
+      genre: 'Classic Fiction',
+      isbn: '9780743273565',
+      description: 'A classic American novel set in the Jazz Age.',
+      language: 'en',
+      coverBase64: null,
+      coverMime: null,
+      duration: null,
+      bitrate: null,
+      sampleRate: null,
+      channels: null,
+    },
+    {
+      id: 2,
+      fileName: 'Atomic Habits.mp3',
+      format: 'mp3',
+      title: 'Atomic Habits',
+      author: 'James Clear',
+      narrator: 'James Clear',
+      series: '',
+      year: '2018',
+      publisher: 'Avery',
+      genre: 'Self-Help',
+      isbn: '9780735211292',
+      description: 'An easy & proven way to build good habits & break bad ones.',
+      language: 'en',
+      coverBase64: null,
+      coverMime: null,
+      duration: null,
+      bitrate: null,
+      sampleRate: null,
+      channels: null,
+    },
+    {
+      id: 3,
+      fileName: 'Design Patterns.pdf',
+      format: 'pdf',
+      title: 'Design Patterns',
+      author: 'Gang of Four',
+      narrator: '',
+      series: '',
+      year: '1994',
+      publisher: 'Addison-Wesley',
+      genre: 'Computer Science',
+      isbn: '9780201633610',
+      description: 'Elements of Reusable Object-Oriented Software.',
+      language: 'en',
+      coverBase64: null,
+      coverMime: null,
+      duration: null,
+      bitrate: null,
+      sampleRate: null,
+      channels: null,
+    }
+  ],
   activeIdx: -1,
   activeTab: 'Library',
   filterFmt: 'all',
