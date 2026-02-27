@@ -8,34 +8,50 @@
   <title>Book Meta Grabber</title>
   
   <style>
-    /* ===== MODERN DESIGN SYSTEM ===== */
+    /* ===== REFRESHED MODERN DESIGN SYSTEM ===== */
     
     :root {
-      /* Colors */
+      /* Enhanced Color Palette - Richer, more vibrant */
       --primary: #6366f1;
       --primary-dark: #4f46e5;
       --primary-light: #818cf8;
-      --secondary: #8b5cf6;
-      --success: #10b981;
+      --primary-glow: rgba(99, 102, 241, 0.4);
+      --secondary: #a855f7;
+      --secondary-light: #c084fc;
+      --success: #22c55e;
+      --success-light: #4ade80;
       --warning: #f59e0b;
+      --warning-light: #fbbf24;
       --error: #ef4444;
+      --error-light: #f87171;
+      --info: #3b82f6;
+      --info-light: #60a5fa;
       
-      /* Neutrals */
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --bg-tertiary: #334155;
-      --surface: #1e293b;
-      --surface-elevated: #334155;
+      /* Enhanced Backgrounds - More depth */
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --bg-tertiary: #252542;
+      --surface: #16162a;
+      --surface-elevated: #1e1e3a;
+      --surface-hover: #252550;
+      --surface-active: #2a2a5c;
       
-      /* Text */
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
+      /* Enhanced Text - Better contrast */
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1c0;
+      --text-muted: #6b6b8d;
+      --text-dim: #4a4a6a;
+      --text-inverse: #0f0f1a;
       
-      /* Borders */
-      --border: rgba(255, 255, 255, 0.1);
+      /* Enhanced Borders - Subtle depth */
+      --border: rgba(255, 255, 255, 0.08);
       --border-focus: var(--primary);
+      --border-glow: rgba(99, 102, 241, 0.3);
+      
+      /* Enhanced Gradients */
+      --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+      --gradient-surface: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+      --gradient-glow: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
       
       /* Safe Areas */
       --safe-top: env(safe-area-inset-top, 0px);
@@ -43,41 +59,47 @@
       --safe-left: env(safe-area-inset-left, 0px);
       --safe-right: env(safe-area-inset-right, 0px);
       
-      /* Spacing */
+      /* Enhanced Spacing - More breathing room */
       --spacing-xs: 4px;
       --spacing-sm: 8px;
-      --spacing-md: 16px;
-      --spacing-lg: 24px;
+      --spacing-md: 12px;
+      --spacing-lg: 20px;
       --spacing-xl: 32px;
+      --spacing-2xl: 48px;
       
       /* Touch Targets */
       --touch-min: 44px;
       --touch-comfortable: 48px;
       
-      /* Typography */
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      /* Enhanced Typography - Modern font stack */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+      --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       
-      /* Shadows */
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      /* Enhanced Shadows - Better depth perception */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+      --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 40px rgba(99, 102, 241, 0.1);
+      --shadow-inset: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
       
-      /* Transitions */
+      /* Enhanced Transitions - Smoother animations */
       --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-      --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-bounce: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
       
-      /* Border Radius */
-      --radius-sm: 6px;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --radius-xl: 16px;
+      /* Enhanced Border Radius - More modern */
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
       --radius-full: 9999px;
     }
     
-    /* ===== BASE STYLES ===== */
+    /* ===== BASE STYLES - Modernized ===== */
     
     * {
       box-sizing: border-box;
@@ -90,15 +112,262 @@
       -webkit-text-size-adjust: 100%;
       -moz-text-size-adjust: 100%;
       text-size-adjust: 100%;
+      scroll-behavior: smooth;
     }
     
     body {
       font-family: var(--font-sans);
       background: var(--bg-primary);
+      background-image: var(--gradient-glow);
       color: var(--text-primary);
-      line-height: 1.5;
+      line-height: 1.6;
       min-height: 100vh;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-full);
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-light);
+    }
+    
+    /* ===== ENHANCED LAYOUT COMPONENTS ===== */
+    
+    .app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
+      position: relative;
+    }
+    
+    .app::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-glow);
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .header {
+      background: var(--surface);
+      background-image: var(--gradient-surface);
+      border-bottom: 1px solid var(--border);
+      padding: var(--spacing-md) var(--spacing-lg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      text-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .main {
+      flex: 1;
+      padding: var(--spacing-lg);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      overflow-y: auto;
+    }
+    
+    /* ===== MODERN TAB BAR ===== */
+    
+    .tab-bar {
+      background: var(--surface);
+      background-image: var(--gradient-surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: var(--shadow-xl);
+      padding-bottom: var(--safe-bottom);
+    }
+    
+    .tab-button {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      min-height: var(--touch-comfortable);
+      transition: all var(--transition-bounce);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tab-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 60%;
+      height: 3px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      transition: transform var(--transition-bounce);
+    }
+    
+    .tab-button:hover {
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .tab-button.active {
+      color: var(--primary-light);
+    }
+    
+    .tab-button.active::before {
+      transform: translateX(-50%) scaleX(1);
+    }
+    
+    .tab-button.active .tab-icon {
+      filter: drop-shadow(0 0 8px var(--primary-glow));
+    }
+    
+    .tab-icon {
+      width: 24px;
+      height: 24px;
+      transition: all var(--transition-normal);
+    }
+    
+    .tab-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    
+    /* ===== MODERN BUTTONS ===== */
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: var(--touch-min);
+      transition: all var(--transition-normal);
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-surface);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+    
+    .btn:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+    }
+    
+    .btn:hover::before {
+      opacity: 1;
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-inset);
+    }
+    
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: white;
+      border-color: transparent;
+      box-shadow: var(--shadow-md), 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+    
+    .btn-primary:hover {
+      box-shadow: var(--shadow-lg), 0 0 30px rgba(99, 102, 241, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    .btn-icon {
+      padding: var(--spacing-sm);
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+    }
+    
+    .btn-icon svg {
+      width: 20px;
+      height: 20px;
     }
     
     /* ===== LAYOUT COMPONENTS ===== */
@@ -139,7 +408,284 @@
     
     .header-actions {
       display: flex;
+      align-items: center;
       gap: var(--spacing-sm);
+    }
+
+    .quick-search {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    #quickSearchInput {
+      width: 200px;
+      padding: var(--spacing-sm);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      transition: all var(--transition-fast);
+    }
+
+    #quickSearchInput:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .view-options {
+      display: flex;
+      gap: var(--spacing-xs);
+      padding: 0 var(--spacing-sm);
+      border-left: 1px solid var(--border);
+    }
+
+    /* ===== QOL FEATURES ===== */
+    
+    .stats-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: var(--spacing-sm) var(--spacing-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .stats-info {
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .quick-filters {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+
+    .quick-filter-btn {
+      padding: var(--spacing-xs) var(--spacing-sm);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .quick-filter-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .quick-filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Enhanced Grid Sizes */
+    .book-grid.grid-small {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+
+    .book-grid.grid-medium {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    .book-grid.grid-large {
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+
+    /* Compact View */
+    .book-grid.compact .book-card {
+      flex-direction: row;
+      height: auto;
+      padding: var(--spacing-sm);
+    }
+
+    .book-grid.compact .book-cover {
+      width: 40px;
+      height: 60px;
+      margin: 0;
+    }
+
+    .book-grid.compact .book-info {
+      flex: 1;
+      text-align: left;
+    }
+
+    .book-grid.compact .book-format {
+      position: static;
+      margin-left: var(--spacing-sm);
+    }
+
+    /* Sort Dropdown */
+    .sort-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      min-width: 200px;
+      display: none;
+    }
+
+    .sort-dropdown.active {
+      display: block;
+    }
+
+    .sort-option {
+      padding: var(--spacing-sm) var(--spacing-md);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sort-option:hover {
+      background: var(--surface-elevated);
+    }
+
+    .sort-option.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .sort-direction {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    /* Keyboard Shortcuts Help */
+    .shortcuts-help {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      z-index: 10000;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .shortcuts-help.active {
+      display: block;
+    }
+
+    .shortcuts-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .shortcuts-content {
+      padding: var(--spacing-lg);
+    }
+
+    .shortcut-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-sm) 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shortcut-item:last-child {
+      border-bottom: none;
+    }
+
+    .shortcut-key {
+      background: var(--surface-elevated);
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .shortcut-desc {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    /* Recent Searches */
+    .recent-searches {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .recent-searches.active {
+      display: block;
+    }
+
+    .recent-search-item {
+      padding: var(--spacing-sm) var(--spacing-md);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .recent-search-item:hover {
+      background: var(--surface-elevated);
+    }
+
+    .recent-search-text {
+      flex: 1;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .recent-search-remove {
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: var(--spacing-xs);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .recent-search-remove:hover {
+      background: var(--error);
+      color: white;
     }
     
     .main {
@@ -270,46 +816,98 @@
     
     .book-grid {
       display: grid;
-      gap: var(--spacing-md);
+      gap: var(--spacing-lg);
       grid-template-columns: 1fr;
+      padding-bottom: 80px;
     }
     
     .book-card {
       background: var(--surface);
+      background-image: var(--gradient-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: var(--spacing-md);
+      padding: var(--spacing-lg);
       display: flex;
-      gap: var(--spacing-md);
+      gap: var(--spacing-lg);
       cursor: pointer;
-      transition: all var(--transition-normal);
+      transition: all var(--transition-slow);
       position: relative;
       overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+    
+    .book-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+    
+    .book-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity var(--transition-slow);
+      pointer-events: none;
     }
     
     .book-card:hover {
-      background: var(--surface-elevated);
+      background: var(--surface-hover);
       border-color: var(--primary);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: var(--shadow-xl), var(--shadow-glow);
+    }
+    
+    .book-card:hover::before {
+      opacity: 1;
+    }
+    
+    .book-card:hover::after {
+      opacity: 1;
+    }
+    
+    .book-card:active {
+      transform: translateY(-2px) scale(1);
     }
     
     .book-cover {
-      width: 60px;
-      height: 80px;
+      width: 80px;
+      height: 110px;
       border-radius: var(--radius-md);
-      background: var(--bg-tertiary);
+      background: linear-gradient(135deg, var(--surface-elevated) 0%, var(--bg-tertiary) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+    
+    .book-cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+      pointer-events: none;
     }
     
     .book-cover img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform var(--transition-slow);
+    }
+    
+    .book-card:hover .book-cover img {
+      transform: scale(1.05);
     }
     
     .book-info {
@@ -318,67 +916,101 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      gap: var(--spacing-xs);
     }
     
     .book-title {
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 1.1rem;
       color: var(--text-primary);
-      margin-bottom: var(--spacing-xs);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      line-height: 1.3;
     }
     
     .book-author {
       color: var(--text-secondary);
-      font-size: 0.875rem;
+      font-size: 0.9rem;
+      font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     
-    .book-format {
-      position: absolute;
-      top: var(--spacing-sm);
-      right: var(--spacing-sm);
-      background: var(--primary);
-      color: white;
-      padding: 2px 6px;
-      border-radius: var(--radius-sm);
-      font-size: 0.625rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .book-progress-indicator {
-      position: absolute;
-      bottom: var(--spacing-xs);
-      right: var(--spacing-xs);
-      background: var(--success);
-      color: white;
-      padding: 2px 6px;
-      border-radius: var(--radius-full);
-      font-size: 0.625rem;
-      font-weight: 600;
-    }
-
-    .book-status {
+    .book-meta {
+      display: flex;
+      gap: var(--spacing-sm);
       margin-top: var(--spacing-xs);
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      font-weight: 500;
     }
     
-    /* ===== FILTER BAR ===== */
+    .book-format {
+      background: var(--gradient-primary);
+      color: white;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+    
+    .book-status-badge {
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .book-status-unread {
+      background: var(--surface-elevated);
+      color: var(--text-muted);
+    }
+    
+    .book-status-reading {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--info-light);
+    }
+    
+    .book-status-finished {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success-light);
+    }
+    
+    .book-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--surface-elevated);
+      border-radius: var(--radius-full);
+      margin-top: var(--spacing-sm);
+      overflow: hidden;
+    }
+    
+    .book-progress-fill {
+      height: 100%;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      transition: width var(--transition-slow);
+    }
+    
+    /* ===== MODERN FILTER BAR ===== */
     
     .filter-bar {
       display: flex;
       gap: var(--spacing-sm);
-      padding: var(--spacing-md);
+      padding: var(--spacing-lg);
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       -ms-overflow-style: none;
+      background: var(--surface);
+      background-image: var(--gradient-surface);
+      border-bottom: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-lg);
     }
     
     .filter-bar::-webkit-scrollbar {
@@ -388,30 +1020,71 @@
     .filter-chip {
       display: inline-flex;
       align-items: center;
-      padding: var(--spacing-xs) var(--spacing-md);
-      background: var(--surface);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--surface-elevated);
       border: 1px solid var(--border);
       border-radius: var(--radius-full);
       color: var(--text-secondary);
-      font-size: 0.875rem;
-      font-weight: 500;
+      font-size: 0.85rem;
+      font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      transition: all var(--transition-fast);
+      transition: all var(--transition-normal);
+      position: relative;
+      overflow: hidden;
     }
     
     .filter-chip:hover {
-      background: var(--surface-elevated);
+      background: var(--surface-hover);
       border-color: var(--primary);
       color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
     
     .filter-chip.active {
-      background: var(--primary);
-      border-color: var(--primary);
+      background: var(--gradient-primary);
+      border-color: transparent;
       color: white;
+      box-shadow: var(--shadow-glow);
     }
-
+    
+    /* ===== MODERN EMPTY STATE ===== */
+    
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-2xl) var(--spacing-lg);
+      color: var(--text-muted);
+      background: var(--surface);
+      background-image: var(--gradient-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      margin: var(--spacing-lg);
+    }
+    
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto var(--spacing-lg);
+      opacity: 0.5;
+      filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.2));
+    }
+    
+    .empty-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+      color: var(--text-secondary);
+    }
+    
+    .empty-description {
+      margin-bottom: var(--spacing-lg);
+      line-height: 1.7;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
     /* ===== BATCH OPERATIONS ===== */
     
     .batch-actions {
@@ -997,8 +1670,46 @@
       <div class="header-content">
         <h1 class="title">Book Meta Grabber</h1>
         <div class="header-actions">
+          <!-- Quick Search Bar -->
+          <div class="quick-search" id="quickSearch">
+            <input 
+              type="search" 
+              id="quickSearchInput"
+              placeholder="Quick search... (Ctrl+K)"
+              style="display: none;"
+            >
+            <button class="btn btn-icon" id="quickSearchBtn" aria-label="Quick Search">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- View Options -->
+          <div class="view-options">
+            <button class="btn btn-icon" id="sortBtn" aria-label="Sort">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 6h18M7 12h10m-7 6h14"/>
+              </svg>
+            </button>
+            <button class="btn btn-icon" id="gridSizeBtn" aria-label="Grid Size">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            </button>
+            <button class="btn btn-icon" id="viewModeBtn" aria-label="View Mode">
+              <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+              </svg>
+            </button>
+          </div>
+          
           <button class="btn btn-icon" id="searchBtn" aria-label="Search">
-            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <circle cx="11" cy="11" r="8"/>
               <path d="m21 21-4.35-4.35"/>
             </svg>
@@ -1017,6 +1728,42 @@
     <main class="main">
       <!-- Library Tab -->
       <div class="tab-screen active" id="libraryTab">
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+          <div class="stats-info">
+            <div class="stat-item">
+              <span>Total Books:</span>
+              <span class="stat-value" id="totalBooks">0</span>
+            </div>
+            <div class="stat-item">
+              <span>Reading:</span>
+              <span class="stat-value" id="readingCount">0</span>
+            </div>
+            <div class="stat-item">
+              <span>Finished:</span>
+              <span class="stat-value" id="finishedCount">0</span>
+            </div>
+          </div>
+          <div class="quick-filters">
+            <button class="quick-filter-btn" data-filter="favorites">⭐ Favorites</button>
+            <button class="quick-filter-btn" data-filter="recent">🕐 Recent</button>
+            <button class="quick-filter-btn" data-filter="unfinished">📖 Unfinished</button>
+            <button class="quick-filter-btn" id="shortcutsHelpBtn">⌨️ Shortcuts</button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <button class="filter-chip active" data-format="all">All</button>
+          <button class="filter-chip" data-format="epub">EPUB</button>
+          <button class="filter-chip" data-format="pdf">PDF</button>
+          <button class="filter-chip" data-format="mp3">MP3</button>
+          <button class="filter-chip" data-format="m4b">M4B</button>
+          <button class="filter-chip" data-format="flac">FLAC</button>
+          <button class="filter-chip" data-format="ogg">OGG</button>
+          <button class="filter-chip" id="selectModeBtn">Select</button>
+        </div>
+
         <!-- Batch Actions Bar -->
         <div class="batch-actions" id="batchActions" style="display: none;">
           <div class="batch-info">
@@ -1035,21 +1782,85 @@
           </button>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-          <button class="filter-chip active" data-format="all">All</button>
-          <button class="filter-chip" data-format="epub">EPUB</button>
-          <button class="filter-chip" data-format="pdf">PDF</button>
-          <button class="filter-chip" data-format="mp3">MP3</button>
-          <button class="filter-chip" data-format="m4b">M4B</button>
-          <button class="filter-chip" data-format="flac">FLAC</button>
-          <button class="filter-chip" data-format="ogg">OGG</button>
-          <button class="filter-chip" id="selectModeBtn">Select</button>
-        </div>
-
         <!-- Book Grid -->
         <div class="book-grid" id="bookGrid">
           <!-- Books will be rendered here -->
+        </div>
+
+        <!-- Sort Dropdown -->
+        <div class="sort-dropdown" id="sortDropdown">
+          <div class="sort-option" data-sort="title">
+            <span>Title</span>
+            <span class="sort-direction" id="titleDirection">↕</span>
+          </div>
+          <div class="sort-option" data-sort="author">
+            <span>Author</span>
+            <span class="sort-direction" id="authorDirection">↕</span>
+          </div>
+          <div class="sort-option" data-sort="addedDate">
+            <span>Date Added</span>
+            <span class="sort-direction" id="addedDateDirection">↕</span>
+          </div>
+          <div class="sort-option" data-sort="progress">
+            <span>Progress</span>
+            <span class="sort-direction" id="progressDirection">↕</span>
+          </div>
+          <div class="sort-option" data-sort="year">
+            <span>Year</span>
+            <span class="sort-direction" id="yearDirection">↕</span>
+          </div>
+        </div>
+
+        <!-- Recent Searches Dropdown -->
+        <div class="recent-searches" id="recentSearches">
+          <!-- Recent searches will appear here -->
+        </div>
+
+        <!-- Keyboard Shortcuts Help -->
+        <div class="shortcuts-help" id="shortcutsHelp">
+          <div class="shortcuts-header">
+            <h3>Keyboard Shortcuts</h3>
+            <button class="btn btn-icon" id="closeShortcutsHelp">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="shortcuts-content">
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Quick Search</span>
+              <span class="shortcut-key">Ctrl+K</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Add Book</span>
+              <span class="shortcut-key">Ctrl+N</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Export Library</span>
+              <span class="shortcut-key">Ctrl+E</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Filter Library</span>
+              <span class="shortcut-key">Ctrl+F</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Toggle Dark Mode</span>
+              <span class="shortcut-key">Ctrl+D</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Save Current</span>
+              <span class="shortcut-key">Ctrl+S</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Close Modal</span>
+              <span class="shortcut-key">Escape</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Delete Selected</span>
+              <span class="shortcut-key">Delete</span>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -1381,12 +2192,35 @@
       filterFormat: 'all',
       settings: {
         gdriveClientId: '',
-        autoFetch: true,
-        theme: 'dark'
+        theme: 'dark',
+        // QOL Settings
+        autoSave: true,
+        showProgress: true,
+        compactView: false,
+        sortBy: 'addedDate', // 'title', 'author', 'addedDate', 'progress'
+        sortOrder: 'desc', // 'asc', 'desc'
+        keyboardShortcuts: true,
+        animations: true,
+        gridSize: 'medium' // 'small', 'medium', 'large'
       },
       currentEditingBook: null,
       selectMode: false,
-      selectedBooks: new Set()
+      selectedBooks: new Set(),
+      // QOL State
+      searchQuery: '',
+      recentSearches: [],
+      favorites: new Set(),
+      lastViewedBook: null,
+      shortcuts: {
+        'Ctrl+K': 'openSearch',
+        'Ctrl+N': 'addBook',
+        'Ctrl+E': 'exportLibrary',
+        'Ctrl+F': 'filterLibrary',
+        'Escape': 'closeModal',
+        'Ctrl+D': 'toggleDarkMode',
+        'Ctrl+S': 'saveCurrent',
+        'Delete': 'deleteSelected'
+      }
     };
 
     // ===== DOM REFERENCES =====
@@ -2901,6 +3735,91 @@
 
     // ===== ENHANCED BOOK MANAGEMENT =====
     async function addBook() {
+      // Show import options dialog
+      const importMode = await showImportOptionsDialog();
+      if (!importMode) return;
+      
+      if (importMode === 'single') {
+        await handleSingleFileImport();
+      } else if (importMode === 'multi') {
+        await handleMultiFileImport();
+      }
+    }
+
+    async function showImportOptionsDialog() {
+      return new Promise((resolve) => {
+        // Create modal dialog
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-lg);
+          max-width: 400px;
+          width: 90%;
+        `;
+        
+        dialog.innerHTML = `
+          <h3 style="margin-bottom: var(--spacing-md); color: var(--text-primary);">Import Books</h3>
+          <p style="margin-bottom: var(--spacing-lg); color: var(--text-secondary);">
+            How would you like to import your files?
+          </p>
+          <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+            <button class="btn btn-primary" id="singleImportBtn">
+              📁 Single Files (Separate Books)
+            </button>
+            <button class="btn" id="multiImportBtn">
+              📚 Multiple Files (Combine into Books)
+            </button>
+            <button class="btn" id="cancelImportBtn" style="background: var(--surface-elevated);">
+              Cancel
+            </button>
+          </div>
+        `;
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        // Event listeners
+        document.getElementById('singleImportBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve('single');
+        });
+        
+        document.getElementById('multiImportBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve('multi');
+        });
+        
+        document.getElementById('cancelImportBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve(null);
+        });
+        
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            document.body.removeChild(modal);
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    async function handleSingleFileImport() {
       const input = document.createElement('input');
       input.type = 'file';
       input.multiple = true;
@@ -2910,60 +3829,534 @@
         const files = Array.from(e.target.files);
         if (!files.length) return;
         
-        showToast('Processing files...', 'info');
-        
-        for (const file of files) {
-          try {
-            // Extract metadata from file
-            const book = await extractMetadata(file);
-            
-            // Try to fetch external metadata if auto-fetch is enabled
-            if (state.settings.autoFetch && book.title) {
-              try {
-                const externalResults = await fetchExternalMetadata(book.title, book.author);
-                if (externalResults.length > 0) {
-                  const bestMatch = externalResults[0]; // Use first result for now
-                  Object.assign(book, {
-                    title: bestMatch.title || book.title,
-                    author: bestMatch.author || book.author,
-                    publisher: bestMatch.publisher || book.publisher,
-                    year: bestMatch.year || book.year,
-                    genre: bestMatch.genre || book.genre,
-                    isbn: bestMatch.isbn || book.isbn,
-                    description: bestMatch.description || book.description
-                  });
-                  
-                  // Fetch cover if available
-                  if (bestMatch.coverUrl && !book.coverBase64) {
-                    try {
-                      const coverResponse = await fetch(bestMatch.coverUrl);
-                      const coverBlob = await coverResponse.blob();
-                      const coverBase64 = await blobToBase64(coverBlob);
-                      book.coverBase64 = coverBase64.split(',')[1];
-                      book.coverMime = coverBlob.type;
-                    } catch (coverError) {
-                      console.warn('Cover fetch failed:', coverError);
-                    }
-                  }
-                }
-              } catch (apiError) {
-                console.warn('External metadata fetch failed:', apiError);
-              }
-            }
-            
-            state.books.unshift(book);
-          } catch (fileError) {
-            console.error('File processing failed:', fileError);
-            showToast(`Failed to process ${file.name}`, 'error');
-          }
-        }
-        
-        renderBooks();
-        saveState();
-        showToast(`Added ${files.length} book${files.length > 1 ? 's' : ''}`, 'success');
+        await processFilesAsSeparateBooks(files);
       };
       
       input.click();
+    }
+
+    async function handleMultiFileImport() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = '.epub,.pdf,.mp3,.m4b,.m4a,.flac,.ogg,.opus';
+      input.webkitdirectory = true; // Enable directory selection on supported browsers
+      
+      input.onchange = async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        
+        // Group files by potential books
+        const bookGroups = groupFilesIntoBooks(files);
+        
+        if (bookGroups.length === 1) {
+          // Single book with multiple parts
+          await processMultiPartBook(bookGroups[0]);
+        } else {
+          // Multiple books
+          await processMultipleBooks(bookGroups);
+        }
+      };
+      
+      input.click();
+    }
+
+    function groupFilesIntoBooks(files) {
+      // Sort files by name to ensure proper order
+      const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name));
+      
+      const groups = [];
+      const audioFormats = ['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus'];
+      
+      // Try to group by directory or similar naming patterns
+      const fileGroups = {};
+      
+      for (const file of sortedFiles) {
+        const format = file.name.split('.').pop().toLowerCase();
+        const isAudio = audioFormats.includes(format);
+        
+        let groupKey;
+        
+        if (isAudio) {
+          // For audio files, try to group by similar base names
+          const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/(\d+)$/, '').trim();
+          groupKey = baseName;
+        } else {
+          // For non-audio files, each file is its own book
+          groupKey = file.name;
+        }
+        
+        if (!fileGroups[groupKey]) {
+          fileGroups[groupKey] = [];
+        }
+        fileGroups[groupKey].push(file);
+      }
+      
+      // Convert to book groups
+      for (const [key, groupFiles] of Object.entries(fileGroups)) {
+        if (groupFiles.length === 1) {
+          // Single file book
+          groups.push({
+            type: 'single',
+            files: groupFiles,
+            title: extractTitleFromFiles(groupFiles)
+          });
+        } else {
+          // Multi-part book
+          groups.push({
+            type: 'multipart',
+            files: groupFiles,
+            title: extractTitleFromFiles(groupFiles)
+          });
+        }
+      }
+      
+      return groups;
+    }
+
+    function extractTitleFromFiles(files) {
+      if (files.length === 1) {
+        return files[0].name.replace(/\.[^/.]+$/, '');
+      }
+      
+      // Find common prefix in all filenames
+      const names = files.map(f => f.name.replace(/\.[^/.]+$/, ''));
+      const firstWords = names[0].split(' ').slice(0, 3).join(' ');
+      
+      // Check if this prefix is common to all files
+      const commonPrefix = names.reduce((prefix, name) => {
+        let common = '';
+        for (let i = 0; i < Math.min(prefix.length, name.length); i++) {
+          if (prefix[i] === name[i]) {
+            common += prefix[i];
+          } else {
+            break;
+          }
+        }
+        return common;
+      });
+      
+      // Clean up the common prefix
+      const cleanedPrefix = commonPrefix.replace(/[_-]+$/, '').trim();
+      return cleanedPrefix || firstWords;
+    }
+
+    async function processFilesAsSeparateBooks(files) {
+      showToast('Processing files and fetching metadata...', 'info');
+      
+      const processedBooks = [];
+      
+      for (const file of files) {
+        try {
+          const book = await extractMetadata(file);
+          
+          // Fetch external metadata
+          if (book.title) {
+            const externalResults = await fetchExternalMetadata(book.title, book.author);
+            if (externalResults.length > 0) {
+              const bestMatch = findBestMetadataMatch(externalResults, book);
+              if (bestMatch) {
+                await applyExternalMetadata(book, bestMatch);
+              }
+            }
+          }
+          
+          processedBooks.push(book);
+        } catch (error) {
+          console.error('File processing failed:', error);
+          showToast(`Failed to process ${file.name}`, 'error');
+        }
+      }
+      
+      state.books.unshift(...processedBooks);
+      renderBooks();
+      saveState();
+      showToast(`Added ${processedBooks.length} separate book${processedBooks.length > 1 ? 's' : ''}`, 'success');
+    }
+
+    async function processMultiPartBook(bookGroup) {
+      showToast(`Processing multi-part book: ${bookGroup.title}`, 'info');
+      
+      try {
+        // Check if user wants to combine or keep separate
+        const shouldCombine = await askCombineOption(bookGroup);
+        
+        if (shouldCombine) {
+          const combinedBook = await combineAudioFiles(bookGroup);
+          if (combinedBook) {
+            state.books.unshift(combinedBook);
+            renderBooks();
+            saveState();
+            showToast(`Created combined audiobook: ${combinedBook.title}`, 'success');
+          }
+        } else {
+          // Process as separate parts
+          await processFilesAsSeparateBooks(bookGroup.files);
+        }
+      } catch (error) {
+        console.error('Multi-part book processing failed:', error);
+        showToast('Failed to process multi-part book', 'error');
+      }
+    }
+
+    async function processMultipleBooks(bookGroups) {
+      showToast(`Processing ${bookGroups.length} book groups...`, 'info');
+      
+      const allProcessedBooks = [];
+      
+      for (const group of bookGroups) {
+        if (group.type === 'multipart') {
+          const shouldCombine = await askCombineOption(group);
+          if (shouldCombine) {
+            try {
+              const combinedBook = await combineAudioFiles(group);
+              if (combinedBook) {
+                allProcessedBooks.push(combinedBook);
+              }
+            } catch (error) {
+              console.error('Failed to combine:', group.title);
+              // Fall back to separate processing
+              const separateBooks = await processGroupAsSeparate(group);
+              allProcessedBooks.push(...separateBooks);
+            }
+          } else {
+            const separateBooks = await processGroupAsSeparate(group);
+            allProcessedBooks.push(...separateBooks);
+          }
+        } else {
+          // Single file
+          try {
+            const book = await extractMetadata(group.files[0]);
+            if (book.title) {
+              const externalResults = await fetchExternalMetadata(book.title, book.author);
+              if (externalResults.length > 0) {
+                const bestMatch = findBestMetadataMatch(externalResults, book);
+                if (bestMatch) {
+                  await applyExternalMetadata(book, bestMatch);
+                }
+              }
+            }
+            allProcessedBooks.push(book);
+          } catch (error) {
+            console.error('Failed to process:', group.files[0].name);
+          }
+        }
+      }
+      
+      state.books.unshift(...allProcessedBooks);
+      renderBooks();
+      saveState();
+      showToast(`Added ${allProcessedBooks.length} book${allProcessedBooks.length > 1 ? 's' : ''}`, 'success');
+    }
+
+    async function askCombineOption(bookGroup) {
+      return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-lg);
+          max-width: 450px;
+          width: 90%;
+        `;
+        
+        const fileCount = bookGroup.files.length;
+        const totalSize = bookGroup.files.reduce((sum, file) => sum + file.size, 0);
+        const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+        
+        dialog.innerHTML = `
+          <h3 style="margin-bottom: var(--spacing-md); color: var(--text-primary);">Multi-Part Book Detected</h3>
+          <div style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">
+            <p><strong>${bookGroup.title}</strong></p>
+            <p>Found ${fileCount} audio files (${sizeMB} MB total)</p>
+            <p>Would you like to combine them into a single file or keep them separate?</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+            <button class="btn btn-primary" id="combineBtn">
+              🔗 Combine into Single File
+            </button>
+            <button class="btn" id="separateBtn">
+              📁 Keep as Separate Files
+            </button>
+            <button class="btn" id="cancelBtn" style="background: var(--surface-elevated);">
+              Cancel
+            </button>
+          </div>
+        `;
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        document.getElementById('combineBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve(true);
+        });
+        
+        document.getElementById('separateBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve(false);
+        });
+        
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+          resolve(null);
+        });
+        
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            document.body.removeChild(modal);
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    async function combineAudioFiles(bookGroup) {
+      try {
+        // Load FFmpeg
+        const { createFFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.0/dist/esm/index.js');
+        const ffmpeg = createFFmpeg({ log: true });
+        
+        showToast('Loading audio processing tools...', 'info');
+        await ffmpeg.load();
+        
+        // Create temporary file names
+        const inputFiles = bookGroup.files.map((file, index) => `input${index}.${file.name.split('.').pop()}`);
+        const outputFile = `${bookGroup.title.replace(/[^a-zA-Z0-9]/g, '_')}_combined.m4b`;
+        
+        showToast('Combining audio files...', 'info');
+        
+        // Write all input files to FFmpeg virtual file system
+        for (let i = 0; i < bookGroup.files.length; i++) {
+          const file = bookGroup.files[i];
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          await ffmpeg.writeFile(inputFiles[i], uint8Array);
+        }
+        
+        // Create concat list file
+        const concatList = inputFiles.map(file => `file '${file}'`).join('\n');
+        await ffmpeg.writeFile('concat_list.txt', concatList);
+        
+        // Run FFmpeg to combine files
+        await ffmpeg.exec([
+          '-f', 'concat',
+          '-safe', '0',
+          '-i', 'concat_list.txt',
+          '-c', 'copy',
+          outputFile
+        ]);
+        
+        // Read the combined file
+        const combinedData = await ffmpeg.readFile(outputFile);
+        const combinedBlob = new Blob([combinedData], { type: 'audio/m4b' });
+        
+        // Create a new file object for the combined audiobook
+        const combinedFile = new File([combinedBlob], outputFile, { type: 'audio/m4b' });
+        
+        // Extract metadata from the first file (or create enhanced metadata)
+        const baseBook = await extractMetadata(bookGroup.files[0]);
+        baseBook.title = bookGroup.title;
+        baseBook.fileName = outputFile;
+        baseBook.file = combinedFile;
+        baseBook.format = 'm4b';
+        
+        // Calculate total duration
+        let totalDuration = 0;
+        for (const file of bookGroup.files) {
+          const book = await extractMetadata(file);
+          if (book.duration) {
+            totalDuration += book.duration;
+          }
+        }
+        baseBook.duration = totalDuration;
+        
+        // Mark as combined audiobook
+        baseBook.combined = true;
+        baseBook.partCount = bookGroup.files.length;
+        baseBook.originalFiles = bookGroup.files.map(f => f.name);
+        
+        // Fetch external metadata for the combined book
+        if (baseBook.title) {
+          const externalResults = await fetchExternalMetadata(baseBook.title, baseBook.author);
+          if (externalResults.length > 0) {
+            const bestMatch = findBestMetadataMatch(externalResults, baseBook);
+            if (bestMatch) {
+              await applyExternalMetadata(baseBook, bestMatch);
+            }
+          }
+        }
+        
+        showToast(`Successfully combined ${bookGroup.files.length} files`, 'success');
+        return baseBook;
+        
+      } catch (error) {
+        console.error('Audio combination failed:', error);
+        showToast('Failed to combine audio files. Keeping them separate.', 'error');
+        return null;
+      }
+    }
+
+    async function processGroupAsSeparate(group) {
+      const books = [];
+      for (const file of group.files) {
+        try {
+          const book = await extractMetadata(file);
+          if (book.title) {
+            const externalResults = await fetchExternalMetadata(book.title, book.author);
+            if (externalResults.length > 0) {
+              const bestMatch = findBestMetadataMatch(externalResults, book);
+              if (bestMatch) {
+                await applyExternalMetadata(book, bestMatch);
+              }
+            }
+          }
+          books.push(book);
+        } catch (error) {
+          console.error('Failed to process file:', file.name);
+        }
+      }
+      return books;
+    }
+
+    async function applyExternalMetadata(book, bestMatch) {
+      Object.assign(book, {
+        title: bestMatch.title || book.title,
+        author: bestMatch.author || book.author,
+        narrator: bestMatch.narrator || book.narrator,
+        publisher: bestMatch.publisher || book.publisher,
+        year: bestMatch.year || book.year,
+        genre: bestMatch.genre || book.genre,
+        isbn: bestMatch.isbn || book.isbn,
+        description: bestMatch.description || book.description,
+        language: bestMatch.language || book.language
+      });
+      
+      // Fetch cover if available
+      if (bestMatch.coverUrl && !book.coverBase64) {
+        try {
+          const coverResponse = await fetch(bestMatch.coverUrl);
+          const coverBlob = await coverResponse.blob();
+          const coverBase64 = await blobToBase64(coverBlob);
+          book.coverBase64 = coverBase64.split(',')[1];
+          book.coverMime = coverBlob.type;
+        } catch (coverError) {
+          console.warn('Cover fetch failed:', coverError);
+        }
+      }
+      
+      console.log(`Enhanced metadata for "${book.title}" from ${bestMatch.source}`);
+    }
+
+    function findBestMetadataMatch(results, book) {
+      if (results.length === 0) return null;
+      if (results.length === 1) return results[0];
+      
+      // Score each result based on similarity to our book
+      const scoredResults = results.map(result => {
+        let score = 0;
+        
+        // Title similarity (most important)
+        const titleSimilarity = calculateStringSimilarity(
+          book.title.toLowerCase(),
+          result.title.toLowerCase()
+        );
+        score += titleSimilarity * 40;
+        
+        // Author similarity
+        if (book.author && result.author) {
+          const authorSimilarity = calculateStringSimilarity(
+            book.author.toLowerCase(),
+            result.author.toLowerCase()
+          );
+          score += authorSimilarity * 30;
+        }
+        
+        // Year match
+        if (book.year && result.year && book.year === result.year) {
+          score += 15;
+        }
+        
+        // ISBN match (very strong indicator)
+        if (book.isbn && result.isbn && book.isbn === result.isbn) {
+          score += 50;
+        }
+        
+        // Format-specific bonuses
+        if (book.format === 'epub' && result.source === 'Google Books') {
+          score += 10; // Google Books is good for EPUBs
+        }
+        if (['mp3', 'm4b', 'm4a'].includes(book.format) && result.source === 'iTunes / Audible') {
+          score += 10; // iTunes is good for audiobooks
+        }
+        
+        return { result, score };
+      });
+      
+      // Return the highest scoring result
+      scoredResults.sort((a, b) => b.score - a.score);
+      
+      // Only return if the best match has a decent score
+      const bestMatch = scoredResults[0];
+      if (bestMatch.score > 30) {
+        return bestMatch.result;
+      }
+      
+      return null;
+    }
+
+    function calculateStringSimilarity(str1, str2) {
+      // Simple Levenshtein distance-based similarity
+      const longer = str1.length > str2.length ? str1 : str2;
+      const shorter = str1.length > str2.length ? str2 : str1;
+      
+      if (longer.length === 0) return 1.0;
+      
+      const distance = levenshteinDistance(longer, shorter);
+      return (longer.length - distance) / longer.length;
+    }
+
+    function levenshteinDistance(str1, str2) {
+      const matrix = [];
+      
+      for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+      }
+      
+      for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+      }
+      
+      for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+          if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j] + 1
+            );
+          }
+        }
+      }
+      
+      return matrix[str2.length][str1.length];
     }
 
     function blobToBase64(blob) {
