@@ -6,6 +6,30 @@
  *  3. Google Drive (OAuth2 → Google Picker API → download)
  */
 
+// ─── Blob URL Management ─────────────────────────────────────────────────────
+// Track blob URLs for cleanup to prevent memory leaks
+const activeBlobUrls = new Set();
+
+export function createBlobUrl(file) {
+  const url = URL.createObjectURL(file);
+  activeBlobUrls.add(url);
+  return url;
+}
+
+export function revokeBlobUrl(url) {
+  if (activeBlobUrls.has(url)) {
+    URL.revokeObjectURL(url);
+    activeBlobUrls.delete(url);
+  }
+}
+
+export function revokeAllBlobUrls() {
+  for (const url of activeBlobUrls) {
+    URL.revokeObjectURL(url);
+  }
+  activeBlobUrls.clear();
+}
+
 // ─── Document Picker (Local + iCloud) ────────────────────────────────────────
 // Uses @capawesome/capacitor-file-picker if available (native iOS),
 // otherwise falls back to browser <input type="file">.
@@ -39,7 +63,7 @@ export async function pickFromFiles() {
 
     return (result.files || []).map((f) => ({
       uri: f.path || f.uri,
-      name: f.name || (f.path && f.path.split('/').pop().split('?')[0]),
+      name: f.name || (f.path ? f.path.split('/').pop().split('?')[0] : 'unknown'),
       format: getFormat(f.name || f.path || ''),
       source: 'local',
     }));
@@ -188,7 +212,7 @@ async function simulateFilePick() {
       const files = Array.from(input.files || [])
         .filter((f) => isSupportedFormat(f.name))
         .map((f) => ({
-          uri: URL.createObjectURL(f),
+          uri: createBlobUrl(f),
           name: f.name,
           format: getFormat(f.name),
           source: 'local',
@@ -232,7 +256,7 @@ function simulateFolderPick() {
         files.map((f) => ({
           file: f,
           name: f.name,
-          uri: URL.createObjectURL(f),
+          uri: createBlobUrl(f),
           relativePath: f.webkitRelativePath || f.name,
         }))
       );

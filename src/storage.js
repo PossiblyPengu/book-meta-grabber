@@ -29,13 +29,9 @@ export async function loadLibrary() {
 }
 
 export async function saveLibrary(items) {
-  // Don't persist cover blobs — too large; keep file refs + metadata only
-  const slim = items.map((item) => ({
-    ...item,
-    coverBase64: null, // re-extracted on open
-    coverMime: null,
-  }));
-  await Preferences.set({ key: LIB_KEY, value: JSON.stringify(slim) });
+  // Keep cover data for persistence - covers are essential for UX
+  // Size is managed by limiting cover quality during extraction
+  await Preferences.set({ key: LIB_KEY, value: JSON.stringify(items) });
 }
 
 export async function loadSettings() {

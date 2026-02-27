@@ -6,6 +6,23 @@
 
 const TIMEOUT_MS = 9000;
 
+// ─── Simple In-Memory Cache ───────────────────────────────────────────────────
+const apiCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getCached(key) {
+  const entry = apiCache.get(key);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    return entry.data;
+  }
+  apiCache.delete(key);
+  return null;
+}
+
+function setCache(key, data) {
+  apiCache.set(key, { data, timestamp: Date.now() });
+}
+
 function fetchWithTimeout(url, opts = {}) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -16,6 +33,10 @@ function fetchWithTimeout(url, opts = {}) {
 
 // ─── Google Books ─────────────────────────────────────────────────────────────
 export async function fetchGoogleBooks(query) {
+  const cacheKey = `google:${query}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+  
   try {
     const r = await fetchWithTimeout(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
@@ -23,7 +44,7 @@ export async function fetchGoogleBooks(query) {
       )}&maxResults=5`
     );
     const data = await r.json();
-    return (data.items || []).map((item) => {
+    const results = (data.items || []).map((item) => {
       const v = item.volumeInfo || {};
       const imgs = v.imageLinks || {};
       const prefer = [
@@ -50,6 +71,8 @@ export async function fetchGoogleBooks(query) {
         coverUrl,
       };
     });
+    setCache(cacheKey, results);
+    return results;
   } catch {
     return [];
   }
@@ -57,6 +80,10 @@ export async function fetchGoogleBooks(query) {
 
 // ─── Open Library ─────────────────────────────────────────────────────────────
 export async function fetchOpenLibrary(query) {
+  const cacheKey = `openlib:${query}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+  
   try {
     const r = await fetchWithTimeout(
       `https://openlibrary.org/search.json?q=${encodeURIComponent(
@@ -64,7 +91,7 @@ export async function fetchOpenLibrary(query) {
       )}&limit=5`
     );
     const data = await r.json();
-    return (data.docs || []).slice(0, 5).map((doc) => ({
+    const results = (data.docs || []).slice(0, 5).map((doc) => ({
       source: 'Open Library',
       title: doc.title || '',
       author: (doc.author_name || []).join(', '),
@@ -77,6 +104,8 @@ export async function fetchOpenLibrary(query) {
         ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
         : null,
     }));
+    setCache(cacheKey, results);
+    return results;
   } catch {
     return [];
   }
@@ -84,6 +113,10 @@ export async function fetchOpenLibrary(query) {
 
 // ─── iTunes / Apple Books ─────────────────────────────────────────────────────
 export async function fetchItunes(query) {
+  const cacheKey = `itunes:${query}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+  
   try {
     const q = encodeURIComponent(query);
     const [abRes, ebRes] = await Promise.allSettled([
@@ -96,7 +129,7 @@ export async function fetchItunes(query) {
     ]);
     const ab = abRes.status === 'fulfilled' ? abRes.value.results || [] : [];
     const eb = ebRes.status === 'fulfilled' ? ebRes.value.results || [] : [];
-    return [...ab, ...eb].slice(0, 6).map((item) => ({
+    const results = [...ab, ...eb].slice(0, 6).map((item) => ({
       source: 'iTunes / Audible',
       title: item.collectionName || item.trackName || '',
       author: item.artistName || '',
@@ -112,6 +145,8 @@ export async function fetchItunes(query) {
         return url.replace(/(\d+)x(\d+)(bb)?/i, '1000x1000$3');
       })(),
     }));
+    setCache(cacheKey, results);
+    return results;
   } catch {
     return [];
   }
@@ -119,6 +154,10 @@ export async function fetchItunes(query) {
 
 // ─── MusicBrainz ─────────────────────────────────────────────────────────────
 export async function fetchMusicBrainz(query) {
+  const cacheKey = `musicbrainz:${query}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+  
   try {
     const r = await fetchWithTimeout(
       `https://musicbrainz.org/ws/2/release/?query=release:${encodeURIComponent(
@@ -154,6 +193,7 @@ export async function fetchMusicBrainz(query) {
         coverUrl,
       });
     }
+    setCache(cacheKey, results);
     return results;
   } catch {
     return [];

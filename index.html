@@ -2190,6 +2190,7 @@
       books: [],
       activeTab: 'library',
       filterFormat: 'all',
+      processing: false, // Lock for async file processing
       settings: {
         gdriveClientId: '',
         theme: 'dark',
@@ -2783,6 +2784,8 @@
 
     // ===== RENDERING =====
     function renderBooks() {
+      if (!elements.bookGrid || !elements.emptyState) return;
+      
       const filteredBooks = state.filterFormat === 'all' 
         ? state.books 
         : state.books.filter(book => book.format === state.filterFormat);
@@ -2803,7 +2806,7 @@
       card.style.animationDelay = `${index * 50}ms`;
       
       const coverHtml = book.coverBase64 
-        ? `<img src="data:${book.coverMime || 'image/jpeg'};base64,${book.coverBase64}" alt="${book.title}">`
+        ? `<img src="data:${book.coverMime || 'image/jpeg'};base64,${book.coverBase64}" alt="${escapeHtml(book.title || 'Book cover')}">`
         : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -2819,7 +2822,7 @@
           <div class="book-author">${escapeHtml(book.author || 'Unknown Author')}</div>
           ${book.status !== 'unread' ? `<div class="book-status">${getStatusLabel(book.status)}</div>` : ''}
         </div>
-        <div class="book-format">${book.format.toUpperCase()}</div>
+        <div class="book-format">${(book.format || 'unknown').toUpperCase()}</div>
       `;
 
       // Add click handler based on mode
@@ -2854,6 +2857,8 @@
 
     // ===== SEARCH =====
     async function performSearch() {
+      if (!elements.searchInput || !elements.searchResults) return;
+      
       const query = elements.searchInput.value.trim();
       if (!query) return;
 
@@ -2890,6 +2895,8 @@
     }
 
     function renderSearchResults(results) {
+      if (!elements.searchResults) return;
+      
       if (results.length === 0) {
         elements.searchResults.innerHTML = '<p style="color: var(--text-secondary);">No results found.</p>';
         return;
@@ -4007,36 +4014,47 @@
     }
 
     async function processFilesAsSeparateBooks(files) {
+      // Prevent concurrent processing that could cause race conditions
+      if (state.processing) {
+        showToast('Please wait for current processing to complete', 'warning');
+        return;
+      }
+      
+      state.processing = true;
       showToast('Processing files and fetching metadata...', 'info');
       
       const processedBooks = [];
       
-      for (const file of files) {
-        try {
-          const book = await extractMetadata(file);
-          
-          // Fetch external metadata
-          if (book.title) {
-            const externalResults = await fetchExternalMetadata(book.title, book.author);
-            if (externalResults.length > 0) {
-              const bestMatch = findBestMetadataMatch(externalResults, book);
-              if (bestMatch) {
-                await applyExternalMetadata(book, bestMatch);
+      try {
+        for (const file of files) {
+          try {
+            const book = await extractMetadata(file);
+            
+            // Fetch external metadata
+            if (book.title) {
+              const externalResults = await fetchExternalMetadata(book.title, book.author);
+              if (externalResults.length > 0) {
+                const bestMatch = findBestMetadataMatch(externalResults, book);
+                if (bestMatch) {
+                  await applyExternalMetadata(book, bestMatch);
+                }
               }
             }
+            
+            processedBooks.push(book);
+          } catch (error) {
+            console.error('File processing failed:', error);
+            showToast(`Failed to process ${file.name}`, 'error');
           }
-          
-          processedBooks.push(book);
-        } catch (error) {
-          console.error('File processing failed:', error);
-          showToast(`Failed to process ${file.name}`, 'error');
         }
+        
+        state.books.unshift(...processedBooks);
+        renderBooks();
+        saveState();
+        showToast(`Added ${processedBooks.length} separate book${processedBooks.length > 1 ? 's' : ''}`, 'success');
+      } finally {
+        state.processing = false;
       }
-      
-      state.books.unshift(...processedBooks);
-      renderBooks();
-      saveState();
-      showToast(`Added ${processedBooks.length} separate book${processedBooks.length > 1 ? 's' : ''}`, 'success');
     }
 
     async function processMultiPartBook(bookGroup) {
@@ -4147,7 +4165,7 @@
         dialog.innerHTML = `
           <h3 style="margin-bottom: var(--spacing-md); color: var(--text-primary);">Multi-Part Book Detected</h3>
           <div style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">
-            <p><strong>${bookGroup.title}</strong></p>
+            <p><strong>${escapeHtml(bookGroup.title)}</strong></p>
             <p>Found ${fileCount} audio files (${sizeMB} MB total)</p>
             <p>Would you like to combine them into a single file or keep them separate?</p>
           </div>
@@ -4652,16 +4670,16 @@
       const book = state.books.find(b => b.id === bookId);
       if (!book) return;
 
-      book.title = document.getElementById('editTitle').value;
-      book.author = document.getElementById('editAuthor').value;
-      book.narrator = document.getElementById('editNarrator').value;
-      book.series = document.getElementById('editSeries').value;
-      book.year = document.getElementById('editYear').value;
-      book.publisher = document.getElementById('editPublisher').value;
-      book.genre = document.getElementById('editGenre').value;
-      book.isbn = document.getElementById('editIsbn').value;
-      book.language = document.getElementById('editLanguage').value;
-      book.description = document.getElementById('editDescription').value;
+      book.title = document.getElementById('edit-title').value;
+      book.author = document.getElementById('edit-author').value;
+      book.narrator = document.getElementById('edit-narrator').value;
+      book.series = document.getElementById('edit-series').value;
+      book.year = document.getElementById('edit-year').value;
+      book.publisher = document.getElementById('edit-publisher').value;
+      book.genre = document.getElementById('edit-genre').value;
+      book.isbn = document.getElementById('edit-isbn').value;
+      book.language = document.getElementById('edit-language').value;
+      book.description = document.getElementById('edit-description').value;
 
       renderBooks();
       saveState();
@@ -4738,16 +4756,22 @@
       const headers = ['Title', 'Author', 'Format', 'Year', 'Publisher', 'Genre', 'ISBN', 'Language'];
       const csv = [headers.join(',')];
       
+      const escapeCSV = (val) => {
+        const str = String(val || '');
+        // Escape quotes and wrap in quotes to prevent CSV injection
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+      
       state.books.forEach(book => {
         const row = [
-          `"${book.title || ''}"`,
-          `"${book.author || ''}"`,
-          book.format,
-          `"${book.year || ''}"`,
-          `"${book.publisher || ''}"`,
-          `"${book.genre || ''}"`,
-          `"${book.isbn || ''}"`,
-          book.language || 'en'
+          escapeCSV(book.title),
+          escapeCSV(book.author),
+          escapeCSV(book.format),
+          escapeCSV(book.year),
+          escapeCSV(book.publisher),
+          escapeCSV(book.genre),
+          escapeCSV(book.isbn),
+          escapeCSV(book.language || 'en')
         ];
         csv.push(row.join(','));
       });
