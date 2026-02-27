@@ -2193,6 +2193,7 @@
       settings: {
         gdriveClientId: '',
         theme: 'dark',
+        exportFormat: 'json',
         // QOL Settings
         autoSave: true,
         showProgress: true,
@@ -2370,6 +2371,13 @@
       elements.editorSearchClose.addEventListener('click', closeEditorSearch);
       elements.editorCoverBtn.addEventListener('click', () => elements.coverInput.click());
       elements.coverInput.addEventListener('change', handleCoverUpload);
+
+      // Header buttons
+      document.getElementById('sortBtn').addEventListener('click', toggleSortDropdown);
+      document.getElementById('gridSizeBtn').addEventListener('click', cycleGridSize);
+      document.getElementById('viewModeBtn').addEventListener('click', toggleViewMode);
+      document.getElementById('shortcutsHelpBtn').addEventListener('click', showShortcutsHelp);
+      document.getElementById('closeShortcutsHelp').addEventListener('click', hideShortcutsHelp);
     }
 
     // ===== TAB MANAGEMENT =====
@@ -3139,6 +3147,41 @@
       const minutes = Math.floor((seconds % 3600) / 60);
       const secs = Math.floor(seconds % 60);
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // ===== UI HANDLERS =====
+    function toggleSortDropdown() {
+      const dropdown = document.getElementById('sortDropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('show');
+      }
+    }
+
+    function cycleGridSize() {
+      const sizes = ['small', 'medium', 'large'];
+      const current = state.settings.gridSize || 'medium';
+      const nextIndex = (sizes.indexOf(current) + 1) % sizes.length;
+      state.settings.gridSize = sizes[nextIndex];
+      saveState();
+      showToast(`Grid size: ${sizes[nextIndex]}`, 'info');
+      renderBooks();
+    }
+
+    function toggleViewMode() {
+      state.settings.compactView = !state.settings.compactView;
+      saveState();
+      showToast(state.settings.compactView ? 'Compact view' : 'Standard view', 'info');
+      renderBooks();
+    }
+
+    function showShortcutsHelp() {
+      const help = document.getElementById('shortcutsHelp');
+      if (help) help.classList.add('show');
+    }
+
+    function hideShortcutsHelp() {
+      const help = document.getElementById('shortcutsHelp');
+      if (help) help.classList.remove('show');
     }
 
     // Apply search result to editor form
@@ -4609,16 +4652,16 @@
       const book = state.books.find(b => b.id === bookId);
       if (!book) return;
 
-      book.title = document.getElementById('edit-title').value;
-      book.author = document.getElementById('edit-author').value;
-      book.narrator = document.getElementById('edit-narrator').value;
-      book.series = document.getElementById('edit-series').value;
-      book.year = document.getElementById('edit-year').value;
-      book.publisher = document.getElementById('edit-publisher').value;
-      book.genre = document.getElementById('edit-genre').value;
-      book.isbn = document.getElementById('edit-isbn').value;
-      book.language = document.getElementById('edit-language').value;
-      book.description = document.getElementById('edit-description').value;
+      book.title = document.getElementById('editTitle').value;
+      book.author = document.getElementById('editAuthor').value;
+      book.narrator = document.getElementById('editNarrator').value;
+      book.series = document.getElementById('editSeries').value;
+      book.year = document.getElementById('editYear').value;
+      book.publisher = document.getElementById('editPublisher').value;
+      book.genre = document.getElementById('editGenre').value;
+      book.isbn = document.getElementById('editIsbn').value;
+      book.language = document.getElementById('editLanguage').value;
+      book.description = document.getElementById('editDescription').value;
 
       renderBooks();
       saveState();
@@ -4711,6 +4754,70 @@
       
       downloadFile(csv.join('\n'), 'library.csv', 'text/csv');
       showToast('Library exported as CSV', 'success');
+    };
+
+    window.exportAsJSON = function() {
+      const data = JSON.stringify(state.books, null, 2);
+      downloadFile(data, 'library.json', 'application/json');
+      showToast('Library exported as JSON', 'success');
+    };
+
+    window.organizeBySeries = function() {
+      const booksBySeries = {};
+      state.books.forEach(book => {
+        const series = book.series || 'No Series';
+        if (!booksBySeries[series]) booksBySeries[series] = [];
+        booksBySeries[series].push(book);
+      });
+      
+      console.log('Books organized by series:', booksBySeries);
+      showToast(`Found ${Object.keys(booksBySeries).length} series`, 'info');
+    };
+
+    window.batchClearMetadata = function() {
+      if (!confirm('Are you sure you want to clear all metadata? This cannot be undone.')) return;
+      
+      state.books.forEach(book => {
+        book.author = '';
+        book.narrator = '';
+        book.series = '';
+        book.year = '';
+        book.publisher = '';
+        book.genre = '';
+        book.isbn = '';
+        book.description = '';
+      });
+      
+      renderBooks();
+      saveState();
+      showToast('All metadata cleared', 'success');
+    };
+
+    window.batchUpdateCovers = async function() {
+      showToast('Updating covers...', 'info');
+      let updated = 0;
+      
+      for (const book of state.books) {
+        if (!book.coverBase64 && book.title) {
+          try {
+            const results = await fetchExternalMetadata(book.title, book.author);
+            if (results.length > 0 && results[0].coverUrl) {
+              const response = await fetch(results[0].coverUrl);
+              const blob = await response.blob();
+              const base64 = await blobToBase64(blob);
+              book.coverBase64 = base64.split(',')[1];
+              book.coverMime = blob.type;
+              updated++;
+            }
+          } catch (e) {
+            console.warn('Cover update failed for', book.title);
+          }
+        }
+      }
+      
+      renderBooks();
+      saveState();
+      showToast(`Updated ${updated} covers`, 'success');
     };
 
     window.exportCoversOnly = function() {
@@ -5060,7 +5167,7 @@
 
     // Update settings to include new options
     function updateSettings() {
-      const settingsContent = document.querySelector('#settingsTab .settings-scroll');
+      const settingsContent = document.querySelector('#settingsTab > div');
       if (settingsContent) {
         const newSections = `
           <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-md); margin-bottom: var(--spacing-md);">
