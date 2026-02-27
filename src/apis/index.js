@@ -9,6 +9,7 @@ const TIMEOUT_MS = 9000;
 // ─── Simple In-Memory Cache ───────────────────────────────────────────────────
 const apiCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_SIZE = 200;
 
 function getCached(key) {
   const entry = apiCache.get(key);
@@ -20,6 +21,11 @@ function getCached(key) {
 }
 
 function setCache(key, data) {
+  // Evict oldest entries when cache exceeds max size
+  if (apiCache.size >= CACHE_MAX_SIZE) {
+    const oldest = apiCache.keys().next().value;
+    apiCache.delete(oldest);
+  }
   apiCache.set(key, { data, timestamp: Date.now() });
 }
 
@@ -36,13 +42,14 @@ export async function fetchGoogleBooks(query) {
   const cacheKey = `google:${query}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
-  
+
   try {
     const r = await fetchWithTimeout(
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
         query
       )}&maxResults=5`
     );
+    if (!r.ok) return [];
     const data = await r.json();
     const results = (data.items || []).map((item) => {
       const v = item.volumeInfo || {};
@@ -83,13 +90,14 @@ export async function fetchOpenLibrary(query) {
   const cacheKey = `openlib:${query}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
-  
+
   try {
     const r = await fetchWithTimeout(
       `https://openlibrary.org/search.json?q=${encodeURIComponent(
         query
       )}&limit=5`
     );
+    if (!r.ok) return [];
     const data = await r.json();
     const results = (data.docs || []).slice(0, 5).map((doc) => ({
       source: 'Open Library',
@@ -116,16 +124,16 @@ export async function fetchItunes(query) {
   const cacheKey = `itunes:${query}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
-  
+
   try {
     const q = encodeURIComponent(query);
     const [abRes, ebRes] = await Promise.allSettled([
       fetchWithTimeout(
         `https://itunes.apple.com/search?term=${q}&media=audiobook&limit=4&entity=audiobook`
-      ).then((r) => r.json()),
+      ).then((r) => (r.ok ? r.json() : { results: [] })),
       fetchWithTimeout(
         `https://itunes.apple.com/search?term=${q}&media=ebook&limit=3&entity=ebook`
-      ).then((r) => r.json()),
+      ).then((r) => (r.ok ? r.json() : { results: [] })),
     ]);
     const ab = abRes.status === 'fulfilled' ? abRes.value.results || [] : [];
     const eb = ebRes.status === 'fulfilled' ? ebRes.value.results || [] : [];
@@ -157,7 +165,7 @@ export async function fetchMusicBrainz(query) {
   const cacheKey = `musicbrainz:${query}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
-  
+
   try {
     const r = await fetchWithTimeout(
       `https://musicbrainz.org/ws/2/release/?query=release:${encodeURIComponent(
@@ -165,25 +173,30 @@ export async function fetchMusicBrainz(query) {
       )}&limit=5&fmt=json`,
       { headers: { 'User-Agent': 'BookMetaGrabber/1.0 (https://github.com)' } }
     );
+    if (!r.ok) return [];
     const data = await r.json();
-    const rels = data.releases || [];
-    const results = [];
-    for (const rel of rels.slice(0, 4)) {
+    const rels = (data.releases || []).slice(0, 4);
+
+    // Fetch cover art in parallel instead of sequentially
+    const coverResults = await Promise.allSettled(
+      rels.map((rel) =>
+        fetchWithTimeout(`https://coverartarchive.org/release/${rel.id}`, {
+          headers: { Accept: 'application/json' },
+        }).then((cr) => (cr.ok ? cr.json() : null))
+      )
+    );
+
+    const results = rels.map((rel, i) => {
       let coverUrl = null;
-      try {
-        const cr = await fetchWithTimeout(
-          `https://coverartarchive.org/release/${rel.id}`,
-          { headers: { Accept: 'application/json' } }
-        );
-        const crd = await cr.json();
-        const img = crd?.images?.[0] || null;
+      if (coverResults[i].status === 'fulfilled' && coverResults[i].value) {
+        const img = coverResults[i].value?.images?.[0] || null;
         coverUrl =
           img?.thumbnails?.large ||
           img?.thumbnails?.['500'] ||
           img?.image ||
           null;
-      } catch {}
-      results.push({
+      }
+      return {
         source: 'MusicBrainz',
         title: rel.title || '',
         author:
@@ -191,8 +204,8 @@ export async function fetchMusicBrainz(query) {
         year: (rel.date || '').slice(0, 4),
         publisher: rel['label-info']?.[0]?.label?.name || '',
         coverUrl,
-      });
-    }
+      };
+    });
     setCache(cacheKey, results);
     return results;
   } catch {

@@ -7,7 +7,9 @@ export async function combineAudioFiles(files, outputName, onProgress) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(
       new URL('../workers/ffmpegWorker.js', import.meta.url),
-      { type: 'module' }
+      {
+        type: 'module',
+      }
     );
 
     let resolved = false;
@@ -40,16 +42,16 @@ export async function combineAudioFiles(files, outputName, onProgress) {
     // Prepare parts for the worker
     // The worker expects objects with { ext, file, name }
     // We pass the File object directly which is clonable
-    const parts = files.map(f => ({
+    const parts = files.map((f) => ({
       ext: f.name.split('.').pop(),
       file: f,
-      name: f.name
+      name: f.name,
     }));
-    
-    worker.postMessage({ 
-      cmd: 'concat', 
-      parts: parts, 
-      outName: outputName 
+
+    worker.postMessage({
+      cmd: 'concat',
+      parts: parts,
+      outName: outputName,
     });
   });
 }

@@ -21,6 +21,7 @@
               type="search" 
               id="quickSearchInput"
               placeholder="Quick search... (Ctrl+K)"
+              aria-label="Quick search library"
               style="display: none;"
             >
             <button class="btn btn-icon" id="quickSearchBtn" aria-label="Quick Search">
@@ -107,7 +108,7 @@
           <button class="filter-chip" data-format="flac">FLAC</button>
           <button class="filter-chip" data-format="ogg">OGG</button>
           <button class="filter-chip" data-format="audiobook-folder">Audiobooks</button>
-          <button class="filter-chip" id="selectModeBtn">Select</button>
+          <button class="filter-chip" id="selectModeBtn" aria-label="Toggle selection mode">Select</button>
         </div>
 
         <!-- Batch Actions Bar -->
@@ -116,11 +117,11 @@
             <span id="selectedCount">0</span> books selected
           </div>
           <div class="batch-buttons">
-            <button class="btn" id="batchEditBtn">Edit All</button>
-            <button class="btn" id="batchExportBtn">Export</button>
-            <button class="btn" id="batchDeleteBtn" style="color: var(--error); border-color: var(--error);">Delete</button>
+            <button class="btn" id="batchEditBtn" aria-label="Edit selected books">Edit All</button>
+            <button class="btn" id="batchExportBtn" aria-label="Export selected books">Export</button>
+            <button class="btn" id="batchDeleteBtn" aria-label="Delete selected books" style="color: var(--error); border-color: var(--error);">Delete</button>
           </div>
-          <button class="btn btn-icon" id="batchCancelBtn">
+          <button class="btn btn-icon" id="batchCancelBtn" aria-label="Cancel selection">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
@@ -166,7 +167,7 @@
         <div class="shortcuts-help" id="shortcutsHelp">
           <div class="shortcuts-header">
             <h3>Keyboard Shortcuts</h3>
-            <button class="btn btn-icon" id="closeShortcutsHelp">
+            <button class="btn btn-icon" id="closeShortcutsHelp" aria-label="Close keyboard shortcuts">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
@@ -225,21 +226,22 @@
 
       <!-- Search Tab -->
       <div class="tab-screen" id="searchTab">
-        <div style="padding: var(--spacing-md);">
-          <h2 style="margin-bottom: var(--spacing-md);">Search Metadata</h2>
-          <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
-            Search for book metadata from multiple sources including Google Books, Open Library, iTunes, and MusicBrainz.
-          </p>
-          <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+        <div class="search-page">
+          <div class="search-page-header">
+            <h2 class="search-page-title">Search Metadata</h2>
+            <p class="search-page-desc">Search for book metadata from Google Books, Open Library, iTunes, and MusicBrainz.</p>
+          </div>
+          <div class="search-page-bar">
             <input 
               type="search" 
               id="searchInput"
+              class="search-page-input"
               placeholder="Search by title, author, or ISBN..."
-              style="flex: 1; padding: var(--spacing-sm); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary);"
+              aria-label="Search by title, author, or ISBN"
             >
             <button class="btn btn-primary" id="searchSubmitBtn">Search</button>
           </div>
-          <div id="searchResults" style="margin-top: var(--spacing-md);">
+          <div id="searchResults" class="search-page-results">
             <!-- Search results will appear here -->
           </div>
         </div>
@@ -247,15 +249,15 @@
 
       <!-- Settings Tab -->
       <div class="tab-screen" id="settingsTab">
-        <div style="padding: var(--spacing-md);">
-          <h2 style="margin-bottom: var(--spacing-lg);">Settings</h2>
+        <div class="settings-page">
+          <h2 class="settings-page-title">Settings</h2>
           
-          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-md); margin-bottom: var(--spacing-md);">
-            <h3 style="margin-bottom: var(--spacing-md);">Appearance</h3>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <label style="color: var(--text-secondary);">Theme</label>
-              <div style="display: flex; gap: var(--spacing-sm);">
-                <button class="theme-btn" id="lightThemeBtn" data-theme="light">
+          <div class="settings-card">
+            <h3 class="settings-card-title">Appearance</h3>
+            <div class="settings-row">
+              <label class="settings-label">Theme</label>
+              <div class="settings-row-actions">
+                <button class="theme-btn" id="lightThemeBtn" data-theme="light" aria-label="Switch to light theme">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="5"/>
                     <line x1="12" y1="1" x2="12" y2="3"/>
@@ -269,7 +271,7 @@
                   </svg>
                   Light
                 </button>
-                <button class="theme-btn" id="darkThemeBtn" data-theme="dark">
+                <button class="theme-btn" id="darkThemeBtn" data-theme="dark" aria-label="Switch to dark theme">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                   </svg>
@@ -279,42 +281,46 @@
             </div>
           </div>
 
-          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-md); margin-bottom: var(--spacing-md);">
-            <h3 style="margin-bottom: var(--spacing-md);">Google Drive Integration</h3>
-            <div style="margin-bottom: var(--spacing-sm);">
-              <label style="display: block; margin-bottom: var(--spacing-xs); color: var(--text-secondary);">OAuth Client ID</label>
-              <input 
-                type="text" 
-                id="gdriveInput"
-                placeholder="Enter your Google OAuth Client ID"
-                style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary);"
-              >
+          <div class="settings-card">
+            <h3 class="settings-card-title">Google Drive Integration</h3>
+            <div class="settings-field">
+              <label class="settings-label">OAuth Client ID</label>
+              <input type="text" id="gdriveInput" class="settings-input" placeholder="Enter your Google OAuth Client ID">
             </div>
-            <p style="font-size: 0.875rem; color: var(--text-muted);">
-              Required for Google Drive integration. Create one at console.cloud.google.com
-            </p>
+            <p class="settings-hint">Required for Google Drive integration. Create one at console.cloud.google.com</p>
           </div>
 
-          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-md); margin-bottom: var(--spacing-md);">
-            <h3 style="margin-bottom: var(--spacing-md);">Library Management</h3>
-            <div style="margin-bottom: var(--spacing-md);">
-              <label style="display: block; margin-bottom: var(--spacing-xs); color: var(--text-secondary);">Export Format</label>
-              <select id="exportFormat" style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary);">
-                <option value="json">JSON</option>
-                <option value="csv">CSV</option>
-                <option value="pdf">PDF</option>
-              </select>
-            </div>
-            <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+          <div class="settings-card">
+            <h3 class="settings-card-title">Library Management</h3>
+            <div class="settings-btn-group">
+              <button class="btn" id="importBtn">Import Library</button>
+              <button class="btn" id="exportJsonBtn">Export JSON</button>
+              <button class="btn" id="exportCsvBtn">Export CSV</button>
               <button class="btn" id="exportBtn">Export Library</button>
               <button class="btn" id="exportSelectedBtn" style="display: none;">Export Selected</button>
             </div>
-            <button class="btn" id="clearLibraryBtn" style="color: var(--error); border-color: var(--error);">Clear All Books</button>
+            <div class="settings-field">
+              <label class="settings-label">Default Export Format</label>
+              <select id="exportFormat" class="settings-input">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+              </select>
+            </div>
+            <button class="btn btn-danger" id="clearLibraryBtn">Clear All Books</button>
           </div>
 
-          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-md);">
-            <h3 style="margin-bottom: var(--spacing-md);">About</h3>
-            <p style="color: var(--text-secondary); line-height: 1.6;">
+          <div class="settings-card">
+            <h3 class="settings-card-title">Tools</h3>
+            <div class="settings-btn-group">
+              <button class="btn" id="batchBtn">Batch Operations</button>
+              <button class="btn" id="advancedSearchBtn">Advanced Search</button>
+              <button class="btn" id="statsBtn">Library Statistics</button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3 class="settings-card-title">About</h3>
+            <p class="settings-about">
               <strong>Book Meta Grabber v2.0</strong><br>
               Extract and enrich metadata from your book collection.<br>
               Supports EPUB, PDF, MP3, M4B, FLAC, and OGG formats.
@@ -325,22 +331,22 @@
     </main>
 
     <!-- Tab Bar -->
-    <nav class="tab-bar">
-      <button class="tab-button active" data-tab="library">
+    <nav class="tab-bar" aria-label="Main navigation">
+      <button class="tab-button active" data-tab="library" aria-label="Library tab">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
         </svg>
         <span class="tab-label">Library</span>
       </button>
-      <button class="tab-button" data-tab="search">
+      <button class="tab-button" data-tab="search" aria-label="Search tab">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="11" cy="11" r="8"/>
           <path d="m21 21-4.35-4.35"/>
         </svg>
         <span class="tab-label">Search</span>
       </button>
-      <button class="tab-button" data-tab="settings">
+      <button class="tab-button" data-tab="settings" aria-label="Settings tab">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="12" cy="12" r="3"/>
           <path d="M12 1v6m0 6v6m4.22-13.22 4.24 4.24M1.54 9.54l4.24 4.24M1.54 14.46l4.24-4.24M18.46 14.46l-4.24-4.24"/>
@@ -365,13 +371,13 @@
                 </svg>
               </div>
             </div>
-            <button class="editor-cover-btn" id="editorCoverBtn">
+            <button class="editor-cover-btn" id="editorCoverBtn" aria-label="Change book cover">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 5v14m-7-7h14"/>
               </svg>
               Change Cover
             </button>
-            <input type="file" id="coverInput" accept="image/*" style="display: none;">
+            <input type="file" id="coverInput" accept="image/*" aria-label="Upload cover image" style="display: none;">
           </div>
           <div class="editor-hero-overlay"></div>
         </div>
@@ -380,7 +386,7 @@
         <div class="editor-content">
           <!-- Editor Header -->
           <div class="editor-header">
-            <button class="editor-close-btn" id="editorCloseBtn">
+            <button class="editor-close-btn" id="editorCloseBtn" aria-label="Close editor">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
@@ -397,7 +403,7 @@
           <div class="editor-search-results" id="editorSearchResults" style="display: none;">
             <div class="editor-search-header">
               <h3>Search Results</h3>
-              <button class="editor-search-close" id="editorSearchClose">×</button>
+              <button class="editor-search-close" id="editorSearchClose" aria-label="Close search results">×</button>
             </div>
             <div class="editor-search-list" id="editorSearchList">
               <!-- Search results will appear here -->

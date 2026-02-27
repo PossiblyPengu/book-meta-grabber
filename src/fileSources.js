@@ -63,7 +63,8 @@ export async function pickFromFiles() {
 
     return (result.files || []).map((f) => ({
       uri: f.path || f.uri,
-      name: f.name || (f.path ? f.path.split('/').pop().split('?')[0] : 'unknown'),
+      name:
+        f.name || (f.path ? f.path.split('/').pop().split('?')[0] : 'unknown'),
       format: getFormat(f.name || f.path || ''),
       source: 'local',
     }));

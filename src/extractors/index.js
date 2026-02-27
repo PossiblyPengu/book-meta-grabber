@@ -15,7 +15,9 @@ async function extractAudio(fileOrBlob, fileName) {
     try {
       worker = new Worker(
         new URL('../workers/metadataWorker.js', import.meta.url),
-        { type: 'module' }
+        {
+          type: 'module',
+        }
       );
 
       // Set up timeout to prevent hanging
@@ -110,7 +112,11 @@ async function extractEpub(fileOrBlob, fileName) {
     if (coverFile) {
       const buf = await coverFile.async('uint8array');
       coverBase64 = uint8ToBase64(buf);
-      coverMime = coverPath.match(/\.png$/i) ? 'image/png' : 'image/jpeg';
+      coverMime = coverPath.match(/\.png$/i)
+        ? 'image/png'
+        : coverPath.match(/\.webp$/i)
+        ? 'image/webp'
+        : 'image/jpeg';
     }
   }
 
@@ -131,7 +137,11 @@ async function extractEpub(fileOrBlob, fileName) {
       }
       if (bestBuf) {
         coverBase64 = uint8ToBase64(bestBuf);
-        coverMime = bestName.match(/\.png$/i) ? 'image/png' : 'image/jpeg';
+        coverMime = bestName.match(/\.png$/i)
+          ? 'image/png'
+          : bestName.match(/\.webp$/i)
+          ? 'image/webp'
+          : 'image/jpeg';
       }
     }
   }
