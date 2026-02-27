@@ -1595,17 +1595,20 @@
 
     function createBookFromFile(file) {
       const format = file.name.split('.').pop().toLowerCase();
-      const title = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      const fileName = file.name.replace(/\.[^/.]+$/, '');
+      
+      // Enhanced filename parsing for better title/author detection
+      const { title, author, series, year } = parseFileName(fileName);
       
       return {
         id: Date.now() + Math.random(),
         fileName: file.name,
         format: format,
         title: title,
-        author: '',
+        author: author,
         narrator: '',
-        series: '',
-        year: '',
+        series: series,
+        year: year,
         publisher: '',
         genre: '',
         isbn: '',
@@ -1622,6 +1625,114 @@
         startDate: '',
         finishDate: '',
         notes: ''
+      };
+    }
+
+    function parseFileName(fileName) {
+      // Remove common patterns and clean up the filename
+      let cleaned = fileName
+        .replace(/[\[\](){}]/g, ' ') // Remove brackets
+        .replace(/[._-]/g, ' ') // Replace dots, underscores, hyphens with spaces
+        .replace(/\s+/g, ' ') // Multiple spaces to single space
+        .trim();
+
+      // Common patterns to detect and extract metadata
+      const patterns = [
+        // Series patterns: "Series Name #1" or "Series Name Book 1"
+        {
+          regex: /^(.+?)(?:\s+(?:#|book)\s*(\d+))$/i,
+          handler: (match, title, seriesNum) => ({
+            title: title.trim(),
+            series: `${title.trim()} #${seriesNum}`,
+            author: '',
+            year: ''
+          })
+        },
+        // Author first: "Author - Title" or "Author - Title (Year)"
+        {
+          regex: /^(.+?)\s*[-–—]\s*(.+?)(?:\s*\((\d{4})\))?$/,
+          handler: (match, author, title, year) => ({
+            title: title.trim(),
+            author: author.trim(),
+            series: '',
+            year: year || ''
+          })
+        },
+        // Title first with author in brackets: "Title - Author Name"
+        {
+          regex: /^(.+?)\s*[-–—]\s*(.+?)$/,
+          handler: (match, title, author) => {
+            // Check if second part looks like an author (shorter, no numbers)
+            if (author.split(' ').length <= 3 && !/\d/.test(author)) {
+              return {
+                title: title.trim(),
+                author: author.trim(),
+                series: '',
+                year: ''
+              };
+            }
+            return null;
+          }
+        },
+        // Year in parentheses: "Title (Year)" or "Title by Author (Year)"
+        {
+          regex: /^(.+?)\s*\((\d{4})\)\s*(?:by\s*(.+))?$/i,
+          handler: (match, title, year, author) => ({
+            title: title.trim(),
+            author: author ? author.trim() : '',
+            series: '',
+            year: year
+          })
+        },
+        // Multiple authors separated by & or and: "Title - Author & Author"
+        {
+          regex: /^(.+?)\s*[-–—]\s*(.+?(?:\s+(?:and|&)\s*.+?)?)$/,
+          handler: (match, title, authors) => ({
+            title: title.trim(),
+            author: authors.trim(),
+            series: '',
+            year: ''
+          })
+        }
+      ];
+
+      // Try each pattern
+      for (const pattern of patterns) {
+        const match = cleaned.match(pattern.regex);
+        if (match) {
+          const result = pattern.handler(match, ...match.slice(1));
+          if (result) return result;
+        }
+      }
+
+      // Fallback: try to detect if there are multiple parts that could be title/author
+      const parts = cleaned.split(/\s+[-–—]\s+/);
+      if (parts.length === 2) {
+        const [part1, part2] = parts;
+        // Heuristic: shorter part is likely the author
+        if (part1.length > part2.length && part2.split(' ').length <= 3) {
+          return {
+            title: part1.trim(),
+            author: part2.trim(),
+            series: '',
+            year: ''
+          };
+        } else if (part2.length > part1.length && part1.split(' ').length <= 3) {
+          return {
+            title: part2.trim(),
+            author: part1.trim(),
+            series: '',
+            year: ''
+          };
+        }
+      }
+
+      // Last resort: treat everything as title
+      return {
+        title: cleaned,
+        author: '',
+        series: '',
+        year: ''
       };
     }
 
@@ -2380,35 +2491,35 @@
         const opfContent = await epub.file(opfPath).async('string');
         const opfDoc = parser.parseFromString(opfContent, 'text/xml');
         
-        // Extract metadata
-        const title = opfDoc.querySelector('title')?.textContent || book.title;
-        const author = opfDoc.querySelector('creator')?.textContent || '';
-        const publisher = opfDoc.querySelector('publisher')?.textContent || '';
-        const description = opfDoc.querySelector('description')?.textContent || '';
-        const isbn = opfDoc.querySelector('identifier[scheme="ISBN"]')?.textContent || '';
-        const language = opfDoc.querySelector('language')?.textContent || 'en';
+        // Enhanced metadata extraction
+        const title = extractTextContent(opfDoc, 'title') || book.title;
+        const author = extractTextContent(opfDoc, 'creator') || book.author;
+        const publisher = extractTextContent(opfDoc, 'publisher') || '';
+        const description = cleanHtml(extractTextContent(opfDoc, 'description') || '');
+        const isbn = extractISBN(opfDoc) || '';
+        const language = extractTextContent(opfDoc, 'language') || 'en';
+        const publisherDate = extractTextContent(opfDoc, 'date') || '';
+        const subjects = extractMultipleTextContent(opfDoc, 'subject') || [];
+        const genre = subjects.slice(0, 3).join(', ') || book.genre;
         
-        // Extract cover
-        const coverItem = opfDoc.querySelector('item[properties="cover-image"]');
-        if (coverItem) {
-          const coverHref = coverItem.getAttribute('href');
-          const coverPath = opfPath.replace(/[^/]*$/, '') + coverHref;
-          const coverFile = epub.file(coverPath);
-          if (coverFile) {
-            const coverData = await coverFile.async('base64');
-            book.coverBase64 = coverData;
-            book.coverMime = coverFile.name.split('.').pop() === 'png' ? 'image/png' : 'image/jpeg';
-          }
-        }
+        // Extract series information from dc:subject or meta tags
+        const series = extractSeries(opfDoc) || book.series;
+        
+        // Extract cover with better fallback
+        const coverData = await extractEpubCover(epub, opfDoc, opfPath);
         
         return {
           ...book,
-          title,
-          author,
-          publisher,
-          description,
-          isbn,
-          language
+          title: cleanTitle(title),
+          author: cleanAuthor(author),
+          publisher: publisher,
+          description: description,
+          isbn: isbn,
+          language: language,
+          year: extractYear(publisherDate) || book.year,
+          genre: genre,
+          series: series,
+          ...coverData
         };
       } catch (error) {
         console.warn('EPUB parsing failed:', error);
@@ -2416,8 +2527,112 @@
       }
     }
 
+    function extractTextContent(doc, tagName) {
+      const element = doc.querySelector(tagName);
+      return element ? element.textContent.trim() : '';
+    }
+
+    function extractMultipleTextContent(doc, tagName) {
+      const elements = doc.querySelectorAll(tagName);
+      return Array.from(elements).map(el => el.textContent.trim()).filter(Boolean);
+    }
+
+    function extractISBN(doc) {
+      // Try different ISBN identifiers
+      const isbn13 = doc.querySelector('identifier[scheme="ISBN13"], identifier[opf:scheme="ISBN13"]');
+      if (isbn13) return isbn13.textContent.trim();
+      
+      const isbn10 = doc.querySelector('identifier[scheme="ISBN10"], identifier[opf:scheme="ISBN10"]');
+      if (isbn10) return isbn10.textContent.trim();
+      
+      const isbn = doc.querySelector('identifier[type="isbn"], identifier[id*="isbn"]');
+      return isbn ? isbn.textContent.trim() : '';
+    }
+
+    function extractSeries(doc) {
+      // Try to extract series from subject or meta tags
+      const seriesSubject = Array.from(doc.querySelectorAll('subject'))
+        .find(subject => subject.textContent.toLowerCase().includes('series'));
+      
+      if (seriesSubject) {
+        return seriesSubject.textContent.trim();
+      }
+      
+      // Check meta tags for series information
+      const metaSeries = Array.from(doc.querySelectorAll('meta'))
+        .find(meta => {
+          const name = meta.getAttribute('name') || meta.getAttribute('property');
+          return name && (name.toLowerCase().includes('series') || name.toLowerCase().includes('calibre:series'));
+        });
+      
+      if (metaSeries) {
+        return metaSeries.getAttribute('content') || metaSeries.textContent.trim();
+      }
+      
+      return '';
+    }
+
+    async function extractEpubCover(epub, opfDoc, opfPath) {
+      // Try multiple methods to find cover
+      const coverItem = opfDoc.querySelector('item[properties="cover-image"]');
+      if (coverItem) {
+        const coverHref = coverItem.getAttribute('href');
+        const coverPath = opfPath.replace(/[^/]*$/, '') + coverHref;
+        const coverFile = epub.file(coverPath);
+        if (coverFile) {
+          const coverData = await coverFile.async('base64');
+          return {
+            coverBase64: coverData,
+            coverMime: coverFile.name.split('.').pop() === 'png' ? 'image/png' : 'image/jpeg'
+          };
+        }
+      }
+      
+      // Fallback: look for common cover image names
+      const coverNames = ['cover.jpg', 'cover.png', 'Cover.jpg', 'Cover.png'];
+      for (const coverName of coverNames) {
+        const coverFile = epub.file(coverName);
+        if (coverFile) {
+          const coverData = await coverFile.async('base64');
+          return {
+            coverBase64: coverData,
+            coverMime: coverFile.name.split('.').pop() === 'png' ? 'image/png' : 'image/jpeg'
+          };
+        }
+      }
+      
+      return { coverBase64: null, coverMime: null };
+    }
+
+    function cleanTitle(title) {
+      return title
+        .replace(/\s+/g, ' ')
+        .replace(/[\[\](){}]/g, '')
+        .trim();
+    }
+
+    function cleanAuthor(author) {
+      return author
+        .replace(/\s+/g, ' ')
+        .replace(/[\[\](){}]/g, '')
+        .replace(/by\s+/gi, '')
+        .trim();
+    }
+
+    function cleanHtml(html) {
+      return html
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function extractYear(dateString) {
+      if (!dateString) return '';
+      const yearMatch = dateString.match(/(\d{4})/);
+      return yearMatch ? yearMatch[1] : '';
+    }
+
     async function extractPdfMetadata(file, book) {
-      // For PDF, we'll need to use PDF.js
       try {
         const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
         const pdfjsWorker = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js');
@@ -2426,20 +2641,97 @@
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-        const page = await pdf.getPage(1);
-        const textContent = await page.getTextContent();
         
-        // Extract text from first page
-        const text = textContent.items.map(item => item.str).join(' ');
+        // Get PDF metadata
+        const metadata = await pdf.getMetadata();
         
-        // Try to extract title from first few lines
-        const lines = text.split('\n').filter(line => line.trim());
-        const possibleTitle = lines[0] || book.title;
+        // Extract basic PDF info
+        const pdfInfo = pdf.info;
+        const title = pdfInfo.title || book.title;
+        const author = pdfInfo.author || book.author;
+        const subject = pdfInfo.subject || '';
+        const creator = pdfInfo.creator || '';
+        const producer = pdfInfo.producer || '';
+        const creationDate = pdfInfo.creationDate || '';
+        const modificationDate = pdfInfo.modificationDate || '';
+        
+        // Enhanced text extraction from first few pages
+        let fullText = '';
+        const pagesToExtract = Math.min(3, pdf.numPages);
+        
+        for (let i = 1; i <= pagesToExtract; i++) {
+          try {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+          } catch (pageError) {
+            console.warn(`Failed to extract text from page ${i}:`, pageError);
+          }
+        }
+        
+        // Try to extract title from text if not found in metadata
+        let extractedTitle = title;
+        if (!extractedTitle && fullText) {
+          const lines = fullText.split('\n').filter(line => line.trim());
+          // Look for likely title lines (longer, not all caps, not just numbers)
+          for (const line of lines.slice(0, 10)) {
+            const cleanLine = line.trim();
+            if (cleanLine.length > 10 && 
+                cleanLine.length < 100 && 
+                !cleanLine.match(/^\d+$/) && 
+                !cleanLine.match(/^[A-Z\s]+$/) &&
+                !cleanLine.toLowerCase().includes('chapter') &&
+                !cleanLine.toLowerCase().includes('page')) {
+              extractedTitle = cleanLine;
+              break;
+            }
+          }
+        }
+        
+        // Try to extract author from text if not found in metadata
+        let extractedAuthor = author;
+        if (!extractedAuthor && fullText) {
+          // Look for "by Author" patterns
+          const byAuthorMatch = fullText.match(/(?:by|author)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})/i);
+          if (byAuthorMatch) {
+            extractedAuthor = byAuthorMatch[1];
+          }
+        }
+        
+        // Extract year from dates or text
+        let year = '';
+        if (creationDate) {
+          year = extractYear(creationDate.toString());
+        } else if (fullText) {
+          const yearMatch = fullText.match(/\b(19|20)\d{2}\b/);
+          if (yearMatch) {
+            year = yearMatch[0];
+          }
+        }
+        
+        // Clean description from first page text
+        let description = '';
+        if (fullText) {
+          const lines = fullText.split('\n').filter(line => line.trim());
+          // Take first few meaningful lines as description
+          const meaningfulLines = lines.slice(0, 5).filter(line => 
+            line.length > 20 && 
+            !line.match(/^\d+$/) &&
+            !line.toLowerCase().includes('chapter') &&
+            !line.toLowerCase().includes('page')
+          );
+          description = meaningfulLines.join(' ').substring(0, 500);
+        }
         
         return {
           ...book,
-          title: possibleTitle.length > 100 ? book.title : possibleTitle,
-          description: text.substring(0, 500) + (text.length > 500 ? '...' : '')
+          title: cleanTitle(extractedTitle),
+          author: cleanAuthor(extractedAuthor),
+          publisher: producer,
+          description: description,
+          year: year || book.year,
+          genre: subject || book.genre
         };
       } catch (error) {
         console.warn('PDF parsing failed:', error);
@@ -2448,7 +2740,6 @@
     }
 
     async function extractAudioMetadata(file, book) {
-      // For audio files, we'll use music-metadata-browser
       try {
         const musicMetadata = await import('https://cdn.jsdelivr.net/npm/music-metadata-browser@2.2.10/dist/metadata.min.js');
         
@@ -2458,28 +2749,124 @@
           size: file.size
         });
         
+        // Extract cover art with better fallback
+        let coverBase64 = null;
+        let coverMime = null;
         const cover = metadata.common.picture;
         if (cover && cover.length > 0) {
-          book.coverBase64 = btoa(String.fromCharCode(...new Uint8Array(cover[0].data)));
-          book.coverMime = cover[0].format;
+          // Use the first available cover
+          const coverData = cover[0];
+          coverBase64 = btoa(String.fromCharCode(...new Uint8Array(coverData.data)));
+          coverMime = coverData.format;
+        }
+        
+        // Enhanced metadata extraction with fallbacks
+        const title = metadata.common.title || book.title;
+        const author = metadata.common.artist || book.author;
+        const album = metadata.common.album || '';
+        const genre = metadata.common.genre?.[0] || book.genre;
+        const year = metadata.common.year?.toString() || book.year;
+        const track = metadata.common.track?.no?.toString() || '';
+        const disk = metadata.common.disk?.no?.toString() || '';
+        
+        // For audiobooks, try to extract narrator from comments or other fields
+        let narrator = '';
+        if (metadata.common.comment) {
+          const comments = Array.isArray(metadata.common.comment) 
+            ? metadata.common.comment 
+            : [metadata.common.comment];
+          
+          // Look for narrator information in comments
+          const narratorComment = comments.find(comment => 
+            comment.toLowerCase().includes('narrator') ||
+            comment.toLowerCase().includes('read by') ||
+            comment.toLowerCase().includes('voiced by')
+          );
+          
+          if (narratorComment) {
+            const narratorMatch = narratorComment.match(/(?:narrator|read by|voiced by)[:\s]+(.+?)(?:[,;]|$)/i);
+            if (narratorMatch) {
+              narrator = narratorMatch[1].trim();
+            }
+          }
+        }
+        
+        // Try to detect if this is an audiobook vs music
+        const isAudiobook = detectAudiobook(metadata, file.name);
+        
+        // Extract technical audio information
+        const format = metadata.format;
+        const duration = format.duration ? Math.round(format.duration) : null;
+        const bitrate = format.bitrate || null;
+        const sampleRate = format.sampleRate || null;
+        const channels = format.numberOfChannels || null;
+        const codec = format.codec || '';
+        
+        // Extract additional metadata from format-specific tags
+        const publisher = metadata.common.label || metadata.common.organization || '';
+        const description = metadata.common.description || metadata.common.comment?.[0] || '';
+        
+        // Try to extract series from album or title
+        let series = '';
+        if (isAudiobook && album) {
+          // Check if album name looks like a series
+          const seriesMatch = album.match(/(.+?)(?:\s+(?:#|book)\s*(\d+))?$/i);
+          if (seriesMatch) {
+            series = seriesMatch[1].trim();
+            if (seriesMatch[2]) {
+              series += ` #${seriesMatch[2]}`;
+            }
+          }
         }
         
         return {
           ...book,
-          title: metadata.common.title || book.title,
-          author: metadata.common.artist || '',
-          narrator: metadata.common.artist || '', // For audiobooks
-          year: metadata.common.year?.toString() || '',
-          genre: metadata.common.genre?.[0] || '',
-          duration: metadata.format.duration ? Math.round(metadata.format.duration) : null,
-          bitrate: metadata.format.bitrate || null,
-          sampleRate: metadata.format.sampleRate || null,
-          channels: metadata.format.numberOfChannels || null
+          title: cleanTitle(title),
+          author: cleanAuthor(author),
+          narrator: narrator || (isAudiobook ? author : ''), // Default to author for audiobooks
+          series: series,
+          year: year,
+          publisher: publisher,
+          genre: isAudiobook ? 'Audiobook' : genre,
+          description: description,
+          duration: duration,
+          bitrate: bitrate,
+          sampleRate: sampleRate,
+          channels: channels,
+          codec: codec,
+          track: track,
+          disk: disk,
+          album: album,
+          coverBase64: coverBase64,
+          coverMime: coverMime
         };
       } catch (error) {
         console.warn('Audio metadata extraction failed:', error);
         return book;
       }
+    }
+
+    function detectAudiobook(metadata, fileName) {
+      // Heuristics to detect if this is an audiobook
+      const indicators = [
+        // File name indicators
+        fileName.toLowerCase().includes('audiobook'),
+        fileName.toLowerCase().includes('unabridged'),
+        fileName.toLowerCase().includes('abridged'),
+        
+        // Metadata indicators
+        metadata.common.genre?.some(g => g.toLowerCase().includes('audiobook')),
+        metadata.common.genre?.some(g => g.toLowerCase().includes('book')),
+        metadata.common.album?.toLowerCase().includes('audiobook'),
+        
+        // Long duration (typical for audiobooks)
+        metadata.format.duration && metadata.format.duration > 600, // 10+ minutes
+        
+        // Single track (common for audiobooks)
+        metadata.common.track?.no === 1 && !metadata.common.disk?.no
+      ];
+      
+      return indicators.some(Boolean);
     }
 
     // ===== EXTERNAL API INTEGRATION =====
