@@ -4,8 +4,10 @@ import { getState } from '../../state/store.js';
 export function Header() {
   const { filters, ui, activeView } = getState();
 
-  // Only show header on library view
-  if (activeView !== 'library') return '';
+  // Only show header on audiobooks/ebooks views
+  if (activeView !== 'audiobooks' && activeView !== 'ebooks') return '';
+
+  const placeholder = activeView === 'audiobooks' ? 'Search audiobooks...' : 'Search ebooks...';
 
   return `
     <div class="app-header">
@@ -13,7 +15,7 @@ export function Header() {
         <input
           type="text"
           class="header-search-input"
-          placeholder="Search library..."
+          placeholder="${placeholder}"
           value="${filters.query || ''}"
           data-action="search-input"
         >
@@ -26,7 +28,7 @@ export function Header() {
           ${ui.selectMode ? 'style="color:var(--primary-light)"' : ''}>
           ${icons.check}
         </button>
-        <button class="btn-icon btn-primary-icon" data-action="add-files" aria-label="Add books">
+        <button class="btn-icon btn-primary-icon" data-action="add-files" aria-label="Add files">
           ${icons.plus}
         </button>
       </div>

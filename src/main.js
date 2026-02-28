@@ -72,7 +72,7 @@ async function init() {
   initState({
     books,
     shelves,
-    activeView: 'library',
+    activeView: 'audiobooks',
     activeShelfId: null,
     filters: { format: 'all', query: '' },
     sort: {
@@ -92,7 +92,7 @@ async function init() {
   // Apply theme
   document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
 
-// Initial render — don't wait for IndexedDB so the UI appears immediately
+  // Initial render — don't wait for IndexedDB so the UI appears immediately
   renderApp();
 
   // Load covers from IndexedDB in the background, then re-render
@@ -120,12 +120,6 @@ async function init() {
 
   // Setup keyboard shortcuts
   setupKeyboard();
-
-  // Load covers from IndexedDB asynchronously — re-render once available
-  covers = await getAllCovers();
-  if (Object.keys(covers).length > 0) {
-    renderApp();
-  }
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -174,7 +168,6 @@ function setupEvents() {
       if (results) results.innerHTML = renderCommandPaletteResults(el.value);
     }
   });
-
 }
 
 const debouncedSearch = debounce((query) => setSearchQuery(query), 200);
@@ -652,78 +645,6 @@ async function handleCoverChange(input) {
     }
   };
   reader.readAsDataURL(file);
-}
-
-// ── API Search View ──────────────────────────────────────────────────────────
-
-async function handleApiSearch() {
-  const input = document.getElementById('apiSearchInput');
-  const query = input?.value?.trim();
-  if (!query) return;
-
-  searchState = { results: [], loading: true };
-  renderApp();
-
-  const [g, ol, it, mb] = await Promise.allSettled([
-    fetchGoogleBooks(query),
-    fetchOpenLibrary(query),
-    fetchItunes(query),
-    fetchMusicBrainz(query),
-  ]);
-
-  searchState = {
-    results: [
-      ...(g.status === 'fulfilled' ? g.value : []),
-      ...(ol.status === 'fulfilled' ? ol.value : []),
-      ...(it.status === 'fulfilled' ? it.value : []),
-      ...(mb.status === 'fulfilled' ? mb.value : []),
-    ],
-    loading: false,
-  };
-  renderApp();
-
-  // Restore input value after re-render
-  const newInput = document.getElementById('apiSearchInput');
-  if (newInput) newInput.value = query;
-}
-
-function handleAddSearchResult(index) {
-  const r = searchState.results[index];
-  if (!r) return;
-
-  const newBooks = addBooks([
-    {
-      title: r.title,
-      author: r.author,
-      narrator: r.narrator || '',
-      publisher: r.publisher || '',
-      year: r.year || '',
-      isbn: r.isbn || '',
-      description: r.description || '',
-      genre: r.genre || '',
-      language: r.language || '',
-      format: 'manual',
-    },
-  ]);
-
-  // Fetch cover if available
-  if (r.coverUrl && newBooks[0]) {
-    fetch(r.coverUrl)
-      .then((resp) => resp.blob())
-      .then((blob) => {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const base64 = reader.result.split(',')[1];
-          await saveCover(newBooks[0].id, base64, blob.type || 'image/jpeg');
-          covers[newBooks[0].id] = { base64, mime: blob.type || 'image/jpeg' };
-          renderApp();
-        };
-        reader.readAsDataURL(blob);
-      })
-      .catch(() => {});
-  }
-
-  showToast(`Added "${r.title}"`, 'success');
 }
 
 // ── Bulk Enrichment ──────────────────────────────────────────────────────────

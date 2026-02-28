@@ -5,12 +5,14 @@ import { BookCard } from './BookCard.js';
 import { EmptyState } from './EmptyState.js';
 import { icons } from '../icons.js';
 
-export function Library(covers = {}) {
+export function Library(covers = {}, mediaType = 'audiobooks') {
   const { settings, ui } = getState();
-  const books = getFilteredBooks();
+  const books = getFilteredBooks(mediaType);
+
+  const label = mediaType === 'audiobooks' ? 'audiobooks' : 'ebooks';
 
   if (books.length === 0 && !getState().books.length) {
-    return FilterBar() + EmptyState();
+    return EmptyState(label);
   }
 
   const batchBar =
@@ -29,7 +31,7 @@ export function Library(covers = {}) {
 
   const noResults =
     books.length === 0
-      ? `<div class="empty-state"><h2>No matches</h2><p>Try changing your filters or search query.</p></div>`
+      ? `<div class="empty-state"><h2>No ${label}</h2><p>Import some ${label} or try changing your filters.</p></div>`
       : '';
 
   const cards = books
@@ -37,7 +39,7 @@ export function Library(covers = {}) {
     .join('');
 
   return `
-    ${FilterBar()}
+    ${FilterBar(mediaType)}
     ${batchBar}
     ${noResults}
     <div class="book-grid" data-size="${

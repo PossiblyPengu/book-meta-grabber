@@ -5,7 +5,8 @@ export function ShelfSidebar() {
   const { activeView } = getState();
 
   const tabs = [
-    { view: 'library', icon: icons.book, label: 'Library' },
+    { view: 'audiobooks', icon: icons.headphones, label: 'Audio' },
+    { view: 'ebooks', icon: icons.tablet, label: 'Ebooks' },
     { view: 'settings', icon: icons.settings, label: 'Settings' },
   ];
 

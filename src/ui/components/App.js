@@ -10,8 +10,12 @@ import { SettingsView } from './SettingsView.js';
 export function App(covers = {}) {
   const { activeView } = getState();
 
-  const mainContent =
-    activeView === 'settings' ? SettingsView() : Library(covers);
+  let mainContent;
+  if (activeView === 'settings') {
+    mainContent = SettingsView();
+  } else {
+    mainContent = Library(covers, activeView);
+  }
 
   return `
     ${Header()}

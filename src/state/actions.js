@@ -122,7 +122,8 @@ export function removeBooksFromShelf(shelfId, bookIds) {
 // ── Filters & View ───────────────────────────────────────────────────────────
 
 export function setView(view) {
-  setState({ activeView: view });
+  const { filters } = getState();
+  setState({ activeView: view, filters: { ...filters, format: 'all' } });
 }
 
 export function setActiveShelf(shelfId) {

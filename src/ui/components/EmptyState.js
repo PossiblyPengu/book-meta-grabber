@@ -1,13 +1,14 @@
 import { icons } from '../icons.js';
 
-export function EmptyState() {
+export function EmptyState(label = 'books') {
+  const icon = label === 'audiobooks' ? icons.headphones : icons.book;
   return `
     <div class="empty-state">
-      ${icons.book}
-      <h2>No books yet</h2>
-      <p>Drop files here, or click Add to import books from your device.</p>
+      ${icon}
+      <h2>No ${label} yet</h2>
+      <p>Drop files here, or tap Add to import from your device.</p>
       <button class="btn btn-primary" data-action="add-files">
-        ${icons.plus} Add Your First Book
+        ${icons.plus} Add ${label === 'audiobooks' ? 'Audiobooks' : 'Ebooks'}
       </button>
     </div>
   `;

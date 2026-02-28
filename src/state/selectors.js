@@ -1,9 +1,27 @@
 import { getState } from './store.js';
 import { searchBooks } from '../utils/fuzzySearch.js';
 
-export function getFilteredBooks() {
+const AUDIO_FORMATS = new Set(['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus', 'audiobook-folder']);
+const EBOOK_FORMATS = new Set(['epub', 'pdf']);
+
+export function isAudioFormat(format) {
+  return AUDIO_FORMATS.has(format);
+}
+
+export function isEbookFormat(format) {
+  return EBOOK_FORMATS.has(format);
+}
+
+export function getFilteredBooks(mediaType) {
   const { books, filters, sort, activeShelfId, shelves } = getState();
   let result = [...books];
+
+  // Filter by media type (audiobooks vs ebooks)
+  if (mediaType === 'audiobooks') {
+    result = result.filter((b) => isAudioFormat(b.format));
+  } else if (mediaType === 'ebooks') {
+    result = result.filter((b) => isEbookFormat(b.format));
+  }
 
   // Filter by shelf
   if (activeShelfId) {

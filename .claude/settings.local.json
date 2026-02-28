@@ -12,7 +12,9 @@
       "Bash(node -e \":*)",
       "Bash(curl -s http://localhost:3001/src/services/storage.js)",
       "Bash(curl -s http://localhost:3001/src/styles/variables.css)",
-      "Bash(curl -s http://localhost:3001/src/main.js)"
+      "Bash(curl -s http://localhost:3001/src/main.js)",
+      "Bash(npx prettier --write src/main.js --end-of-line lf)",
+      "Bash(cat /e/CODE/book-meta-grabber/.github/workflows/*)"
     ]
   }
 }
