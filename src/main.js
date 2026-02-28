@@ -92,7 +92,7 @@ async function init() {
   // Apply theme
   document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
 
-  // Initial render (before covers load, so the user sees the UI immediately)
+// Initial render — don't wait for IndexedDB so the UI appears immediately
   renderApp();
 
   // Load covers from IndexedDB in the background, then re-render
@@ -120,6 +120,12 @@ async function init() {
 
   // Setup keyboard shortcuts
   setupKeyboard();
+
+  // Load covers from IndexedDB asynchronously — re-render once available
+  covers = await getAllCovers();
+  if (Object.keys(covers).length > 0) {
+    renderApp();
+  }
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
