@@ -8,8 +8,8 @@ export function SettingsView() {
     <div class="settings-page">
       <h2>Settings</h2>
 
+      <div class="settings-section-header">Appearance</div>
       <div class="settings-card">
-        <h3>Appearance</h3>
         <div class="settings-row">
           <label>Theme</label>
           <div class="theme-toggle">
@@ -45,8 +45,8 @@ export function SettingsView() {
         </div>
       </div>
 
+      <div class="settings-section-header">Library</div>
       <div class="settings-card">
-        <h3>Library</h3>
         <div class="settings-btn-group">
           <button class="btn" data-action="import-library">${
             icons.upload
@@ -60,8 +60,8 @@ export function SettingsView() {
         </div>
       </div>
 
+      <div class="settings-section-header">Tools</div>
       <div class="settings-card">
-        <h3>Tools</h3>
         <div class="settings-btn-group">
           <button class="btn" data-action="enrich-all">${
             icons.zap
@@ -69,8 +69,8 @@ export function SettingsView() {
         </div>
       </div>
 
+      <div class="settings-section-header">Danger Zone</div>
       <div class="settings-card">
-        <h3>Danger Zone</h3>
         <div class="settings-btn-group">
           <button class="btn btn-danger" data-action="clear-library">${
             icons.trash
@@ -78,9 +78,9 @@ export function SettingsView() {
         </div>
       </div>
 
+      <div class="settings-section-header">About</div>
       <div class="settings-card">
-        <h3>About</h3>
-        <p style="font-size:var(--text-sm);color:var(--text-secondary)">
+        <p style="padding:var(--sp-md) var(--sp-section);font-size:0.9375rem;color:var(--text-secondary)">
           <strong>Book Meta Grabber v2.0</strong><br>
           Extract and enrich metadata from your book collection.<br>
           Supports EPUB, PDF, MP3, M4B, FLAC, and OGG formats.

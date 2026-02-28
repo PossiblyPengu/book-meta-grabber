@@ -1,4 +1,4 @@
-/* ===== APP SHELL (mobile-first) ===== */
+/* ===== APP SHELL (mobile-first, iOS style) ===== */
 
 #app {
   display: flex;
@@ -16,9 +16,9 @@
   display: flex;
   align-items: center;
   gap: var(--sp-sm);
-  padding: var(--sp-sm) var(--sp-md);
-  background: rgba(12, 12, 24, 0.75);
-  border-bottom: 1px solid var(--border);
+  padding: 14px var(--sp-section);
+  background: rgba(0, 0, 0, 0.72);
+  border-bottom: 0.5px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -26,12 +26,16 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
+[data-theme="light"] .app-header {
+  background: rgba(242, 242, 247, 0.72);
+}
+
 /* ===== MAIN ===== */
 
 .app-main {
   flex: 1;
-  padding: var(--sp-md);
-  padding-bottom: calc(72px + var(--safe-bottom));
+  padding: 12px var(--sp-section) var(--sp-section);
+  padding-bottom: calc(84px + var(--safe-bottom));
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -45,12 +49,16 @@
   left: 0;
   right: 0;
   display: flex;
-  background: rgba(12, 12, 24, 0.8);
-  border-top: 1px solid var(--border-subtle);
+  background: rgba(0, 0, 0, 0.72);
+  border-top: 0.5px solid var(--border);
   z-index: 100;
-  padding-bottom: var(--safe-bottom);
+  padding: 8px 0 calc(4px + var(--safe-bottom));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+[data-theme="light"] .tab-bar {
+  background: rgba(242, 242, 247, 0.72);
 }
 
 .tab-button {
@@ -58,50 +66,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 10px 0 8px;
+  gap: 4px;
+  padding: 6px 0;
   background: transparent;
-  color: var(--text-dim);
+  color: var(--text-muted);
   min-height: var(--touch-comfortable);
   transition: color var(--t-normal);
   position: relative;
 }
 
 .tab-button svg {
-  width: 22px;
-  height: 22px;
-  transition: filter var(--t-normal);
+  width: 24px;
+  height: 24px;
 }
 
 .tab-button.active {
-  color: var(--primary-light);
-}
-
-.tab-button.active svg {
-  filter: drop-shadow(0 0 6px var(--primary-glow));
-}
-
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 32px;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 0 0 var(--radius-full) var(--radius-full);
-  transform: translateX(-50%) scaleX(1);
-  animation: tabIn 500ms var(--ease-bounce);
-}
-
-@keyframes tabIn {
-  from { transform: translateX(-50%) scaleX(0); }
-  to { transform: translateX(-50%) scaleX(1); }
+  color: var(--primary);
 }
 
 .tab-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.625rem;
+  font-weight: 500;
 }

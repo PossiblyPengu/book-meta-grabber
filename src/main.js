@@ -658,6 +658,7 @@ async function handleBulkEnrich(bookIds) {
   }
 
   await enrichBooks(books, {
+    overwrite: true,
     onProgress(p) {
       setBulkEnrichment(p);
     },

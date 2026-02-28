@@ -37,6 +37,7 @@ export function BookEditor(covers = {}) {
       open ? 'open' : ''
     }" data-action="close-editor"></div>
     <div class="editor-panel ${open ? 'open' : ''}">
+      <div class="editor-drag-handle"></div>
       <div class="editor-header">
         <h2>Edit Metadata</h2>
         <div class="editor-header-actions">

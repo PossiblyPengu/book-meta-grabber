@@ -16,7 +16,8 @@
       "Bash(npx prettier --write src/main.js --end-of-line lf)",
       "Bash(cat /e/CODE/book-meta-grabber/.github/workflows/*)",
       "Bash(npx prettier --write src/state/selectors.js src/ui/components/FilterBar.js src/ui/components/Header.js src/main.js)",
-      "Bash(npx eslint src/main.js src/state/selectors.js src/ui/components/FilterBar.js src/ui/components/Header.js src/ui/components/App.js src/ui/components/ShelfSidebar.js src/ui/components/EmptyState.js src/ui/components/Library.js src/state/actions.js --max-warnings=0)"
+      "Bash(npx eslint src/main.js src/state/selectors.js src/ui/components/FilterBar.js src/ui/components/Header.js src/ui/components/App.js src/ui/components/ShelfSidebar.js src/ui/components/EmptyState.js src/ui/components/Library.js src/state/actions.js --max-warnings=0)",
+      "Bash(npx eslint src/ui/components/SettingsView.js src/ui/components/BookEditor.js --max-warnings=0)"
     ]
   }
 }
