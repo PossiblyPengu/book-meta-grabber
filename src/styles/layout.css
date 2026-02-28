@@ -1,77 +1,107 @@
-/* ===== APP SHELL ===== */
+/* ===== APP SHELL (mobile-first) ===== */
 
 #app {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "sidebar header"
-    "sidebar main";
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
-
-.app-header {
-  grid-area: header;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-4) var(--sp-6);
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  height: 56px;
-  z-index: 10;
-}
-
-.app-sidebar {
-  grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--sp-4) 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
+
+/* ===== HEADER ===== */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  background: rgba(12, 12, 24, 0.75);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* ===== MAIN ===== */
 
 .app-main {
-  grid-area: main;
+  flex: 1;
+  padding: var(--sp-md);
+  padding-bottom: calc(72px + var(--safe-bottom));
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--sp-6);
-  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== BOTTOM TAB BAR ===== */
 
-@media (max-width: 768px) {
-  #app {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas:
-      "header"
-      "main"
-      "nav";
-  }
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: rgba(12, 12, 24, 0.8);
+  border-top: 1px solid var(--border-subtle);
+  z-index: 100;
+  padding-bottom: var(--safe-bottom);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
 
-  .app-sidebar {
-    grid-area: nav;
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-right: none;
-    border-top: 1px solid var(--border);
-    padding: var(--sp-2) var(--sp-3);
-    gap: var(--sp-1);
-  }
+.tab-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 0 8px;
+  background: transparent;
+  color: var(--text-dim);
+  min-height: var(--touch-comfortable);
+  transition: color var(--t-normal);
+  position: relative;
+}
 
-  .app-sidebar .sidebar-section-title,
-  .app-sidebar .shelf-create-btn {
-    display: none;
-  }
+.tab-button svg {
+  width: 22px;
+  height: 22px;
+  transition: filter var(--t-normal);
+}
 
-  .app-main {
-    padding: var(--sp-4);
-  }
+.tab-button.active {
+  color: var(--primary-light);
+}
+
+.tab-button.active svg {
+  filter: drop-shadow(0 0 6px var(--primary-glow));
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 32px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 0 0 var(--radius-full) var(--radius-full);
+  transform: translateX(-50%) scaleX(1);
+  animation: tabIn 500ms var(--ease-bounce);
+}
+
+@keyframes tabIn {
+  from { transform: translateX(-50%) scaleX(0); }
+  to { transform: translateX(-50%) scaleX(1); }
+}
+
+.tab-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

@@ -7,7 +7,12 @@
       "Bash(npx eslint . --ext .js --fix)",
       "Bash(npx prettier --write \"src/**/*.js\")",
       "Bash(npx prettier --write src/main.js src/services/storage.js src/ui/components/CommandPalette.js)",
-      "Bash(npx eslint . --ext .js --max-warnings=0)"
+      "Bash(npx eslint . --ext .js --max-warnings=0)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(node -e \":*)",
+      "Bash(curl -s http://localhost:3001/src/services/storage.js)",
+      "Bash(curl -s http://localhost:3001/src/styles/variables.css)",
+      "Bash(curl -s http://localhost:3001/src/main.js)"
     ]
   }
 }

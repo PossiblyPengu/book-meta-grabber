@@ -60,7 +60,6 @@ import { showToast } from './ui/components/Toast.js';
 
 // ── App-level mutable state (not in store — ephemeral) ──────────────────────
 let covers = {};
-let searchState = { results: [], loading: false };
 let modalCallback = null;
 
 // ── Initialize ──────────────────────────────────────────────────────────────
@@ -90,14 +89,19 @@ async function init() {
     },
   });
 
-  // Load covers from IndexedDB
-  covers = await getAllCovers();
-
   // Apply theme
   document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
 
-  // Initial render
+  // Initial render (before covers load, so the user sees the UI immediately)
   renderApp();
+
+  // Load covers from IndexedDB in the background, then re-render
+  try {
+    covers = await getAllCovers();
+    renderApp();
+  } catch (e) {
+    console.warn('Failed to load covers:', e);
+  }
 
   // Subscribe to all state changes → re-render
   subscribe('*', () => {
@@ -122,7 +126,7 @@ async function init() {
 
 function renderApp() {
   const root = document.getElementById('app');
-  render(root, App(covers, searchState));
+  render(root, App(covers));
 
   // After render, focus command palette input if open
   if (getState().ui.commandPaletteOpen) {
@@ -165,11 +169,6 @@ function setupEvents() {
     }
   });
 
-  root.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.target.dataset.action === 'api-search-input') {
-      handleApiSearch();
-    }
-  });
 }
 
 const debouncedSearch = debounce((query) => setSearchQuery(query), 200);
@@ -334,30 +333,6 @@ async function handleAction(action, el, _e) {
       openEditor(el.dataset.bookId);
       break;
 
-    case 'command-search-apis':
-      closeCommandPalette();
-      setView('search');
-      setTimeout(() => {
-        const input = document.getElementById('apiSearchInput');
-        if (input) {
-          input.value = el.dataset.query;
-          handleApiSearch();
-        }
-      }, 50);
-      break;
-
-    case 'command-isbn-lookup':
-      closeCommandPalette();
-      setView('search');
-      setTimeout(() => {
-        const input = document.getElementById('apiSearchInput');
-        if (input) {
-          input.value = el.dataset.isbn;
-          handleApiSearch();
-        }
-      }, 50);
-      break;
-
     // ── Theme ──
     case 'toggle-theme':
       toggleTheme();
@@ -370,15 +345,6 @@ async function handleAction(action, el, _e) {
 
     case 'set-grid-size':
       updateSettings({ gridSize: el.dataset.size });
-      break;
-
-    // ── Search view ──
-    case 'api-search':
-      handleApiSearch();
-      break;
-
-    case 'add-search-result':
-      handleAddSearchResult(parseInt(el.dataset.index, 10));
       break;
 
     // ── Settings ──
@@ -1016,10 +982,15 @@ function attr(s) {
 init().catch((e) => {
   // eslint-disable-next-line no-console
   console.error('Init failed:', e);
-  document.getElementById('app').innerHTML = `
-    <div style="padding:40px;color:#f44;font-family:monospace">
-      <h1>Failed to initialize</h1>
-      <pre>${e.message}</pre>
-    </div>
-  `;
+  const app = document.getElementById('app');
+  if (app) {
+    app.style.display = 'block';
+    app.innerHTML = `
+      <div style="padding:40px;color:#f44;font-family:monospace;background:#111;min-height:100vh">
+        <h1>Failed to initialize</h1>
+        <pre>${String(e?.message || e)}</pre>
+        <pre>${String(e?.stack || '')}</pre>
+      </div>
+    `;
+  }
 });

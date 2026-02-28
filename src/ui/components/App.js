@@ -5,29 +5,18 @@ import { Library } from './Library.js';
 import { BookEditor } from './BookEditor.js';
 import { CommandPalette } from './CommandPalette.js';
 import { BulkEnrichment } from './BulkEnrichment.js';
-import { SearchView } from './SearchView.js';
 import { SettingsView } from './SettingsView.js';
 
-export function App(covers = {}, searchState = {}) {
+export function App(covers = {}) {
   const { activeView } = getState();
 
-  let mainContent;
-  switch (activeView) {
-    case 'search':
-      mainContent = SearchView(searchState.results || [], searchState.loading);
-      break;
-    case 'settings':
-      mainContent = SettingsView();
-      break;
-    default:
-      mainContent = Library(covers);
-      break;
-  }
+  const mainContent =
+    activeView === 'settings' ? SettingsView() : Library(covers);
 
   return `
-    ${ShelfSidebar()}
     ${Header()}
     <div class="app-main">${mainContent}</div>
+    ${ShelfSidebar()}
     ${BookEditor(covers)}
     ${CommandPalette()}
     ${BulkEnrichment()}

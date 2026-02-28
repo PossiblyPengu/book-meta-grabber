@@ -2,7 +2,11 @@ import { icons } from '../icons.js';
 import { getState } from '../../state/store.js';
 
 export function Header() {
-  const { filters, ui } = getState();
+  const { filters, ui, activeView } = getState();
+
+  // Only show header on library view
+  if (activeView !== 'library') return '';
+
   return `
     <div class="app-header">
       <div class="header-search">
@@ -13,24 +17,17 @@ export function Header() {
           value="${filters.query || ''}"
           data-action="search-input"
         >
-        <span class="header-search-kbd">Ctrl+K</span>
       </div>
       <div class="header-actions">
         <button class="btn-icon" data-action="toggle-sort" aria-label="Sort">${
           icons.sort
         }</button>
-        <button class="btn-icon" data-action="cycle-grid" aria-label="Grid size">${
-          icons.grid
-        }</button>
         <button class="btn-icon" data-action="toggle-select" aria-label="Select mode"
-          ${ui.selectMode ? 'style="color:var(--accent)"' : ''}>
+          ${ui.selectMode ? 'style="color:var(--primary-light)"' : ''}>
           ${icons.check}
         </button>
-        <button class="btn btn-primary" data-action="add-files">
-          ${icons.plus} Add
-        </button>
-        <button class="btn btn-primary" data-action="add-folder" aria-label="Import folder">
-          ${icons.folder}
+        <button class="btn-icon btn-primary-icon" data-action="add-files" aria-label="Add books">
+          ${icons.plus}
         </button>
       </div>
     </div>
