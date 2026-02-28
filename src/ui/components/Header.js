@@ -7,7 +7,8 @@ export function Header() {
   // Only show header on audiobooks/ebooks views
   if (activeView !== 'audiobooks' && activeView !== 'ebooks') return '';
 
-  const placeholder = activeView === 'audiobooks' ? 'Search audiobooks...' : 'Search ebooks...';
+  const placeholder =
+    activeView === 'audiobooks' ? 'Search audiobooks...' : 'Search ebooks...';
 
   return `
     <div class="app-header">

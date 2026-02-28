@@ -100,6 +100,7 @@ async function init() {
     covers = await getAllCovers();
     renderApp();
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.warn('Failed to load covers:', e);
   }
 

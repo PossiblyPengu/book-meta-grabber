@@ -1,7 +1,15 @@
 import { getState } from './store.js';
 import { searchBooks } from '../utils/fuzzySearch.js';
 
-const AUDIO_FORMATS = new Set(['mp3', 'm4b', 'm4a', 'flac', 'ogg', 'opus', 'audiobook-folder']);
+const AUDIO_FORMATS = new Set([
+  'mp3',
+  'm4b',
+  'm4a',
+  'flac',
+  'ogg',
+  'opus',
+  'audiobook-folder',
+]);
 const EBOOK_FORMATS = new Set(['epub', 'pdf']);
 
 export function isAudioFormat(format) {

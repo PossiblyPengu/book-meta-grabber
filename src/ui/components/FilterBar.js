@@ -22,11 +22,15 @@ export function FilterBar(mediaType = 'audiobooks') {
   const stats = getStats();
   const formats = mediaType === 'audiobooks' ? AUDIO_FORMATS : EBOOK_FORMATS;
 
-  const chips = formats.map(
-    (f) =>
-      `<button class="filter-chip ${filters.format === f.value ? 'active' : ''}"
+  const chips = formats
+    .map(
+      (f) =>
+        `<button class="filter-chip ${
+          filters.format === f.value ? 'active' : ''
+        }"
         data-action="set-filter" data-format="${f.value}">${f.label}</button>`
-  ).join('');
+    )
+    .join('');
 
   return `
     <div class="stats-bar">
