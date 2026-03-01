@@ -219,7 +219,10 @@ export function removeBookmark(bookId, bookmarkId) {
   setState({
     books: books.map((b) => {
       if (b.id !== bookId) return b;
-      return { ...b, bookmarks: (b.bookmarks || []).filter((bm) => bm.id !== bookmarkId) };
+      return {
+        ...b,
+        bookmarks: (b.bookmarks || []).filter((bm) => bm.id !== bookmarkId),
+      };
     }),
   });
   debouncedSaveBooks();

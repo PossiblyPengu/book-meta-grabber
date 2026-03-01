@@ -22,12 +22,17 @@ function renderStarPicker(rating) {
 
 function renderTagEditor(tags) {
   const list = tags || [];
-  const tagHtml = list.map((t, i) =>
-    `<span class="tag-chip">
+  const tagHtml = list
+    .map(
+      (t, i) =>
+        `<span class="tag-chip">
       ${escapeHtml(t)}
-      <button class="tag-chip-remove" data-action="remove-tag" data-tag-index="${i}">${icons.x}</button>
+      <button class="tag-chip-remove" data-action="remove-tag" data-tag-index="${i}">${
+          icons.x
+        }</button>
     </span>`
-  ).join('');
+    )
+    .join('');
 
   return `
     <div class="tag-editor">

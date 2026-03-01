@@ -6,11 +6,11 @@ function renderStars(rating) {
   const full = Math.floor(rating);
   const half = rating % 1 >= 0.5 ? 1 : 0;
   const empty = 5 - full - half;
-  return `<div class="book-card-stars">${
-    '<span class="star-full">★</span>'.repeat(full)
-  }${half ? '<span class="star-half">★</span>' : ''}${
-    '<span class="star-empty">★</span>'.repeat(empty)
-  }</div>`;
+  return `<div class="book-card-stars">${'<span class="star-full">★</span>'.repeat(
+    full
+  )}${
+    half ? '<span class="star-half">★</span>' : ''
+  }${'<span class="star-empty">★</span>'.repeat(empty)}</div>`;
 }
 
 export function BookCard(book, { selected = false, covers = {} } = {}) {
@@ -28,9 +28,13 @@ export function BookCard(book, { selected = false, covers = {} } = {}) {
 
   const stars = renderStars(book.rating);
 
-  const tags = (book.tags && book.tags.length > 0)
-    ? `<div class="book-card-tags">${book.tags.slice(0, 2).map(t => `<span class="book-card-tag">${escapeHtml(t)}</span>`).join('')}</div>`
-    : '';
+  const tags =
+    book.tags && book.tags.length > 0
+      ? `<div class="book-card-tags">${book.tags
+          .slice(0, 2)
+          .map((t) => `<span class="book-card-tag">${escapeHtml(t)}</span>`)
+          .join('')}</div>`
+      : '';
 
   return `
     <div class="book-card ${selected ? 'selected' : ''}"

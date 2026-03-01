@@ -30,7 +30,7 @@
   transition: background var(--t-base), border-color var(--t-base);
 }
 
-[data-theme="dark"] .app-header {
+[data-theme='dark'] .app-header {
   border-bottom-color: var(--border-accent);
   box-shadow: 0 1px 0 0 var(--border-accent), var(--shadow-sm);
 }
@@ -48,9 +48,11 @@
   overflow-x: auto;
   scrollbar-width: none;
 }
-.tab-bar::-webkit-scrollbar { display: none; }
+.tab-bar::-webkit-scrollbar {
+  display: none;
+}
 
-[data-theme="dark"] .tab-bar {
+[data-theme='dark'] .tab-bar {
   border-bottom-color: var(--border-accent);
 }
 
@@ -82,7 +84,7 @@
   background: var(--tab-active-bg);
   border-color: var(--border-accent);
 }
-[data-theme="dark"] .tab-button.active {
+[data-theme='dark'] .tab-button.active {
   box-shadow: 0 0 8px var(--primary-glow);
 }
 
@@ -97,7 +99,7 @@
   background: var(--primary);
   border-radius: 1px;
 }
-[data-theme="dark"] .tab-button.active::after {
+[data-theme='dark'] .tab-button.active::after {
   box-shadow: 0 0 6px var(--primary-glow), 0 2px 8px var(--primary-glow);
 }
 
@@ -137,7 +139,7 @@
   border-color: var(--primary);
   background: var(--primary-light);
 }
-[data-theme="dark"] .shelf-pill.active {
+[data-theme='dark'] .shelf-pill.active {
   box-shadow: 0 0 6px var(--primary-glow);
 }
 

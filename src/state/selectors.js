@@ -202,9 +202,13 @@ export function getBookInsights(bookId) {
   if (!book) return null;
 
   const sessions = book.sessions || [];
-  const totalMinutes = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+  const totalMinutes = sessions.reduce(
+    (sum, s) => sum + (s.durationMinutes || 0),
+    0
+  );
   const sessionCount = sessions.length;
-  const avgSessionMinutes = sessionCount > 0 ? Math.round(totalMinutes / sessionCount) : 0;
+  const avgSessionMinutes =
+    sessionCount > 0 ? Math.round(totalMinutes / sessionCount) : 0;
 
   // Calculate reading pace (% per minute)
   const progress = book.progress || 0;
@@ -212,19 +216,23 @@ export function getBookInsights(bookId) {
 
   // Estimated remaining minutes
   const remaining = 100 - progress;
-  const estimatedRemainingMinutes = pacePerMinute > 0 ? Math.round(remaining / pacePerMinute) : 0;
+  const estimatedRemainingMinutes =
+    pacePerMinute > 0 ? Math.round(remaining / pacePerMinute) : 0;
 
   // Estimated finish date based on recent pace
   let estimatedFinishDate = null;
   if (sessionCount >= 2 && pacePerMinute > 0) {
     // Average minutes per day from last 7 sessions
     const recentSessions = sessions.slice(-7);
-    const recentDates = recentSessions.map(s => s.date).filter(Boolean);
+    const recentDates = recentSessions.map((s) => s.date).filter(Boolean);
     if (recentDates.length >= 2) {
       const first = new Date(recentDates[0]);
       const last = new Date(recentDates[recentDates.length - 1]);
       const daySpan = Math.max(1, (last - first) / (1000 * 60 * 60 * 24));
-      const recentTotal = recentSessions.reduce((s, r) => s + (r.durationMinutes || 0), 0);
+      const recentTotal = recentSessions.reduce(
+        (s, r) => s + (r.durationMinutes || 0),
+        0
+      );
       const minutesPerDay = recentTotal / daySpan;
       if (minutesPerDay > 0) {
         const daysLeft = estimatedRemainingMinutes / minutesPerDay;
@@ -239,15 +247,24 @@ export function getBookInsights(bookId) {
   let totalDurationMinutes = 0;
   if (book.duration) {
     const parts = book.duration.split(':').map(Number);
-    if (parts.length === 3) totalDurationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
-    else if (parts.length === 2) totalDurationMinutes = parts[0] * 60 + parts[1];
+    if (parts.length === 3)
+      totalDurationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
+    else if (parts.length === 2)
+      totalDurationMinutes = parts[0] * 60 + parts[1];
   }
 
-  const listenedMinutes = totalDurationMinutes > 0 ? Math.round(totalDurationMinutes * (progress / 100)) : 0;
-  const remainingListenMinutes = totalDurationMinutes > 0 ? Math.round(totalDurationMinutes * (remaining / 100)) : 0;
+  const listenedMinutes =
+    totalDurationMinutes > 0
+      ? Math.round(totalDurationMinutes * (progress / 100))
+      : 0;
+  const remainingListenMinutes =
+    totalDurationMinutes > 0
+      ? Math.round(totalDurationMinutes * (remaining / 100))
+      : 0;
 
   // Last session info
-  const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+  const lastSession =
+    sessions.length > 0 ? sessions[sessions.length - 1] : null;
 
   return {
     totalMinutes,
@@ -269,12 +286,12 @@ export function getCurrentlyReading() {
 
   // If there's an explicit now-playing, use that
   if (settings.nowPlayingId) {
-    const book = books.find(b => b.id === settings.nowPlayingId);
+    const book = books.find((b) => b.id === settings.nowPlayingId);
     if (book) return book;
   }
 
   // Otherwise find the most recently active "reading" book
-  const reading = books.filter(b => b.status === 'reading');
+  const reading = books.filter((b) => b.status === 'reading');
   if (reading.length === 0) return null;
 
   // Sort by most recent session

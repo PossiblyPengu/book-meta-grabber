@@ -103,7 +103,9 @@ function formatTimerDisplay(ms) {
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(
+    s
+  ).padStart(2, '0')}`;
 }
 
 function updateTimerDisplay() {
@@ -144,7 +146,10 @@ async function init() {
 
   // Apply theme
   document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
-  document.documentElement.setAttribute('data-color', settings.colorTheme || 'violet');
+  document.documentElement.setAttribute(
+    'data-color',
+    settings.colorTheme || 'violet'
+  );
 
   // Initial render — don't wait for IndexedDB so the UI appears immediately
   renderApp();
@@ -161,10 +166,7 @@ async function init() {
   // Subscribe to all state changes → re-render
   subscribe('*', () => {
     const s = getState().settings;
-    document.documentElement.setAttribute(
-      'data-theme',
-      s.theme || 'dark'
-    );
+    document.documentElement.setAttribute('data-theme', s.theme || 'dark');
     document.documentElement.setAttribute(
       'data-color',
       s.colorTheme || 'violet'
@@ -646,7 +648,10 @@ async function handleAction(action, el, _e) {
         const newProg = Math.min(100, (book.progress || 0) + 5);
         updateBook(bookId, { progress: newProg });
         if (newProg === 100) {
-          updateBook(bookId, { status: 'finished', finishDate: new Date().toISOString().slice(0, 10) });
+          updateBook(bookId, {
+            status: 'finished',
+            finishDate: new Date().toISOString().slice(0, 10),
+          });
           showToast('Finished!', 'success');
         } else {
           showToast(`Progress: ${newProg}%`, 'info');
@@ -697,7 +702,11 @@ async function handleAction(action, el, _e) {
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = null;
         showToast('Timer paused', 'info');
-      } else if (!timerRunning && timerBookId === bookId && timerPausedElapsed > 0) {
+      } else if (
+        !timerRunning &&
+        timerBookId === bookId &&
+        timerPausedElapsed > 0
+      ) {
         // Resume
         timerStartTime = Date.now();
         timerRunning = true;
