@@ -74,7 +74,7 @@ export function BookEditor(covers = {}) {
   const open = !!book;
 
   if (!open) {
-    return `<div class="editor-overlay"></div><div class="editor-panel"></div>`;
+    return '';
   }
 
   const cover = covers[book.id];
