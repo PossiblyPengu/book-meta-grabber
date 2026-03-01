@@ -5,10 +5,17 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── App Shell ── */
-.app-main {
+.app-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
   background: var(--bg);
   position: relative;
 }

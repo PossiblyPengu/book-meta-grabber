@@ -24,10 +24,12 @@ export function App(covers = {}) {
   }
 
   return `
-    ${Header()}
-    <div class="app-main">${mainContent}</div>
+    <div class="app-shell">
+      ${Header()}
+      ${ShelfSidebar()}
+      <div class="app-main">${mainContent}</div>
+    </div>
     ${NowPlayingBar(covers)}
-    ${ShelfSidebar()}
     ${BookEditor(covers)}
     ${BookDetailView(covers)}
     ${BatchEditor()}
