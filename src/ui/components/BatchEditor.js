@@ -6,7 +6,7 @@ export function BatchEditor() {
   const open = ui.batchEditorOpen && ui.selectedBookIds.size > 0;
 
   if (!open) {
-    return `<div class="editor-overlay"></div><div class="editor-panel"></div>`;
+    return '';
   }
 
   const count = ui.selectedBookIds.size;

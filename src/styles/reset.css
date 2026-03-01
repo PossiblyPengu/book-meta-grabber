@@ -28,22 +28,8 @@ body {
   transition: background var(--t-slow), color var(--t-slow);
 }
 
-/* ── Scanline overlay on body (dark mode subtle effect) ── */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 99999;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
-    rgba(0, 0, 0, var(--scanline-opacity)) 4px
-  );
-  opacity: 1;
-}
+/* ── Scanline overlay (CSS-only, no extra DOM) ── */
+/* Disabled — caused compositing issues with backdrop-filter */
 
 a {
   color: var(--primary);
