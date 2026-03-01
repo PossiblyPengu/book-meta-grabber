@@ -42,7 +42,7 @@
   box-shadow: 0 1px 0 0 var(--border-accent), var(--shadow-sm);
 }
 
-/* ── Tab Bar — Bottom-anchored navigation with HUD indicators ── */
+/* ── Tab Bar — Bottom navigation ── */
 .tab-bar {
   display: flex;
   align-items: center;
@@ -51,7 +51,7 @@
   background: var(--tab-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: var(--border-w) solid var(--border-color);
+  border-top: var(--border-w) solid var(--border-color);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -60,7 +60,7 @@
 }
 
 [data-theme='dark'] .tab-bar {
-  border-bottom-color: var(--border-accent);
+  border-top-color: var(--border-accent);
 }
 
 .tab-button {

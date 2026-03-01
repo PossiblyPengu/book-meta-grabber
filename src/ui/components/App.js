@@ -26,8 +26,8 @@ export function App(covers = {}) {
   return `
     <div class="app-shell">
       ${Header()}
-      ${ShelfSidebar()}
       <div class="app-main">${mainContent}</div>
+      ${ShelfSidebar()}
     </div>
     ${NowPlayingBar(covers)}
     ${BookEditor(covers)}
