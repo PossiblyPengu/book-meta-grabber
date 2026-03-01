@@ -438,6 +438,7 @@
   animation: fadeIn 0.4s ease;
   position: relative;
 }
+.empty-state h2,
 .empty-state h3 {
   font-family: var(--font-mono);
   font-size: 1rem;

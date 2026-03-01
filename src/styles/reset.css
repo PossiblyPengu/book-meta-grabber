@@ -77,6 +77,73 @@ ol {
   list-style: none;
 }
 
+/* ── SVG icon sizing — prevent blow-up ── */
+svg {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* Larger icon contexts */
+.empty-state > svg {
+  width: 64px;
+  height: 64px;
+  color: var(--text-dim);
+  stroke-width: 1;
+}
+
+.tab-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn svg,
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-primary-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.insight-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.detail-bookmark-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.now-playing-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.now-playing-btn-main svg {
+  width: 20px;
+  height: 20px;
+}
+
+.audio-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.audio-btn-play svg {
+  width: 24px;
+  height: 24px;
+}
+
+.command-palette-item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* ── Scrollbar — Marathon HUD thin line ── */
 ::-webkit-scrollbar {
   width: 6px;
