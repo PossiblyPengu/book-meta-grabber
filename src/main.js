@@ -29,7 +29,6 @@ import {
   openDetailView,
   closeDetailView,
   setNowPlaying,
-  clearNowPlaying,
   addBookmark,
   removeBookmark,
   updatePlaybackSpeed,

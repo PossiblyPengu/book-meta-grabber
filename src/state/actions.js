@@ -193,12 +193,10 @@ export function closeDetailView() {
 }
 
 export function setNowPlaying(bookId) {
-  const { settings } = getState();
   updateSettings({ nowPlayingId: bookId });
 }
 
 export function clearNowPlaying() {
-  const { settings } = getState();
   updateSettings({ nowPlayingId: null });
 }
 
