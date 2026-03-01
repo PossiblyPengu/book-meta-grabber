@@ -1,5 +1,5 @@
 import { getState } from '../../state/store.js';
-import { getStats } from '../../state/selectors.js';
+import { StatsCard } from './StatsCard.js';
 
 const AUDIO_FORMATS = [
   { value: 'all', label: 'All' },
@@ -19,7 +19,6 @@ const EBOOK_FORMATS = [
 
 export function FilterBar(mediaType = 'audiobooks') {
   const { filters } = getState();
-  const stats = getStats();
   const formats = mediaType === 'audiobooks' ? AUDIO_FORMATS : EBOOK_FORMATS;
 
   const chips = formats
@@ -33,11 +32,7 @@ export function FilterBar(mediaType = 'audiobooks') {
     .join('');
 
   return `
-    <div class="stats-bar">
-      <div class="stat-item"><span>Total</span> <span class="stat-value">${stats.total}</span></div>
-      <div class="stat-item"><span>Reading</span> <span class="stat-value">${stats.reading}</span></div>
-      <div class="stat-item"><span>Finished</span> <span class="stat-value">${stats.finished}</span></div>
-    </div>
+    ${StatsCard(mediaType)}
     <div class="filter-bar">
       ${chips}
     </div>

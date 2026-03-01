@@ -7,6 +7,7 @@ export function ShelfSidebar() {
   const tabs = [
     { view: 'audiobooks', icon: icons.headphones, label: 'Audio' },
     { view: 'ebooks', icon: icons.tablet, label: 'Ebooks' },
+    { view: 'stats', icon: icons.barChart, label: 'Stats' },
     { view: 'settings', icon: icons.settings, label: 'Settings' },
   ];
 

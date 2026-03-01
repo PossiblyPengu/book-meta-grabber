@@ -1,6 +1,11 @@
 import { getState, setState } from './store.js';
 import { generateId } from '../utils/id.js';
-import { saveBooks, saveShelves, saveSettings } from '../services/storage.js';
+import {
+  saveBooks,
+  saveShelves,
+  saveSettings,
+  saveActivityLog,
+} from '../services/storage.js';
 import { debounce } from '../utils/debounce.js';
 
 const debouncedSaveBooks = debounce(() => saveBooks(getState().books), 500);
@@ -42,6 +47,18 @@ export function updateBook(id, updates) {
   debouncedSaveBooks();
 }
 
+export function addSession(bookId, session) {
+  const { books } = getState();
+  setState({
+    books: books.map((b) => {
+      if (b.id !== bookId) return b;
+      const sessions = [...(b.sessions || []), session];
+      return { ...b, sessions };
+    }),
+  });
+  debouncedSaveBooks();
+}
+
 export function removeBooks(ids) {
   const idSet = new Set(ids);
   const { books, shelves } = getState();
@@ -55,6 +72,15 @@ export function removeBooks(ids) {
   });
   debouncedSaveBooks();
   debouncedSaveShelves();
+}
+
+export function batchUpdateBooks(ids, updates) {
+  const idSet = new Set(ids);
+  const { books } = getState();
+  setState({
+    books: books.map((b) => (idSet.has(b.id) ? { ...b, ...updates } : b)),
+  });
+  debouncedSaveBooks();
 }
 
 export function toggleFavorite(id) {
@@ -158,6 +184,51 @@ export function closeEditor() {
   setState({ ui: { ...getState().ui, editorBookId: null } });
 }
 
+export function openDetailView(bookId) {
+  setState({ ui: { ...getState().ui, detailBookId: bookId } });
+}
+
+export function closeDetailView() {
+  setState({ ui: { ...getState().ui, detailBookId: null } });
+}
+
+export function setNowPlaying(bookId) {
+  const { settings } = getState();
+  updateSettings({ nowPlayingId: bookId });
+}
+
+export function clearNowPlaying() {
+  const { settings } = getState();
+  updateSettings({ nowPlayingId: null });
+}
+
+export function addBookmark(bookId, bookmark) {
+  const { books } = getState();
+  setState({
+    books: books.map((b) => {
+      if (b.id !== bookId) return b;
+      const bookmarks = [...(b.bookmarks || []), bookmark];
+      return { ...b, bookmarks };
+    }),
+  });
+  debouncedSaveBooks();
+}
+
+export function removeBookmark(bookId, bookmarkId) {
+  const { books } = getState();
+  setState({
+    books: books.map((b) => {
+      if (b.id !== bookId) return b;
+      return { ...b, bookmarks: (b.bookmarks || []).filter((bm) => bm.id !== bookmarkId) };
+    }),
+  });
+  debouncedSaveBooks();
+}
+
+export function updatePlaybackSpeed(speed) {
+  updateSettings({ playbackSpeed: speed });
+}
+
 export function toggleSelectMode() {
   const { ui } = getState();
   setState({
@@ -211,4 +282,21 @@ export function updateSettings(updates) {
 export function toggleTheme() {
   const { settings } = getState();
   updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' });
+}
+
+// ── Activity Log ────────────────────────────────────────────────────────────
+
+export function logActivity(minutes) {
+  const { activityLog } = getState();
+  const today = new Date().toISOString().slice(0, 10);
+  const entry = activityLog[today] || { minutesRead: 0, booksUpdated: 0 };
+  const updated = {
+    ...activityLog,
+    [today]: {
+      minutesRead: entry.minutesRead + minutes,
+      booksUpdated: entry.booksUpdated + 1,
+    },
+  };
+  setState({ activityLog: updated });
+  saveActivityLog(updated);
 }

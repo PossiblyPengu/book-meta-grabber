@@ -20,6 +20,7 @@ export function Library(covers = {}, mediaType = 'audiobooks') {
       ? `<div class="batch-bar">
           <div class="batch-bar-info"><strong>${ui.selectedBookIds.size}</strong> selected</div>
           <div class="batch-bar-actions">
+            <button class="btn" data-action="batch-edit">${icons.edit} Edit</button>
             <button class="btn" data-action="batch-enrich">${icons.zap} Enrich</button>
             <button class="btn" data-action="batch-shelf">${icons.folder} Add to Shelf</button>
             <button class="btn" data-action="batch-export">${icons.download} Export</button>

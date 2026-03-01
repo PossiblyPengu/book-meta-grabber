@@ -1,5 +1,6 @@
 import { icons } from '../icons.js';
 import { getState } from '../../state/store.js';
+import { getStreakInfo } from '../../state/selectors.js';
 
 export function Header() {
   const { filters, ui, activeView } = getState();
@@ -10,8 +11,18 @@ export function Header() {
   const placeholder =
     activeView === 'audiobooks' ? 'Search audiobooks...' : 'Search ebooks...';
 
+  const streak = getStreakInfo();
+  const streakHtml =
+    streak.currentStreak > 0
+      ? `<div class="streak-indicator" title="${streak.todayMinutes}/${streak.dailyGoal} min today">
+           <span class="streak-fire">${icons.flame}</span>
+           <span class="streak-count">${streak.currentStreak}</span>
+         </div>`
+      : '';
+
   return `
     <div class="app-header">
+      ${streakHtml}
       <div class="header-search">
         <input
           type="text"

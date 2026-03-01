@@ -177,6 +177,7 @@ const DEFAULT_SETTINGS = {
   sortBy: 'addedAt',
   sortOrder: 'desc',
   exportFormat: 'json',
+  dailyGoal: 30,
 };
 
 export function loadSettings() {
@@ -185,4 +186,16 @@ export function loadSettings() {
 
 export function saveSettings(settings) {
   setJSON(SETTINGS_KEY, settings);
+}
+
+// ── Activity Log ──────────────────────────────────────────────────────────────
+
+const ACTIVITY_KEY = 'bmg_activity_v1';
+
+export function loadActivityLog() {
+  return getJSON(ACTIVITY_KEY, {});
+}
+
+export function saveActivityLog(log) {
+  setJSON(ACTIVITY_KEY, log);
 }

@@ -28,6 +28,30 @@ export function SettingsView() {
           </div>
         </div>
         <div class="settings-row">
+          <label>Colour</label>
+          <div class="color-swatches">
+            ${[
+              { id: 'violet', color: '#7C3AED', label: 'Violet' },
+              { id: 'coral', color: '#F97316', label: 'Coral' },
+              { id: 'ocean', color: '#0284C7', label: 'Ocean' },
+              { id: 'mint', color: '#059669', label: 'Mint' },
+              { id: 'sunset', color: '#DC2626', label: 'Sunset' },
+              { id: 'bubblegum', color: '#DB2777', label: 'Bubblegum' },
+              { id: 'runner', color: '#FF2D55', label: 'Runner' },
+            ]
+              .map(
+                (t) =>
+                  `<button class="color-swatch ${
+                    (settings.colorTheme || 'violet') === t.id ? 'active' : ''
+                  }" data-action="set-color-theme" data-color="${t.id}"
+                    style="--swatch: ${t.color}" title="${t.label}">
+                    <span class="color-swatch-dot"></span>
+                  </button>`
+              )
+              .join('')}
+          </div>
+        </div>
+        <div class="settings-row">
           <label>Grid Size</label>
           <div class="theme-toggle">
             ${['small', 'medium', 'large']
@@ -57,6 +81,22 @@ export function SettingsView() {
           <button class="btn" data-action="export-csv">${
             icons.download
           } Export CSV</button>
+        </div>
+      </div>
+
+      <div class="settings-section-header">Reading Goals</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <label>Daily Goal (minutes)</label>
+          <input
+            type="number"
+            class="editor-input"
+            style="width:100px;text-align:center"
+            min="5"
+            max="480"
+            value="${settings.dailyGoal || 30}"
+            data-action="set-daily-goal"
+          >
         </div>
       </div>
 

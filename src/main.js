@@ -13,6 +13,8 @@ import { initState, getState, setState, subscribe } from './state/store.js';
 import {
   addBooks,
   updateBook,
+  batchUpdateBooks,
+  addSession,
   removeBooks,
   createShelf,
   addBooksToShelf,
@@ -24,6 +26,13 @@ import {
   setSort,
   openEditor,
   closeEditor,
+  openDetailView,
+  closeDetailView,
+  setNowPlaying,
+  clearNowPlaying,
+  addBookmark,
+  removeBookmark,
+  updatePlaybackSpeed,
   toggleSelectMode,
   toggleBookSelection,
   clearSelection,
@@ -32,12 +41,18 @@ import {
   setBulkEnrichment,
   updateSettings,
   toggleTheme,
+  logActivity,
 } from './state/actions.js';
-import { getBookById } from './state/selectors.js';
+import {
+  getBookById,
+  isAudioFormat,
+  isEbookFormat,
+} from './state/selectors.js';
 import {
   loadBooks,
   loadShelves,
   loadSettings,
+  loadActivityLog,
   saveCover,
   getAllCovers,
   deleteCover,
@@ -62,16 +77,52 @@ import { showToast } from './ui/components/Toast.js';
 let covers = {};
 let modalCallback = null;
 
+// ── Reading Timer State ─────────────────────────────────────────────────────
+let timerInterval = null;
+let timerStartTime = null;
+let timerPausedElapsed = 0;
+let timerRunning = false;
+let timerBookId = null;
+
+function stopTimerCleanup() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  timerStartTime = null;
+  timerPausedElapsed = 0;
+  timerRunning = false;
+  timerBookId = null;
+}
+
+function getTimerElapsed() {
+  if (!timerStartTime) return timerPausedElapsed;
+  return timerPausedElapsed + (Date.now() - timerStartTime);
+}
+
+function formatTimerDisplay(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+  const display = document.getElementById('timerDisplay');
+  if (display) display.textContent = formatTimerDisplay(getTimerElapsed());
+}
+
 // ── Initialize ──────────────────────────────────────────────────────────────
 
 async function init() {
   const books = loadBooks();
   const shelves = loadShelves();
   const settings = loadSettings();
+  const activityLog = loadActivityLog();
 
   initState({
     books,
     shelves,
+    activityLog,
     activeView: 'audiobooks',
     activeShelfId: null,
     filters: { format: 'all', query: '' },
@@ -82,15 +133,18 @@ async function init() {
     settings,
     ui: {
       editorBookId: null,
+      detailBookId: null,
       selectMode: false,
       selectedBookIds: new Set(),
       commandPaletteOpen: false,
+      batchEditorOpen: false,
       bulkEnrichment: null,
     },
   });
 
   // Apply theme
   document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
+  document.documentElement.setAttribute('data-color', settings.colorTheme || 'violet');
 
   // Initial render — don't wait for IndexedDB so the UI appears immediately
   renderApp();
@@ -106,9 +160,14 @@ async function init() {
 
   // Subscribe to all state changes → re-render
   subscribe('*', () => {
+    const s = getState().settings;
     document.documentElement.setAttribute(
       'data-theme',
-      getState().settings.theme || 'dark'
+      s.theme || 'dark'
+    );
+    document.documentElement.setAttribute(
+      'data-color',
+      s.colorTheme || 'violet'
     );
     renderApp();
   });
@@ -168,6 +227,21 @@ function setupEvents() {
       const results = document.getElementById('commandPaletteResults');
       if (results) results.innerHTML = renderCommandPaletteResults(el.value);
     }
+    if (el.dataset.action === 'set-daily-goal') {
+      const val = parseInt(el.value, 10);
+      if (val > 0) updateSettings({ dailyGoal: val });
+    }
+    if (el.dataset.action === 'audio-scrub') {
+      handleAction('audio-scrub', el, e);
+    }
+  });
+
+  // Handle Enter key in tag input
+  root.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.id === 'tagInput') {
+      e.preventDefault();
+      handleAction('add-tag', e.target, e);
+    }
   });
 }
 
@@ -218,7 +292,7 @@ async function handleAction(action, el, _e) {
       if (ui.selectMode) {
         toggleBookSelection(bookId);
       } else {
-        openEditor(bookId);
+        openDetailView(bookId);
       }
       break;
     }
@@ -234,6 +308,7 @@ async function handleAction(action, el, _e) {
 
     // ── Editor ──
     case 'close-editor':
+      stopTimerCleanup();
       closeEditor();
       break;
 
@@ -276,6 +351,43 @@ async function handleAction(action, el, _e) {
         clearSelection();
         showToast(`Deleted ${ids.length} book(s)`, 'success');
       }
+      break;
+    }
+
+    case 'batch-edit':
+      setState({
+        ui: { ...getState().ui, batchEditorOpen: true },
+      });
+      break;
+
+    case 'close-batch-editor':
+      setState({
+        ui: { ...getState().ui, batchEditorOpen: false },
+      });
+      break;
+
+    case 'batch-edit-save': {
+      const ids = [...getState().ui.selectedBookIds];
+      const updates = {};
+      const bStatus = document.getElementById('batchStatus')?.value;
+      const bGenre = document.getElementById('batchGenre')?.value?.trim();
+      const bSeries = document.getElementById('batchSeries')?.value?.trim();
+      const bProgress = document.getElementById('batchProgress')?.value;
+      if (bStatus) updates.status = bStatus;
+      if (bGenre) updates.genre = bGenre;
+      if (bSeries) updates.series = bSeries;
+      if (bProgress !== '' && bProgress != null)
+        updates.progress = parseInt(bProgress, 10) || 0;
+      if (Object.keys(updates).length === 0) {
+        showToast('No fields to update', 'info');
+        break;
+      }
+      batchUpdateBooks(ids, updates);
+      setState({
+        ui: { ...getState().ui, batchEditorOpen: false },
+      });
+      clearSelection();
+      showToast(`Updated ${ids.length} book(s)`, 'success');
       break;
     }
 
@@ -347,6 +459,10 @@ async function handleAction(action, el, _e) {
       updateSettings({ gridSize: el.dataset.size });
       break;
 
+    case 'set-color-theme':
+      updateSettings({ colorTheme: el.dataset.color });
+      break;
+
     // ── Settings ──
     case 'import-library':
       handleImportLibrary();
@@ -371,6 +487,301 @@ async function handleAction(action, el, _e) {
         showToast('Library cleared', 'success');
       }
       break;
+
+    // ── Sessions ──
+    case 'log-session': {
+      const bookId = el.dataset.bookId;
+      const date = document.getElementById('sessionDate')?.value;
+      const minutes = parseInt(
+        document.getElementById('sessionMinutes')?.value,
+        10
+      );
+      if (!minutes || minutes <= 0) {
+        showToast('Enter a valid duration', 'info');
+        break;
+      }
+      const notes = document.getElementById('sessionNotes')?.value?.trim();
+      addSession(bookId, {
+        id: Date.now().toString(36),
+        date: date || new Date().toISOString().slice(0, 10),
+        durationMinutes: minutes,
+        notes: notes || '',
+        loggedAt: new Date().toISOString(),
+      });
+      logActivity(minutes);
+      showToast(`Logged ${minutes} min session`, 'success');
+      break;
+    }
+
+    // ── Star Ratings ──
+    case 'set-rating': {
+      const { ui } = getState();
+      if (ui.editorBookId) {
+        const rating = parseInt(el.dataset.rating, 10);
+        updateBook(ui.editorBookId, { rating });
+      }
+      break;
+    }
+
+    // ── Tags ──
+    case 'add-tag': {
+      const { ui } = getState();
+      const input = document.getElementById('tagInput');
+      const tag = input?.value?.trim();
+      if (!tag || !ui.editorBookId) break;
+      const book = getBookById(ui.editorBookId);
+      const tags = [...(book?.tags || [])];
+      if (!tags.includes(tag)) {
+        tags.push(tag);
+        updateBook(ui.editorBookId, { tags });
+        showToast(`Tag "${tag}" added`, 'success');
+      }
+      break;
+    }
+
+    case 'remove-tag': {
+      const { ui } = getState();
+      if (!ui.editorBookId) break;
+      const book = getBookById(ui.editorBookId);
+      const tags = [...(book?.tags || [])];
+      const idx = parseInt(el.dataset.tagIndex, 10);
+      if (idx >= 0 && idx < tags.length) {
+        tags.splice(idx, 1);
+        updateBook(ui.editorBookId, { tags });
+      }
+      break;
+    }
+
+    // ── Reading Timer ──
+    case 'timer-start': {
+      timerBookId = el.dataset.bookId;
+      timerStartTime = Date.now();
+      timerPausedElapsed = 0;
+      timerRunning = true;
+      timerInterval = setInterval(updateTimerDisplay, 1000);
+      // Auto-set as now playing
+      setNowPlaying(timerBookId);
+      // Toggle button visibility
+      const startBtn = document.getElementById('timerStartBtn');
+      const pauseBtn = document.getElementById('timerPauseBtn');
+      const stopBtn = document.getElementById('timerStopBtn');
+      if (startBtn) startBtn.style.display = 'none';
+      if (pauseBtn) pauseBtn.style.display = '';
+      if (stopBtn) stopBtn.style.display = '';
+      break;
+    }
+
+    case 'timer-pause': {
+      timerPausedElapsed = getTimerElapsed();
+      timerStartTime = null;
+      timerRunning = false;
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      const pauseBtn = document.getElementById('timerPauseBtn');
+      const resumeBtn = document.getElementById('timerResumeBtn');
+      if (pauseBtn) pauseBtn.style.display = 'none';
+      if (resumeBtn) resumeBtn.style.display = '';
+      break;
+    }
+
+    case 'timer-resume': {
+      timerStartTime = Date.now();
+      timerRunning = true;
+      timerInterval = setInterval(updateTimerDisplay, 1000);
+      const pauseBtn = document.getElementById('timerPauseBtn');
+      const resumeBtn = document.getElementById('timerResumeBtn');
+      if (resumeBtn) resumeBtn.style.display = 'none';
+      if (pauseBtn) pauseBtn.style.display = '';
+      break;
+    }
+
+    case 'timer-stop': {
+      const elapsed = getTimerElapsed();
+      const minutes = Math.round(elapsed / 60000);
+      const bookId = timerBookId || el.dataset.bookId;
+      stopTimerCleanup();
+      if (minutes > 0 && bookId) {
+        addSession(bookId, {
+          id: Date.now().toString(36),
+          date: new Date().toISOString().slice(0, 10),
+          durationMinutes: minutes,
+          notes: 'Timer session',
+          loggedAt: new Date().toISOString(),
+        });
+        logActivity(minutes);
+        showToast(`Logged ${minutes} min from timer`, 'success');
+      } else {
+        showToast('Session too short to log', 'info');
+      }
+      break;
+    }
+
+    // ── Detail View ──
+    case 'open-detail': {
+      const bookId = el.dataset.bookId;
+      if (bookId) openDetailView(bookId);
+      break;
+    }
+
+    case 'close-detail':
+      closeDetailView();
+      break;
+
+    case 'open-editor-from-detail': {
+      closeDetailView();
+      openEditor(el.dataset.bookId);
+      break;
+    }
+
+    case 'set-now-playing': {
+      setNowPlaying(el.dataset.bookId);
+      showToast('Set as Now Playing', 'success');
+      break;
+    }
+
+    case 'quick-progress-up': {
+      const bookId = el.dataset.bookId;
+      const book = getBookById(bookId);
+      if (book) {
+        const newProg = Math.min(100, (book.progress || 0) + 5);
+        updateBook(bookId, { progress: newProg });
+        if (newProg === 100) {
+          updateBook(bookId, { status: 'finished', finishDate: new Date().toISOString().slice(0, 10) });
+          showToast('Finished!', 'success');
+        } else {
+          showToast(`Progress: ${newProg}%`, 'info');
+        }
+      }
+      break;
+    }
+
+    case 'quick-progress-down': {
+      const bookId = el.dataset.bookId;
+      const book = getBookById(bookId);
+      if (book) {
+        const newProg = Math.max(0, (book.progress || 0) - 5);
+        updateBook(bookId, { progress: newProg });
+        showToast(`Progress: ${newProg}%`, 'info');
+      }
+      break;
+    }
+
+    case 'quick-progress-set': {
+      const bookId = el.dataset.bookId;
+      const progress = parseInt(el.dataset.progress, 10);
+      if (bookId && !isNaN(progress)) {
+        updateBook(bookId, { progress: Math.max(0, Math.min(100, progress)) });
+        showToast(`Progress: ${progress}%`, 'info');
+      }
+      break;
+    }
+
+    case 'mark-finished': {
+      const bookId = el.dataset.bookId;
+      updateBook(bookId, {
+        progress: 100,
+        status: 'finished',
+        finishDate: new Date().toISOString().slice(0, 10),
+      });
+      showToast('Marked as finished!', 'success');
+      break;
+    }
+
+    case 'toggle-now-playing-timer': {
+      const bookId = el.dataset.bookId;
+      if (timerRunning && timerBookId === bookId) {
+        // Pause
+        timerPausedElapsed = getTimerElapsed();
+        timerStartTime = null;
+        timerRunning = false;
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+        showToast('Timer paused', 'info');
+      } else if (!timerRunning && timerBookId === bookId && timerPausedElapsed > 0) {
+        // Resume
+        timerStartTime = Date.now();
+        timerRunning = true;
+        timerInterval = setInterval(updateTimerDisplay, 1000);
+        showToast('Timer resumed', 'info');
+      } else {
+        // Start new timer
+        if (timerRunning) stopTimerCleanup();
+        timerBookId = bookId;
+        timerStartTime = Date.now();
+        timerPausedElapsed = 0;
+        timerRunning = true;
+        timerInterval = setInterval(updateTimerDisplay, 1000);
+        setNowPlaying(bookId);
+        showToast('Timer started', 'info');
+      }
+      break;
+    }
+
+    case 'audio-scrub': {
+      const bookId = el.dataset.bookId;
+      const value = parseInt(el.value, 10);
+      if (bookId && !isNaN(value)) {
+        updateBook(bookId, { progress: value });
+      }
+      break;
+    }
+
+    case 'audio-skip-back': {
+      const bookId = el.dataset.bookId;
+      const book = getBookById(bookId);
+      if (book) {
+        const newProg = Math.max(0, (book.progress || 0) - 1);
+        updateBook(bookId, { progress: newProg });
+      }
+      break;
+    }
+
+    case 'audio-skip-forward': {
+      const bookId = el.dataset.bookId;
+      const book = getBookById(bookId);
+      if (book) {
+        const newProg = Math.min(100, (book.progress || 0) + 1);
+        updateBook(bookId, { progress: newProg });
+      }
+      break;
+    }
+
+    case 'set-playback-speed': {
+      const speed = parseFloat(el.dataset.speed);
+      if (!isNaN(speed)) {
+        updatePlaybackSpeed(speed);
+        showToast(`Playback speed: ${speed}x`, 'info');
+      }
+      break;
+    }
+
+    case 'add-bookmark': {
+      const bookId = el.dataset.bookId;
+      const book = getBookById(bookId);
+      if (book) {
+        const label = prompt('Bookmark label:');
+        if (label?.trim()) {
+          addBookmark(bookId, {
+            id: Date.now().toString(36),
+            label: label.trim(),
+            position: book.currentPage || `${book.progress || 0}%`,
+            createdAt: new Date().toISOString(),
+          });
+          showToast('Bookmark added', 'success');
+        }
+      }
+      break;
+    }
+
+    case 'remove-bookmark': {
+      const bookId = el.dataset.bookId;
+      const bookmarkId = el.dataset.bookmarkId;
+      if (bookId && bookmarkId) {
+        removeBookmark(bookId, bookmarkId);
+        showToast('Bookmark removed', 'info');
+      }
+      break;
+    }
 
     // ── Enrichment ──
     case 'cancel-enrichment':
@@ -455,11 +866,41 @@ async function importFiles(items) {
 
   if (bookEntries.length === 0) return;
 
-  const newBooks = addBooks(bookEntries);
+  // ── Feature 1: Duplicate detection ──
+  const { books: existingBooks } = getState();
+  const makeKey = (t, a) =>
+    `${(t || '').toLowerCase()}::${(a || '').toLowerCase()}`;
+  const existingKeys = new Set(
+    existingBooks.map((b) => makeKey(b.title, b.author))
+  );
+  const existingFiles = new Set(
+    existingBooks.map((b) => (b.fileName || '').toLowerCase())
+  );
+
+  const unique = [];
+  let dupCount = 0;
+  for (const entry of bookEntries) {
+    const key = makeKey(entry.title, entry.author);
+    const fileKey = (entry.fileName || '').toLowerCase();
+    if (existingKeys.has(key) || existingFiles.has(fileKey)) {
+      dupCount++;
+    } else {
+      unique.push(entry);
+      existingKeys.add(key);
+      existingFiles.add(fileKey);
+    }
+  }
+
+  if (dupCount > 0) {
+    showToast(`${dupCount} duplicate(s) skipped`, 'warning');
+  }
+  if (unique.length === 0) return;
+
+  const newBooks = addBooks(unique);
 
   // Save covers to IndexedDB
   for (let i = 0; i < newBooks.length; i++) {
-    const entry = bookEntries[i];
+    const entry = unique[i];
     if (entry.coverBase64) {
       await saveCover(
         newBooks[i].id,
@@ -471,6 +912,28 @@ async function importFiles(items) {
         mime: entry.coverMime || 'image/jpeg',
       };
     }
+  }
+
+  // ── Feature 2: Auto-shelf on import ──
+  const audioIds = [];
+  const ebookIds = [];
+  for (const book of newBooks) {
+    if (isAudioFormat(book.format)) audioIds.push(book.id);
+    else if (isEbookFormat(book.format)) ebookIds.push(book.id);
+  }
+
+  const { shelves } = getState();
+  if (audioIds.length > 0) {
+    let audioShelf = shelves.find(
+      (s) => !s.isSystem && s.name === 'Audiobooks'
+    );
+    if (!audioShelf) audioShelf = createShelf('Audiobooks', '#8B5CF6');
+    addBooksToShelf(audioShelf.id, audioIds);
+  }
+  if (ebookIds.length > 0) {
+    let ebookShelf = shelves.find((s) => !s.isSystem && s.name === 'Ebooks');
+    if (!ebookShelf) ebookShelf = createShelf('Ebooks', '#3b82f6');
+    addBooksToShelf(ebookShelf.id, ebookIds);
   }
 
   showToast(`Added ${newBooks.length} book(s)`, 'success');
@@ -502,6 +965,8 @@ function handleEditorSave() {
     startDate: get('editStartDate'),
     finishDate: get('editFinishDate'),
     notes: get('editNotes'),
+    rating: getBookById(ui.editorBookId)?.rating || 0,
+    tags: getBookById(ui.editorBookId)?.tags || [],
   });
 
   showToast('Saved', 'success');
@@ -867,6 +1332,7 @@ function setupKeyboard() {
     if (e.key === 'Escape') {
       if (getState().ui.commandPaletteOpen) closeCommandPalette();
       else if (getState().ui.editorBookId) closeEditor();
+      else if (getState().ui.detailBookId) closeDetailView();
       else if (getState().ui.selectMode) clearSelection();
     }
 

@@ -2,6 +2,66 @@ import { getState } from '../../state/store.js';
 import { getBookById } from '../../state/selectors.js';
 import { escapeHtml } from '../../utils/escapeHtml.js';
 import { icons } from '../icons.js';
+import { SessionLogger } from './SessionLogger.js';
+
+function renderStarPicker(rating) {
+  const current = rating || 0;
+  let html = '<div class="star-picker">';
+  for (let i = 1; i <= 5; i++) {
+    const filled = i <= current;
+    html += `<button class="star-picker-btn ${filled ? 'filled' : ''}"
+      data-action="set-rating" data-rating="${i}"
+      title="${i} star${i > 1 ? 's' : ''}">★</button>`;
+  }
+  if (current > 0) {
+    html += `<button class="star-picker-clear" data-action="set-rating" data-rating="0" title="Clear rating">${icons.x}</button>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderTagEditor(tags) {
+  const list = tags || [];
+  const tagHtml = list.map((t, i) =>
+    `<span class="tag-chip">
+      ${escapeHtml(t)}
+      <button class="tag-chip-remove" data-action="remove-tag" data-tag-index="${i}">${icons.x}</button>
+    </span>`
+  ).join('');
+
+  return `
+    <div class="tag-editor">
+      <div class="tag-chips">${tagHtml}</div>
+      <div class="tag-input-row">
+        <input class="editor-input tag-input" id="tagInput" placeholder="Add tag..." data-action="tag-input">
+        <button class="btn" data-action="add-tag">${icons.plus} Add</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderReadingTimer(bookId) {
+  return `
+    <div class="editor-section-title">${icons.clock} Reading Timer</div>
+    <div class="reading-timer" id="readingTimer">
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+      <div class="timer-controls">
+        <button class="btn btn-primary" data-action="timer-start" data-book-id="${bookId}" id="timerStartBtn">
+          ${icons.play} Start
+        </button>
+        <button class="btn" data-action="timer-pause" id="timerPauseBtn" style="display:none">
+          ${icons.pause} Pause
+        </button>
+        <button class="btn" data-action="timer-resume" id="timerResumeBtn" style="display:none">
+          ${icons.play} Resume
+        </button>
+        <button class="btn btn-primary" data-action="timer-stop" data-book-id="${bookId}" id="timerStopBtn" style="display:none">
+          ${icons.stop} Save Session
+        </button>
+      </div>
+    </div>
+  `;
+}
 
 export function BookEditor(covers = {}) {
   const { ui, shelves } = getState();
@@ -128,6 +188,16 @@ export function BookEditor(covers = {}) {
           )}</textarea>
         </div>
 
+        <div class="editor-section-title">Rating & Tags</div>
+        <div class="editor-form-group">
+          <label class="editor-label">Rating</label>
+          ${renderStarPicker(book.rating)}
+        </div>
+        <div class="editor-form-group">
+          <label class="editor-label">Tags</label>
+          ${renderTagEditor(book.tags)}
+        </div>
+
         ${
           isAudio
             ? `<div class="editor-section-title">Audio Info</div>
@@ -200,6 +270,10 @@ export function BookEditor(covers = {}) {
             book.notes || ''
           )}</textarea>
         </div>
+
+        ${renderReadingTimer(book.id)}
+
+        ${SessionLogger(book.id)}
 
         ${
           customShelves.length > 0
