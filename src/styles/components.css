@@ -602,6 +602,8 @@
 }
 
 .editor-panel {
+  position: relative;
+  z-index: 501;
   width: 100%;
   max-width: 520px;
   height: 100%;
@@ -1002,6 +1004,8 @@
 }
 
 .detail-view {
+  position: relative;
+  z-index: 401;
   max-width: 720px;
   margin: 0 auto;
   padding: var(--sp-lg);

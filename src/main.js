@@ -219,10 +219,24 @@ function showConfirm(title, body, onConfirm, danger = true) {
   });
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
-  document.body.appendChild(wrapper.firstElementChild);
+  const overlay = wrapper.firstElementChild;
+  document.body.appendChild(overlay);
   modalCallback = onConfirm;
+
+  // Handle clicks inside the modal (it lives outside #app)
+  overlay.addEventListener('click', (e) => {
+    if (
+      e.target.closest('[data-stop-propagation]') &&
+      !e.target.closest('[data-action]')
+    )
+      return;
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    handleAction(el.dataset.action, el, e);
+  });
+
   // Focus trap the modal
-  const modal = document.querySelector('.modal-overlay .modal');
+  const modal = overlay.querySelector('.modal');
   if (modal) {
     if (releaseFocusTrap) releaseFocusTrap();
     releaseFocusTrap = trapFocus(modal);
