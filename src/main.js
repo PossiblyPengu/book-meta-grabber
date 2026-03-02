@@ -978,9 +978,9 @@ function mergeAudioBookParts(entries) {
       entry.format !== 'audiobook-folder' &&
       entry.series
     ) {
-      const key = `${entry.series
+      const key = `${entry.series.toLowerCase().trim()}::${(entry.author || '')
         .toLowerCase()
-        .trim()}::${(entry.author || '').toLowerCase().trim()}`;
+        .trim()}`;
       if (!audioByAlbum.has(key)) audioByAlbum.set(key, []);
       audioByAlbum.get(key).push(entry);
     } else {
