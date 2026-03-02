@@ -149,11 +149,30 @@ async function init() {
   });
 
   // Apply theme
-  document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
-  document.documentElement.setAttribute(
-    'data-color',
-    settings.colorTheme || 'violet'
-  );
+  function resolveTheme(t) {
+    if (t === 'auto') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
+    return t || 'dark';
+  }
+  function applyTheme(theme, color) {
+    const effective = resolveTheme(theme);
+    document.documentElement.setAttribute('data-theme', effective);
+    document.documentElement.setAttribute('data-color', color || 'violet');
+  }
+  applyTheme(settings.theme, settings.colorTheme);
+
+  // Listen for system color scheme changes when auto
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', () => {
+      const s = getState().settings;
+      if (s.theme === 'auto') {
+        applyTheme(s.theme, s.colorTheme);
+      }
+    });
 
   // Initial render — don't wait for IndexedDB so the UI appears immediately
   renderApp();
@@ -170,11 +189,7 @@ async function init() {
   // Subscribe to all state changes → re-render
   subscribe('*', () => {
     const s = getState().settings;
-    document.documentElement.setAttribute('data-theme', s.theme || 'dark');
-    document.documentElement.setAttribute(
-      'data-color',
-      s.colorTheme || 'violet'
-    );
+    applyTheme(s.theme, s.colorTheme);
     renderApp();
   });
 

@@ -31,6 +31,31 @@ body {
   transition: background var(--t-slow), color var(--t-slow);
 }
 
+/* Theme transition on key surfaces */
+.app-shell,
+.app-main,
+.book-card,
+.book-card-info,
+.editor-panel,
+.detail-section,
+.detail-hero,
+.stats-panel,
+.settings-card,
+.filter-bar,
+.tab-bar,
+.modal,
+.toast,
+.command-palette,
+.now-playing-bar,
+.search-result-card,
+.insight-card {
+  transition:
+    background var(--t-slow),
+    border-color var(--t-slow),
+    box-shadow var(--t-slow),
+    color var(--t-slow);
+}
+
 /* ── Scanline overlay (CSS-only, no extra DOM) ── */
 /* Disabled — caused compositing issues with backdrop-filter */
 

@@ -21,6 +21,9 @@
   background: var(--bg);
   position: relative;
 }
+[data-theme='dark'] .app-main {
+  background: var(--bg-gradient);
+}
 
 /* ── Header — Frosted glass with neon bottom edge ── */
 .app-header {
@@ -39,7 +42,8 @@
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   border-bottom: var(--border-w) solid var(--border-color);
   min-height: 56px;
-  transition: background var(--t-base), border-color var(--t-base);
+  transition: background var(--t-slow), border-color var(--t-slow),
+    box-shadow var(--t-slow);
 }
 
 [data-theme='dark'] .app-header {

@@ -25,6 +25,12 @@ export function SettingsView() {
               data-action="set-theme" data-theme="dark">
               ${icons.moon} Dark
             </button>
+            <button class="theme-toggle-btn ${
+              settings.theme === 'auto' ? 'active' : ''
+            }"
+              data-action="set-theme" data-theme="auto">
+              ${icons.monitor} Auto
+            </button>
           </div>
         </div>
         <div class="settings-row">
@@ -38,6 +44,8 @@ export function SettingsView() {
               { id: 'sunset', color: '#DC2626', label: 'Sunset' },
               { id: 'bubblegum', color: '#DB2777', label: 'Bubblegum' },
               { id: 'runner', color: '#FF2D55', label: 'Runner' },
+              { id: 'slate', color: '#475569', label: 'Slate' },
+              { id: 'gold', color: '#B45309', label: 'Gold' },
             ]
               .map(
                 (t) =>

@@ -301,7 +301,9 @@ export function updateSettings(updates) {
 
 export function toggleTheme() {
   const { settings } = getState();
-  updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' });
+  const order = ['dark', 'light', 'auto'];
+  const idx = order.indexOf(settings.theme || 'dark');
+  updateSettings({ theme: order[(idx + 1) % order.length] });
 }
 
 // ── Activity Log ────────────────────────────────────────────────────────────
