@@ -8,6 +8,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -16,6 +17,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  touch-action: manipulation;
 }
 
 body {
@@ -25,6 +27,7 @@ body {
   line-height: 1.5;
   min-height: 100dvh;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
   transition: background var(--t-slow), color var(--t-slow);
 }
 
@@ -49,6 +52,21 @@ textarea {
   border: none;
   outline: none;
   background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS Safari zoom on focus for inputs < 16px */
+@media screen and (max-width: 768px) {
+  input[type='text'],
+  input[type='number'],
+  input[type='search'],
+  input[type='email'],
+  input[type='url'],
+  input[type='tel'],
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 button {
