@@ -97,6 +97,39 @@ export async function enrichBooks(
   return results;
 }
 
+/**
+ * Enrich a single book entry (no store ID required).
+ * Returns the entry merged with any API-found metadata.
+ */
+export async function enrichEntry(entry) {
+  const query = buildQuery(entry);
+  if (!query) return entry;
+
+  try {
+    const [g, ol, it, mb] = await Promise.allSettled([
+      fetchGoogleBooks(query),
+      fetchOpenLibrary(query),
+      fetchItunes(query),
+      fetchMusicBrainz(query),
+    ]);
+    const all = [
+      ...(g.status === 'fulfilled' ? g.value : []),
+      ...(ol.status === 'fulfilled' ? ol.value : []),
+      ...(it.status === 'fulfilled' ? it.value : []),
+      ...(mb.status === 'fulfilled' ? mb.value : []),
+    ];
+
+    const best = pickBest(all, entry);
+    if (best) {
+      const updates = buildUpdates(entry, best, false);
+      return { ...entry, ...updates };
+    }
+  } catch {
+    // enrichment failure is non-fatal
+  }
+  return entry;
+}
+
 function buildQuery(book) {
   const parts = [];
   if (book.title) parts.push(book.title);

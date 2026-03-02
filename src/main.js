@@ -65,7 +65,11 @@ import {
   fetchItunes,
   fetchMusicBrainz,
 } from './services/apis.js';
-import { enrichBooks, cancelEnrichment } from './services/enrichment.js';
+import {
+  enrichBooks,
+  enrichEntry,
+  cancelEnrichment,
+} from './services/enrichment.js';
 import { debounce } from './utils/debounce.js';
 import { trapFocus } from './utils/focusTrap.js';
 import { isScannerSupported, startScanner } from './utils/barcodeScanner.js';
@@ -584,9 +588,11 @@ async function handleAction(action, el, _e) {
         'Clear Library',
         'Delete ALL books? This cannot be undone.',
         () => {
-          setState({ books: [] });
+          const allIds = getState().books.map((b) => b.id);
+          if (allIds.length) removeBooks(allIds);
           covers = {};
           showToast('Library cleared', 'success');
+          renderApp();
         }
       );
       break;
@@ -964,35 +970,51 @@ async function handleAction(action, el, _e) {
 // ── File Import ──────────────────────────────────────────────────────────────
 
 /**
- * Groups individual audio files that belong to the same audiobook
- * (matching album/series + author metadata) into a single entry.
+ * Groups individual audio files that belong to the same audiobook into
+ * a single entry.  Grouping keys (tried in order):
+ *  1. Enriched title + author  (from API results)
+ *  2. Album / series + author  (from embedded metadata)
  */
 function mergeAudioBookParts(entries) {
   const nonAudio = [];
-  const audioByAlbum = new Map();
+  const audioEntries = [];
 
   for (const entry of entries) {
-    // Only group individual audio files that have an album/series tag
-    if (
-      isAudioFormat(entry.format) &&
-      entry.format !== 'audiobook-folder' &&
-      entry.series
-    ) {
-      const key = `${entry.series.toLowerCase().trim()}::${(entry.author || '')
-        .toLowerCase()
-        .trim()}`;
-      if (!audioByAlbum.has(key)) audioByAlbum.set(key, []);
-      audioByAlbum.get(key).push(entry);
+    if (isAudioFormat(entry.format) && entry.format !== 'audiobook-folder') {
+      audioEntries.push(entry);
     } else {
       nonAudio.push(entry);
     }
   }
 
-  const merged = [...nonAudio];
+  // Nothing to merge
+  if (audioEntries.length <= 1) return [...nonAudio, ...audioEntries];
 
-  for (const [, group] of audioByAlbum) {
+  // Build a grouping key for each audio entry
+  const keyOf = (e) => {
+    // Prefer enriched title+author; fall back to series(album)+author
+    const title = (e.enrichedTitle || e.series || '').toLowerCase().trim();
+    const author = (e.enrichedAuthor || e.author || '').toLowerCase().trim();
+    return title && author ? `${title}::${author}` : null;
+  };
+
+  const groups = new Map();
+  const ungrouped = [];
+
+  for (const entry of audioEntries) {
+    const key = keyOf(entry);
+    if (key) {
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(entry);
+    } else {
+      ungrouped.push(entry);
+    }
+  }
+
+  const merged = [...nonAudio, ...ungrouped];
+
+  for (const [, group] of groups) {
     if (group.length === 1) {
-      // Single file — keep as-is
       merged.push(group[0]);
       continue;
     }
@@ -1008,7 +1030,7 @@ function mergeAudioBookParts(entries) {
     const primary = group[0];
     const totalDuration = group.reduce((sum, e) => sum + (e.duration || 0), 0);
 
-    // Use the first available cover art from any part
+    // Pick best cover from any part
     let coverBase64 = null;
     let coverMime = null;
     for (const e of group) {
@@ -1019,11 +1041,16 @@ function mergeAudioBookParts(entries) {
       }
     }
 
+    // Use enriched metadata when available
+    const title = primary.enrichedTitle || primary.series || primary.title;
+    const author = primary.enrichedAuthor || primary.author;
+
     merged.push({
       ...primary,
-      title: primary.series || primary.title,
+      title,
+      author,
       format: 'audiobook-folder',
-      fileName: primary.series || primary.fileName,
+      fileName: title || primary.fileName,
       partCount: group.length,
       duration: totalDuration || null,
       coverBase64,
@@ -1090,9 +1117,66 @@ async function importFiles(items) {
     }
   }
 
+  // ── Auto-enrich audio files before grouping ──
+  // Enrichment provides proper title/author from APIs so chapter files
+  // from the same audiobook can be recognised and merged.
+  const audioIndices = [];
+  for (let i = 0; i < bookEntries.length; i++) {
+    if (
+      isAudioFormat(bookEntries[i].format) &&
+      bookEntries[i].format !== 'audiobook-folder'
+    ) {
+      audioIndices.push(i);
+    }
+  }
+
+  if (audioIndices.length > 1) {
+    showToast('Enriching audio files for grouping...', 'info');
+
+    // Deduplicate API calls: entries that already share the same
+    // extracted title+author only need one lookup.
+    const enrichCache = new Map();
+    for (const idx of audioIndices) {
+      const e = bookEntries[idx];
+      const cacheKey =
+        `${(e.title || '').toLowerCase()}::` +
+        `${(e.author || '').toLowerCase()}`;
+
+      let enriched;
+      if (enrichCache.has(cacheKey)) {
+        enriched = enrichCache.get(cacheKey);
+      } else {
+        enriched = await enrichEntry(e);
+        enrichCache.set(cacheKey, enriched);
+      }
+
+      // Stash enriched metadata so mergeAudioBookParts can use it
+      bookEntries[idx].enrichedTitle = enriched.title || '';
+      bookEntries[idx].enrichedAuthor = enriched.author || '';
+
+      // Also apply other enriched fields that were missing
+      const fields = [
+        'narrator',
+        'publisher',
+        'year',
+        'isbn',
+        'description',
+        'genre',
+        'language',
+      ];
+      for (const f of fields) {
+        if (enriched[f] && !bookEntries[idx][f]) {
+          bookEntries[idx][f] = enriched[f];
+        }
+      }
+      if (enriched.coverUrl && !bookEntries[idx].coverBase64) {
+        bookEntries[idx].enrichedCoverUrl = enriched.coverUrl;
+      }
+    }
+  }
+
   // ── Merge multi-file audiobooks ──
-  // When individual audio files share the same album (series) + author,
-  // group them into a single audiobook-folder entry.
+  // Groups audio files by enriched title+author (or album+author).
   bookEntries = mergeAudioBookParts(bookEntries);
 
   if (bookEntries.length === 0) return;
@@ -1151,6 +1235,27 @@ async function importFiles(items) {
         base64: entry.coverBase64,
         mime: entry.coverMime || 'image/jpeg',
       };
+    } else if (entry.enrichedCoverUrl) {
+      // Download cover from enrichment API result
+      try {
+        const resp = await fetch(entry.enrichedCoverUrl);
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const reader = new FileReader();
+          await new Promise((resolve) => {
+            reader.onload = async () => {
+              const base64 = reader.result.split(',')[1];
+              const mime = blob.type || 'image/jpeg';
+              await saveCover(newBooks[i].id, base64, mime);
+              covers[newBooks[i].id] = { base64, mime };
+              resolve();
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch {
+        // cover download failure is non-fatal
+      }
     }
   }
 
