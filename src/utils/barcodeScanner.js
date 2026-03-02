@@ -3,6 +3,8 @@
  * Falls back gracefully if BarcodeDetector is not available.
  */
 
+/* global BarcodeDetector */
+
 export function isScannerSupported() {
   return 'BarcodeDetector' in window;
 }
@@ -19,7 +21,11 @@ export async function startScanner(onDetect, onError) {
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
     });
   } catch (e) {
     onError?.('Camera access denied');

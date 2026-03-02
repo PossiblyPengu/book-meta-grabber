@@ -156,13 +156,20 @@ function matchesSmartRules(book, rules) {
     const val = String(book[rule.field] || '').toLowerCase();
     const target = String(rule.value || '').toLowerCase();
     switch (rule.op) {
-      case 'equals': return val === target;
-      case 'contains': return val.includes(target);
-      case 'gt': return Number(book[rule.field] || 0) > Number(rule.value);
-      case 'lt': return Number(book[rule.field] || 0) < Number(rule.value);
-      case 'gte': return Number(book[rule.field] || 0) >= Number(rule.value);
-      case 'exists': return !!book[rule.field];
-      default: return false;
+      case 'equals':
+        return val === target;
+      case 'contains':
+        return val.includes(target);
+      case 'gt':
+        return Number(book[rule.field] || 0) > Number(rule.value);
+      case 'lt':
+        return Number(book[rule.field] || 0) < Number(rule.value);
+      case 'gte':
+        return Number(book[rule.field] || 0) >= Number(rule.value);
+      case 'exists':
+        return !!book[rule.field];
+      default:
+        return false;
     }
   });
 }

@@ -191,7 +191,13 @@ async function init() {
 // ── Confirm Dialog (replaces window.confirm) ─────────────────────────────
 
 function showConfirm(title, body, onConfirm, danger = true) {
-  const html = Modal({ title, body, confirmText: 'Confirm', cancelText: 'Cancel', danger });
+  const html = Modal({
+    title,
+    body,
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+    danger,
+  });
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper.firstElementChild);
@@ -533,9 +539,18 @@ async function handleAction(action, el, _e) {
 
     case 'create-smart-shelf': {
       const presets = {
-        'top-rated': { name: 'Top Rated', rules: [{ field: 'rating', op: 'gte', value: 4 }] },
-        'favorites': { name: 'Favorites', rules: [{ field: 'favorite', op: 'equals', value: 'true' }] },
-        'long-books': { name: 'Almost Done', rules: [{ field: 'progress', op: 'gt', value: 80 }] },
+        'top-rated': {
+          name: 'Top Rated',
+          rules: [{ field: 'rating', op: 'gte', value: 4 }],
+        },
+        favorites: {
+          name: 'Favorites',
+          rules: [{ field: 'favorite', op: 'equals', value: 'true' }],
+        },
+        'long-books': {
+          name: 'Almost Done',
+          rules: [{ field: 'progress', op: 'gt', value: 80 }],
+        },
       };
       const preset = presets[el.dataset.preset];
       if (preset) {
@@ -869,13 +884,16 @@ async function handleAction(action, el, _e) {
       if (book) {
         const text = prompt('Note:');
         if (text?.trim()) {
-          const tsNotes = [...(book.timestampedNotes || []), {
-            id: Date.now().toString(36),
-            text: text.trim(),
-            timestamp: new Date().toLocaleString(),
-            position: book.currentPage || `${book.progress || 0}%`,
-            createdAt: new Date().toISOString(),
-          }];
+          const tsNotes = [
+            ...(book.timestampedNotes || []),
+            {
+              id: Date.now().toString(36),
+              text: text.trim(),
+              timestamp: new Date().toLocaleString(),
+              position: book.currentPage || `${book.progress || 0}%`,
+              createdAt: new Date().toISOString(),
+            },
+          ];
           updateBook(bookId, { timestampedNotes: tsNotes });
           showToast('Note added', 'success');
         }
@@ -888,7 +906,9 @@ async function handleAction(action, el, _e) {
       const noteId = el.dataset.noteId;
       const book = getBookById(bookId);
       if (book && noteId) {
-        const tsNotes = (book.timestampedNotes || []).filter((n) => n.id !== noteId);
+        const tsNotes = (book.timestampedNotes || []).filter(
+          (n) => n.id !== noteId
+        );
         updateBook(bookId, { timestampedNotes: tsNotes });
         showToast('Note removed', 'info');
       }
@@ -908,14 +928,20 @@ async function handleAction(action, el, _e) {
     case 'close-modal':
       document.querySelector('.modal-overlay')?.remove();
       modalCallback = null;
-      if (releaseFocusTrap) { releaseFocusTrap(); releaseFocusTrap = null; }
+      if (releaseFocusTrap) {
+        releaseFocusTrap();
+        releaseFocusTrap = null;
+      }
       break;
 
     case 'confirm-modal':
       modalCallback?.();
       document.querySelector('.modal-overlay')?.remove();
       modalCallback = null;
-      if (releaseFocusTrap) { releaseFocusTrap(); releaseFocusTrap = null; }
+      if (releaseFocusTrap) {
+        releaseFocusTrap();
+        releaseFocusTrap = null;
+      }
       break;
   }
 }
@@ -1419,7 +1445,9 @@ async function handleScanIsbn() {
           addBooks([{ ...bookData, isbn, format: 'epub' }]);
           showToast(`Added: ${bookData.title || isbn}`, 'success');
         } else {
-          addBooks([{ title: `ISBN ${isbn}`, author: '', isbn, format: 'epub' }]);
+          addBooks([
+            { title: `ISBN ${isbn}`, author: '', isbn, format: 'epub' },
+          ]);
           showToast('Book added — enrich to fill metadata', 'info');
         }
       } catch {
@@ -1479,19 +1507,19 @@ function parseGoodreadsCsv(text) {
 
   // Parse header row
   const headers = parseCsvRow(lines[0]);
-  const col = (name) => headers.findIndex(
-    (h) => h.toLowerCase().trim() === name.toLowerCase()
-  );
+  const col = (name) =>
+    headers.findIndex((h) => h.toLowerCase().trim() === name.toLowerCase());
 
   const iTitle = col('title');
   const iAuthor = col('author');
   const iIsbn = col('isbn13') !== -1 ? col('isbn13') : col('isbn');
   const iRating = col('my rating');
-  const iPages = col('number of pages');
-  const iYear = col('year published') !== -1 ? col('year published') : col('original publication year');
+  const iYear =
+    col('year published') !== -1
+      ? col('year published')
+      : col('original publication year');
   const iShelf = col('exclusive shelf');
   const iDateRead = col('date read');
-  const iDateAdded = col('date added');
   const iReview = col('my review');
   const iPublisher = col('publisher');
 
@@ -1505,7 +1533,7 @@ function parseGoodreadsCsv(text) {
 
     const shelfStatus = {
       'currently-reading': 'reading',
-      'read': 'finished',
+      read: 'finished',
       'to-read': 'unread',
     };
 
@@ -1517,7 +1545,8 @@ function parseGoodreadsCsv(text) {
       isbn: iIsbn !== -1 ? (row[iIsbn] || '').replace(/[="]/g, '').trim() : '',
       rating: rating > 0 ? rating : 0,
       year: iYear !== -1 ? (row[iYear] || '').trim() : '',
-      status: iShelf !== -1 ? (shelfStatus[row[iShelf]?.trim()] || 'unread') : 'unread',
+      status:
+        iShelf !== -1 ? shelfStatus[row[iShelf]?.trim()] || 'unread' : 'unread',
       finishDate: iDateRead !== -1 ? (row[iDateRead] || '').trim() : '',
       notes: iReview !== -1 ? (row[iReview] || '').trim() : '',
       publisher: iPublisher !== -1 ? (row[iPublisher] || '').trim() : '',
@@ -1536,15 +1565,19 @@ function parseCsvRow(line) {
     const ch = line[i];
     if (inQuotes) {
       if (ch === '"') {
-        if (line[i + 1] === '"') { current += '"'; i++; }
-        else inQuotes = false;
+        if (line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else inQuotes = false;
       } else {
         current += ch;
       }
     } else {
       if (ch === '"') inQuotes = true;
-      else if (ch === ',') { result.push(current); current = ''; }
-      else current += ch;
+      else if (ch === ',') {
+        result.push(current);
+        current = '';
+      } else current += ch;
     }
   }
   result.push(current);
@@ -1661,7 +1694,13 @@ function setupKeyboard() {
     // Arrow keys: Navigate book grid
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       const grid = document.querySelector('.book-grid');
-      if (!grid || getState().ui.editorBookId || getState().ui.detailBookId || getState().ui.commandPaletteOpen) return;
+      if (
+        !grid ||
+        getState().ui.editorBookId ||
+        getState().ui.detailBookId ||
+        getState().ui.commandPaletteOpen
+      )
+        return;
 
       const cards = [...grid.querySelectorAll('.book-card')];
       if (!cards.length) return;
@@ -1678,14 +1717,17 @@ function setupKeyboard() {
         e.preventDefault();
         if (e.key === 'ArrowRight') idx = Math.min(idx + 1, cards.length - 1);
         else if (e.key === 'ArrowLeft') idx = Math.max(idx - 1, 0);
-        else if (e.key === 'ArrowDown') idx = Math.min(idx + cols, cards.length - 1);
+        else if (e.key === 'ArrowDown')
+          idx = Math.min(idx + cols, cards.length - 1);
         else if (e.key === 'ArrowUp') idx = Math.max(idx - cols, 0);
       }
 
       cards[idx].setAttribute('tabindex', '0');
       cards[idx].focus();
       // Clean up other tabindexes
-      cards.forEach((c, i) => { if (i !== idx) c.removeAttribute('tabindex'); });
+      cards.forEach((c, i) => {
+        if (i !== idx) c.removeAttribute('tabindex');
+      });
     }
 
     // Enter: Open focused book card
