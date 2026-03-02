@@ -3219,6 +3219,66 @@ body:has(.now-playing-bar) .tab-bar {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   TRACK LIST — Multi-part audiobook part listing
+   ═══════════════════════════════════════════════════════════════ */
+
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: var(--border-w) solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+[data-theme='dark'] .track-list {
+  border-color: var(--border-accent);
+}
+
+.track-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: 0.8rem;
+  border-bottom: var(--border-w) solid var(--border-color);
+  transition: background var(--t-fast);
+}
+.track-row:last-child {
+  border-bottom: none;
+}
+.track-row:nth-child(odd) {
+  background: var(--bg-tertiary);
+}
+[data-theme='dark'] .track-row {
+  border-bottom-color: var(--border-accent);
+}
+[data-theme='dark'] .track-row:nth-child(odd) {
+  background: var(--surface-sunken);
+}
+
+.track-num {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.track-title {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-dur {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    META SELECTOR — Import Metadata Picker
    ═══════════════════════════════════════════════════════════════ */
 

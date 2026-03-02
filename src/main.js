@@ -1250,6 +1250,13 @@ function mergeAudioBookParts(entries) {
       duration: totalDuration || null,
       coverBase64,
       coverMime,
+      // Per-track metadata for the "Tracks" list in the detail view.
+      audioParts: group.map((e, idx) => ({
+        fileName: e.fileName || '',
+        title: e.title || e.fileName || `Part ${idx + 1}`,
+        duration: e.duration || null,
+        trackNumber: e.trackNumber ?? idx + 1,
+      })),
       // Track individual source filenames so we can consolidate pre-existing
       // individually-imported entries when the same files are re-imported.
       sourceFileNames: group.map((e) => (e.fileName || '').toLowerCase()),

@@ -153,6 +153,50 @@ export function BookDetailView(covers = {}) {
     .filter(Boolean)
     .join('');
 
+  function renderTrackList(b) {
+    const parts = b.audioParts || [];
+
+    const formatSecs = (secs) => {
+      if (!secs) return null;
+      const s = Math.round(secs);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      if (h > 0) {
+        return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(
+          2,
+          '0'
+        )}`;
+      }
+      return `${m}:${String(sec).padStart(2, '0')}`;
+    };
+
+    const rows = parts
+      .map(
+        (p, i) => `
+        <div class="track-row">
+          <span class="track-num">${p.trackNumber ?? i + 1}</span>
+          <span class="track-title">${escapeHtml(
+            p.title || p.fileName || `Part ${i + 1}`
+          )}</span>
+          ${
+            p.duration
+              ? `<span class="track-dur">${formatSecs(p.duration)}</span>`
+              : ''
+          }
+        </div>`
+      )
+      .join('');
+
+    return `
+      <div class="detail-section">
+        <div class="detail-section-header">
+          <span>${icons.list} Tracks (${parts.length})</span>
+        </div>
+        <div class="track-list">${rows}</div>
+      </div>`;
+  }
+
   function renderTimestampedNotes(b) {
     const notes = b.timestampedNotes || [];
     if (!notes.length && !b.notes) {
@@ -280,6 +324,9 @@ export function BookDetailView(covers = {}) {
 
         <!-- Audio Player (for audiobooks) -->
         ${isAudio ? AudioPlayer(book, insights) : ''}
+
+        <!-- Track list (multi-part audiobooks) -->
+        ${isAudio && book.audioParts?.length > 1 ? renderTrackList(book) : ''}
 
         <!-- Reading Insights -->
         ${ReadingInsights(book, insights)}
