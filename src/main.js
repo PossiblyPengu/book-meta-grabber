@@ -67,12 +67,15 @@ import {
 } from './services/apis.js';
 import {
   enrichBooks,
-  enrichEntry,
+  searchMetadata,
+  buildQueryFromEntry,
   cancelEnrichment,
 } from './services/enrichment.js';
+import { escapeHtml } from './utils/escapeHtml.js';
 import { debounce } from './utils/debounce.js';
 import { trapFocus } from './utils/focusTrap.js';
 import { isScannerSupported, startScanner } from './utils/barcodeScanner.js';
+import { parseAudiobookFileName } from './utils/filenameParser.js';
 
 import { App } from './ui/components/App.js';
 import { Modal } from './ui/components/Modal.js';
@@ -232,6 +235,167 @@ function showConfirm(title, body, onConfirm, danger = true) {
     if (releaseFocusTrap) releaseFocusTrap();
     releaseFocusTrap = trapFocus(modal);
   }
+}
+
+// ── Metadata Selector ────────────────────────────────────────────────────────
+
+/**
+ * Show an interactive metadata picker for a single book entry.
+ * Searches all APIs with the detected title/author, lets the user browse
+ * results and choose the correct match (or skip).
+ *
+ * @param {Object} entry - Parsed book entry
+ * @param {Object} [opts]
+ * @param {number} [opts.current=1]  - 1-based index in current batch
+ * @param {number} [opts.total=1]   - Total books in current batch
+ * @returns {Promise<Object|null>}  Resolved result object, or null if skipped
+ */
+async function showMetadataSelector(entry, { current = 1, total = 1 } = {}) {
+  return new Promise((resolve) => {
+    let currentResults = [];
+    let resolved = false;
+
+    const finish = (result) => {
+      if (resolved) return;
+      resolved = true;
+      document.removeEventListener('keydown', onKey);
+      overlay.remove();
+      resolve(result);
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') finish(null);
+    };
+    document.addEventListener('keydown', onKey);
+
+    const detectedTitle = escapeHtml(entry.series || entry.title || '');
+    const detectedAuthor = escapeHtml(entry.author || '');
+    const initialQuery = buildQueryFromEntry(entry);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'meta-selector-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Match Metadata');
+    overlay.innerHTML = `
+      <div class="meta-selector-panel" data-stop-propagation>
+        <div class="meta-selector-header">
+          <div>
+            <div class="meta-selector-title">Match Metadata</div>
+            <div class="meta-selector-detected">
+              ${detectedTitle}${
+      detectedAuthor ? ` &mdash; <em>${detectedAuthor}</em>` : ''
+    }
+            </div>
+          </div>
+          ${
+            total > 1
+              ? `<div class="meta-selector-progress">${current} / ${total}</div>`
+              : ''
+          }
+        </div>
+        <div class="meta-selector-search-row">
+          <input
+            type="text"
+            class="form-input meta-selector-input"
+            value="${escapeHtml(initialQuery)}"
+            placeholder="Search for book…"
+            aria-label="Search for book metadata"
+          />
+          <button class="btn btn-primary meta-selector-search-btn">Search</button>
+        </div>
+        <div class="meta-selector-results"></div>
+        <div class="meta-selector-footer">
+          <button class="btn meta-selector-skip-btn">Skip — Keep Detected</button>
+        </div>
+      </div>
+    `;
+
+    const root = document.getElementById('app');
+    root.appendChild(overlay);
+
+    const input = overlay.querySelector('.meta-selector-input');
+    const searchBtn = overlay.querySelector('.meta-selector-search-btn');
+    const skipBtn = overlay.querySelector('.meta-selector-skip-btn');
+    const resultsEl = overlay.querySelector('.meta-selector-results');
+
+    const renderLoading = () => {
+      resultsEl.innerHTML =
+        '<div class="meta-selector-loading">Searching\u2026</div>';
+    };
+
+    const renderResults = (results) => {
+      currentResults = results;
+      if (!results.length) {
+        resultsEl.innerHTML =
+          '<div class="meta-selector-empty">' +
+          'No results found. Try a different search.' +
+          '</div>';
+        return;
+      }
+      resultsEl.innerHTML = results
+        .map(
+          (r, i) => `
+          <button class="meta-result-card" data-select-result="${i}"
+            title="${escapeHtml(r.title || '')}">
+            ${
+              r.coverUrl
+                ? `<img class="meta-result-cover"
+                    src="${escapeHtml(r.coverUrl)}" alt="" loading="lazy"
+                    onerror="this.style.display='none'">`
+                : '<div class="meta-result-cover meta-result-cover--empty"></div>'
+            }
+            <div class="meta-result-info">
+              <div class="meta-result-title">${escapeHtml(
+                r.title || '\u2014'
+              )}</div>
+              <div class="meta-result-author">${escapeHtml(
+                r.author || ''
+              )}</div>
+              <div class="meta-result-meta">
+                ${r.year ? `<span>${escapeHtml(String(r.year))}</span>` : ''}
+                <span class="meta-result-source">${escapeHtml(
+                  r.source || ''
+                )}</span>
+              </div>
+            </div>
+            <div class="meta-result-select-label">Use this</div>
+          </button>`
+        )
+        .join('');
+    };
+
+    const doSearch = async (q) => {
+      if (!q.trim()) return;
+      renderLoading();
+      const results = await searchMetadata(q.trim());
+      renderResults(results);
+    };
+
+    searchBtn.addEventListener('click', () => doSearch(input.value));
+    skipBtn.addEventListener('click', () => finish(null));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch(input.value);
+    });
+
+    overlay.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-select-result]');
+      if (card) {
+        const idx = parseInt(card.dataset.selectResult, 10);
+        finish(Number.isNaN(idx) ? null : currentResults[idx] ?? null);
+      }
+    });
+
+    // Kick off the initial search, then focus the input
+    if (initialQuery) {
+      doSearch(initialQuery);
+    } else {
+      resultsEl.innerHTML =
+        '<div class="meta-selector-empty">Enter a title to search.</div>';
+    }
+    input.focus();
+    input.select();
+  });
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -1138,7 +1302,39 @@ async function importFiles(items) {
     } else if (item.file) {
       try {
         const meta = await extractMetadata(item.file, item.name);
-        bookEntries.push({ ...meta, fileName: item.name });
+        const entry = { ...meta, fileName: item.name };
+
+        // ── Derive series/author from filename when tags are absent ──
+        // parseAudiobookFileName strips part/chapter numbers so all files
+        // from the same book resolve to the same title/author string.
+        if (
+          isAudioFormat(entry.format) &&
+          entry.format !== 'audiobook-folder'
+        ) {
+          const fn = parseAudiobookFileName(item.name);
+          // series (album) is the primary grouping key
+          if (!entry.series && fn.title) {
+            entry.series = fn.title;
+          }
+          if (!entry.author && fn.author) {
+            entry.author = fn.author;
+          }
+          // Use cleaner filename-derived title when tag title is just the
+          // raw guess (e.g. "Book Title 02" → "Book Title")
+          const rawGuess = item.name
+            .replace(/\.[^.]+$/, '')
+            .replace(/[_\-.]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (fn.title && entry.title === rawGuess) {
+            entry.title = fn.title;
+          }
+          if (!entry.year && fn.year) {
+            entry.year = fn.year;
+          }
+        }
+
+        bookEntries.push(entry);
       } catch (e) {
         // eslint-disable-next-line no-console
         console.warn('Extract failed:', item.name, e);
@@ -1151,69 +1347,47 @@ async function importFiles(items) {
     }
   }
 
-  // ── Auto-enrich audio files before grouping ──
-  // Enrichment provides proper title/author from APIs so chapter files
-  // from the same audiobook can be recognised and merged.
-  const audioIndices = [];
-  for (let i = 0; i < bookEntries.length; i++) {
-    if (
-      isAudioFormat(bookEntries[i].format) &&
-      bookEntries[i].format !== 'audiobook-folder'
-    ) {
-      audioIndices.push(i);
-    }
-  }
-
-  if (audioIndices.length > 1) {
-    showToast('Enriching audio files for grouping...', 'info');
-
-    // Deduplicate API calls: entries that already share the same
-    // extracted title+author only need one lookup.
-    const enrichCache = new Map();
-    for (const idx of audioIndices) {
-      const e = bookEntries[idx];
-      const cacheKey =
-        `${(e.series || e.title || '').toLowerCase()}::` +
-        `${(e.author || '').toLowerCase()}`;
-
-      let enriched;
-      if (enrichCache.has(cacheKey)) {
-        enriched = enrichCache.get(cacheKey);
-      } else {
-        enriched = await enrichEntry(e);
-        enrichCache.set(cacheKey, enriched);
-      }
-
-      // Stash enriched metadata so mergeAudioBookParts can use it
-      bookEntries[idx].enrichedTitle = enriched.title || '';
-      bookEntries[idx].enrichedAuthor = enriched.author || '';
-
-      // Also apply other enriched fields that were missing
-      const fields = [
-        'narrator',
-        'publisher',
-        'year',
-        'isbn',
-        'description',
-        'genre',
-        'language',
-      ];
-      for (const f of fields) {
-        if (enriched[f] && !bookEntries[idx][f]) {
-          bookEntries[idx][f] = enriched[f];
-        }
-      }
-      if (enriched.coverUrl && !bookEntries[idx].coverBase64) {
-        bookEntries[idx].enrichedCoverUrl = enriched.coverUrl;
-      }
-    }
-  }
-
   // ── Merge multi-file audiobooks ──
-  // Groups audio files by enriched title+author (or album+author).
+  // Groups audio files by filename-derived series/title (set during parse).
   bookEntries = mergeAudioBookParts(bookEntries);
 
   if (bookEntries.length === 0) return;
+
+  // ── Interactive metadata picker ──
+  // For each book, show a search-and-select dialog so the user can confirm
+  // or correct the metadata before it is saved to the library.
+  {
+    const pickedEntries = [];
+    for (let i = 0; i < bookEntries.length; i++) {
+      const entry = bookEntries[i];
+      // eslint-disable-next-line no-await-in-loop
+      const picked = await showMetadataSelector(entry, {
+        current: i + 1,
+        total: bookEntries.length,
+      });
+      if (picked) {
+        const metaFields = [
+          'title',
+          'author',
+          'narrator',
+          'publisher',
+          'year',
+          'isbn',
+          'description',
+          'genre',
+          'language',
+        ];
+        for (const f of metaFields) {
+          if (picked[f]) entry[f] = picked[f];
+        }
+        if (picked.coverUrl && !entry.coverBase64) {
+          entry.enrichedCoverUrl = picked.coverUrl;
+        }
+      }
+      pickedEntries.push(entry);
+    }
+    bookEntries = pickedEntries;
+  }
 
   // ── Consolidate: replace pre-existing individual entries that belong to a
   //    merge group (handles re-import of files previously imported one-by-one)

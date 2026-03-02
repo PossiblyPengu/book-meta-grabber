@@ -139,6 +139,48 @@ function buildQuery(book) {
   return parts.join(' ').trim();
 }
 
+/**
+ * Search all APIs for a given query string and return all deduplicated results.
+ * Used by the interactive metadata picker shown during import.
+ * @param {string} query
+ * @returns {Promise<Object[]>} Flat deduplicated array of result objects
+ */
+export async function searchMetadata(query) {
+  if (!query) return [];
+  const [g, ol, it, mb] = await Promise.allSettled([
+    fetchGoogleBooks(query),
+    fetchOpenLibrary(query),
+    fetchItunes(query),
+    fetchMusicBrainz(query),
+  ]);
+  const all = [
+    ...(g.status === 'fulfilled' ? g.value : []),
+    ...(ol.status === 'fulfilled' ? ol.value : []),
+    ...(it.status === 'fulfilled' ? it.value : []),
+    ...(mb.status === 'fulfilled' ? mb.value : []),
+  ];
+  // Deduplicate by normalised title + author
+  const seen = new Set();
+  return all.filter((r) => {
+    const key = `${(r.title || '').toLowerCase()}::${(
+      r.author || ''
+    ).toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Build a search query string from a book entry. Exported for use in
+ * the interactive metadata picker.
+ * @param {Object} entry
+ * @returns {string}
+ */
+export function buildQueryFromEntry(entry) {
+  return buildQuery(entry);
+}
+
 function pickBest(results, book) {
   if (!results.length) return null;
 
