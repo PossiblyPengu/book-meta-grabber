@@ -75,7 +75,10 @@ import { escapeHtml } from './utils/escapeHtml.js';
 import { debounce } from './utils/debounce.js';
 import { trapFocus } from './utils/focusTrap.js';
 import { isScannerSupported, startScanner } from './utils/barcodeScanner.js';
-import { parseAudiobookFileName } from './utils/filenameParser.js';
+import {
+  parseAudiobookFileName,
+  stripAuthorFromTitle,
+} from './utils/filenameParser.js';
 
 import { App } from './ui/components/App.js';
 import { Modal } from './ui/components/Modal.js';
@@ -1338,6 +1341,16 @@ async function importFiles(items) {
           }
           if (!entry.year && fn.year) {
             entry.year = fn.year;
+          }
+        }
+
+        // ── Strip author name from title/series when it leaked in ──
+        if (entry.author) {
+          if (entry.title) {
+            entry.title = stripAuthorFromTitle(entry.title, entry.author);
+          }
+          if (entry.series) {
+            entry.series = stripAuthorFromTitle(entry.series, entry.author);
           }
         }
 

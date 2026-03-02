@@ -151,6 +151,51 @@ export function parseAudiobookFileName(fileName) {
   return parseFileName(`${stripped}.mp3`);
 }
 
+/**
+ * Removes the author name from a title string when it appears as a prefix or
+ * suffix (separated by spaces or ' - '). Comparison is case-insensitive and
+ * normalises consecutive spaces/dashes.
+ *
+ * Examples:
+ *   stripAuthorFromTitle('David Wong John Dies at the End', 'David Wong')
+ *   → 'John Dies at the End'
+ *   stripAuthorFromTitle('John Dies at the End David Wong', 'David Wong')
+ *   → 'John Dies at the End'
+ *
+ * @param {string} title
+ * @param {string} author
+ * @returns {string}
+ */
+export function stripAuthorFromTitle(title, author) {
+  if (!title || !author) return title;
+
+  const norm = (s) =>
+    s
+      .toLowerCase()
+      .replace(/[\s_\-\u2013\u2014]+/g, ' ')
+      .trim();
+
+  const a = norm(author);
+
+  if (!a) return title;
+
+  // Build a regex that matches the author (with flexible separator) at the
+  // start or end of the title.
+  const escaped = a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const sep = '[\\s\\-–—]+';
+
+  // Strip from start
+  const startRe = new RegExp(`^${escaped}${sep}`, 'i');
+  // Strip from end
+  const endRe = new RegExp(`${sep}${escaped}$`, 'i');
+
+  // Work on the ORIGINAL title so we preserve capitalisation
+  let cleaned = title.replace(/[\s_\-–—]+/g, ' ').trim();
+  cleaned = cleaned.replace(startRe, '').replace(endRe, '').trim();
+
+  return cleaned || title;
+}
+
 // Helper to validate parsed results
 function isValidResult(result) {
   // Title should be reasonably long
