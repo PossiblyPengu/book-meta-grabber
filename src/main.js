@@ -220,20 +220,11 @@ function showConfirm(title, body, onConfirm, danger = true) {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
   const overlay = wrapper.firstElementChild;
-  document.body.appendChild(overlay);
-  modalCallback = onConfirm;
 
-  // Handle clicks inside the modal (it lives outside #app)
-  overlay.addEventListener('click', (e) => {
-    if (
-      e.target.closest('[data-stop-propagation]') &&
-      !e.target.closest('[data-action]')
-    )
-      return;
-    const el = e.target.closest('[data-action]');
-    if (!el) return;
-    handleAction(el.dataset.action, el, e);
-  });
+  // Append inside #app so the existing click-delegation handles buttons
+  const root = document.getElementById('app');
+  root.appendChild(overlay);
+  modalCallback = onConfirm;
 
   // Focus trap the modal
   const modal = overlay.querySelector('.modal');

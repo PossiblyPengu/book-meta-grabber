@@ -602,11 +602,13 @@
 }
 
 .editor-panel {
-  position: relative;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
   z-index: 501;
   width: 100%;
   max-width: 520px;
-  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-secondary);
@@ -997,18 +999,18 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 400;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   animation: fadeIn 0.2s ease;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .detail-view {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 401;
   max-width: 720px;
   margin: 0 auto;
   padding: var(--sp-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
