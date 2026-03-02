@@ -40,6 +40,7 @@ body {
 .detail-section,
 .detail-hero,
 .stats-panel,
+.stats-kpi,
 .settings-card,
 .filter-bar,
 .tab-bar,
@@ -56,8 +57,32 @@ body {
     color var(--t-slow);
 }
 
-/* ── Scanline overlay (CSS-only, no extra DOM) ── */
-/* Disabled — caused compositing issues with backdrop-filter */
+/* ── Scanline overlay — CRT effect (dark mode only) ── */
+[data-theme='dark'] .app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* ── Subtle vignette for depth (dark mode) ── */
+[data-theme='dark'] .app-main::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.35) 100%);
+}
 
 a {
   color: var(--primary);
@@ -206,6 +231,14 @@ svg {
 ::selection {
   background: var(--primary);
   color: #fff;
+}
+
+/* ── Dark mode cyberpunk grid background ── */
+[data-theme='dark'] .app-main {
+  background-image:
+    linear-gradient(rgba(255, 45, 85, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 45, 85, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 /* ═══════════════════════════════════════

@@ -111,24 +111,24 @@
    DARK MODE — Deep Space / Marathon HUD
    ═══════════════════════════════════════ */
 [data-theme='dark'] {
-  --bg: #0a0c14;
-  --bg-secondary: #10121c;
-  --bg-tertiary: #161a28;
-  --surface-elevated: #1c2136;
-  --surface-sunken: #080a10;
-  --bg-gradient: linear-gradient(180deg, #0a0c14 0%, #0e1018 50%, #12141e 100%);
+  --bg: #06080e;
+  --bg-secondary: #0c0e18;
+  --bg-tertiary: #121522;
+  --surface-elevated: #1a1e30;
+  --surface-sunken: #04060a;
+  --bg-gradient: linear-gradient(180deg, #06080e 0%, #080a12 40%, #0e1018 100%);
 
-  --text: #e0e4ee;
+  --text: #e4e8f4;
   --text-secondary: #8892ad;
   --text-muted: #505a74;
-  --text-dim: #2e3548;
+  --text-dim: #2a3040;
 
   --primary: #ff2d55;
   --primary-hover: #ff4d6f;
   --primary-light: rgba(255, 45, 85, 0.1);
   --primary-dark: #ff6b8a;
-  --primary-glow: rgba(255, 45, 85, 0.22);
-  --primary-surface: rgba(255, 45, 85, 0.04);
+  --primary-glow: rgba(255, 45, 85, 0.3);
+  --primary-surface: rgba(255, 45, 85, 0.05);
 
   --accent: #ff2d55;
   --accent-hover: #ff4d6f;
@@ -159,19 +159,20 @@
   --status-dnf: #636366;
   --status-error: #ff453a;
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.45);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55);
-  --shadow-focus: 0 0 0 3px rgba(255, 45, 85, 0.3);
-  --shadow-glow: 0 0 20px rgba(255, 45, 85, 0.18),
-    0 0 60px rgba(255, 45, 85, 0.04);
-  --shadow-neon: 0 0 8px rgba(255, 45, 85, 0.35),
-    0 0 24px rgba(255, 45, 85, 0.1);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-focus: 0 0 0 2px rgba(255, 45, 85, 0.4), 0 0 16px rgba(255, 45, 85, 0.15);
+  --shadow-glow: 0 0 20px rgba(255, 45, 85, 0.25),
+    0 0 60px rgba(255, 45, 85, 0.08);
+  --shadow-neon: 0 0 6px rgba(255, 45, 85, 0.45),
+    0 0 20px rgba(255, 45, 85, 0.15),
+    0 0 40px rgba(255, 45, 85, 0.05);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 45, 85, 0.08);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 45, 85, 0.1);
 
-  --scanline-opacity: 0.012;
+  --scanline-opacity: 0.025;
 
   --overlay-bg: rgba(6, 8, 15, 0.6);
   --overlay-heavy: rgba(6, 8, 15, 0.75);

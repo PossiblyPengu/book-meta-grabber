@@ -48,7 +48,8 @@
 
 [data-theme='dark'] .app-header {
   border-bottom-color: var(--border-accent);
-  box-shadow: 0 1px 0 0 var(--border-accent), var(--shadow-sm);
+  box-shadow: 0 1px 0 0 var(--border-accent), 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: rgba(6, 8, 14, 0.88);
 }
 
 /* ── Tab Bar — Bottom navigation ── */
@@ -73,6 +74,8 @@
 
 [data-theme='dark'] .tab-bar {
   border-top-color: var(--border-accent);
+  background: rgba(6, 8, 14, 0.92);
+  box-shadow: 0 -1px 0 0 var(--border-accent), 0 -4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .tab-button {
@@ -104,7 +107,7 @@
   border-color: var(--border-accent);
 }
 [data-theme='dark'] .tab-button.active {
-  box-shadow: 0 0 8px var(--primary-glow);
+  box-shadow: 0 0 12px var(--primary-glow), inset 0 0 8px rgba(255, 45, 85, 0.06);
 }
 
 /* Active indicator — neon underline */
@@ -119,7 +122,9 @@
   border-radius: 1px;
 }
 [data-theme='dark'] .tab-button.active::after {
-  box-shadow: 0 0 6px var(--primary-glow), 0 2px 8px var(--primary-glow);
+  box-shadow: 0 0 8px var(--primary-glow), 0 2px 12px var(--primary-glow);
+  height: 2px;
+  animation: neonPulse 2.5s ease-in-out infinite;
 }
 
 .tab-label {
@@ -161,7 +166,7 @@
   background: var(--primary-light);
 }
 [data-theme='dark'] .shelf-pill.active {
-  box-shadow: 0 0 6px var(--primary-glow);
+  box-shadow: 0 0 8px var(--primary-glow), inset 0 0 6px rgba(255, 45, 85, 0.04);
 }
 
 /* ── Content area ── */
