@@ -1086,6 +1086,9 @@ function mergeAudioBookParts(entries) {
       duration: totalDuration || null,
       coverBase64,
       coverMime,
+      // Track individual source filenames so we can consolidate pre-existing
+      // individually-imported entries when the same files are re-imported.
+      sourceFileNames: group.map((e) => (e.fileName || '').toLowerCase()),
     });
   }
 
@@ -1211,6 +1214,30 @@ async function importFiles(items) {
   bookEntries = mergeAudioBookParts(bookEntries);
 
   if (bookEntries.length === 0) return;
+
+  // ── Consolidate: replace pre-existing individual entries that belong to a
+  //    merge group (handles re-import of files previously imported one-by-one)
+  const mergedEntries = bookEntries.filter(
+    (e) => e.format === 'audiobook-folder' && e.sourceFileNames?.length > 1
+  );
+  if (mergedEntries.length > 0) {
+    const { books: currentBooks } = getState();
+    for (const merged of mergedEntries) {
+      const sourceSet = new Set(merged.sourceFileNames);
+      const staleIds = currentBooks
+        .filter(
+          (b) =>
+            isAudioFormat(b.format) &&
+            b.format !== 'audiobook-folder' &&
+            sourceSet.has((b.fileName || '').toLowerCase())
+        )
+        .map((b) => b.id);
+      if (staleIds.length > 0) {
+        removeBooks(staleIds);
+        staleIds.forEach((id) => delete covers[id]);
+      }
+    }
+  }
 
   // ── Feature 1: Duplicate detection ──
   const { books: existingBooks } = getState();
