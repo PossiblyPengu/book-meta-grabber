@@ -132,7 +132,9 @@ export async function enrichEntry(entry) {
 
 function buildQuery(book) {
   const parts = [];
-  if (book.title) parts.push(book.title);
+  // For audio files, prefer album/series as the book title for searching
+  const titleTerm = book.series || book.title;
+  if (titleTerm) parts.push(titleTerm);
   if (book.author) parts.push(book.author);
   return parts.join(' ').trim();
 }

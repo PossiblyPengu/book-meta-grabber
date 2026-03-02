@@ -995,12 +995,38 @@ function mergeAudioBookParts(entries) {
   // Nothing to merge
   if (audioEntries.length <= 1) return [...nonAudio, ...audioEntries];
 
-  // Build a grouping key for each audio entry
+  // Build a grouping key for each audio entry.
+  // Priority: enriched data > series/album tag > part-stripped title.
+  // Author is OPTIONAL — many audiobooks have empty artist tags.
   const keyOf = (e) => {
-    // Prefer enriched title+author; fall back to series(album)+author
-    const title = (e.enrichedTitle || e.series || '').toLowerCase().trim();
+    const enrichedTitle = (e.enrichedTitle || '').toLowerCase().trim();
+    const enrichedAuthor = (e.enrichedAuthor || '').toLowerCase().trim();
+    const series = (e.series || '').toLowerCase().trim();
+    const rawTitle = (e.title || '').toLowerCase().trim();
     const author = (e.enrichedAuthor || e.author || '').toLowerCase().trim();
-    return title && author ? `${title}::${author}` : null;
+
+    // Best: enriched title (from API) — always reliable
+    if (enrichedTitle) {
+      return `enriched::${enrichedTitle}::${enrichedAuthor}`;
+    }
+    // Good: series/album tag present in embedded metadata
+    if (series) {
+      return `series::${series}::${author}`;
+    }
+    // Fallback: strip part/chapter numbers from the raw title so
+    // "Book Title Part 01" and "Book Title Part 02" become the same key.
+    if (rawTitle) {
+      const stripped = rawTitle
+        .replace(
+          /[\s_-]*(part|chapter|ch\.?|cd|disc|disk|volume|vol\.?)[\s_-]*\d+[\s_-]*$/i,
+          ''
+        )
+        .replace(/[\s_-]+\d{1,3}$/, '')
+        .trim();
+      const base = stripped || rawTitle;
+      return `title::${base}::${author}`;
+    }
+    return null;
   };
 
   const groups = new Map();
@@ -1144,7 +1170,7 @@ async function importFiles(items) {
     for (const idx of audioIndices) {
       const e = bookEntries[idx];
       const cacheKey =
-        `${(e.title || '').toLowerCase()}::` +
+        `${(e.series || e.title || '').toLowerCase()}::` +
         `${(e.author || '').toLowerCase()}`;
 
       let enriched;

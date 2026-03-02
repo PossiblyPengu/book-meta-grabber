@@ -3,6 +3,26 @@
  * Heuristics to extract Title, Author, Series, Year from filenames.
  */
 
+/**
+ * Strips audiobook part/chapter/disc/track suffixes and leading track numbers.
+ * e.g. "John Dies Part 01" -> "John Dies"
+ *      "01 - Chapter Name"  -> "Chapter Name"
+ */
+export function stripPartNumber(name) {
+  if (!name) return name;
+  let s = name;
+  // Strip leading track number: "01 - ", "01. ", "1 "
+  s = s.replace(/^\d{1,3}[.\s_-]+/, '');
+  // Strip trailing part/chapter/disc/volume markers
+  s = s.replace(
+    /[\s_-]*(part|chapter|ch\.?|cd|disc|disk|volume|vol\.?)[\s_-]*\d+[\s_-]*$/i,
+    ''
+  );
+  // Strip trailing standalone 1-3 digit numbers (but not 4-digit years)
+  s = s.replace(/[\s_-]+\d{1,3}$/, '');
+  return s.trim();
+}
+
 export function parseFileName(fileName) {
   if (!fileName) return { title: '', author: '', series: '', year: '' };
 
@@ -116,6 +136,19 @@ export function parseFileName(fileName) {
     series: '',
     year: '',
   };
+}
+
+/**
+ * Like parseFileName but pre-strips audiobook part/chapter numbers so all
+ * files from the same book parse to the same title.
+ */
+export function parseAudiobookFileName(fileName) {
+  if (!fileName) return { title: '', author: '', series: '', year: '' };
+  // Remove extension, then strip part numbers, then parse
+  const withoutExt = fileName.replace(/\.[^/.]+$/, '');
+  const stripped = stripPartNumber(withoutExt);
+  // Re-add a dummy extension so parseFileName's regex still fires correctly
+  return parseFileName(`${stripped}.mp3`);
 }
 
 // Helper to validate parsed results

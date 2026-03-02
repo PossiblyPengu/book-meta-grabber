@@ -1,4 +1,5 @@
 import { parseBlob } from 'music-metadata-browser';
+import { parseAudiobookFileName } from '../utils/filenameParser.js';
 
 self.addEventListener('message', async (ev) => {
   const { cmd, buffer, fileName } = ev.data || {};
@@ -56,6 +57,26 @@ self.addEventListener('message', async (ev) => {
         track: common.track || { no: null, of: null },
         disk: common.disk || { no: null, of: null },
       };
+
+      // Fill in blanks from filename when tags are missing.
+      // parseAudiobookFileName strips part/chapter numbers so all files
+      // from the same book resolve to the same title/author.
+      const fn = parseAudiobookFileName(fileName);
+      if (!result.series && fn.title) {
+        // Use parsed filename title as series (grouping key for multi-part books)
+        result.series = fn.title;
+      }
+      if (!result.author && fn.author) {
+        result.author = fn.author;
+      }
+      // If the tag title is just the same as the raw filename guess, prefer
+      // the cleaner filename-parsed title as the display title too.
+      if (fn.title && result.title === guessTitle(fileName)) {
+        result.title = fn.title;
+      }
+      if (!result.year && fn.year) {
+        result.year = fn.year;
+      }
 
       self.postMessage({ event: 'result', result });
     } catch (e) {
