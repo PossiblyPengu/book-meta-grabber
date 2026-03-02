@@ -153,11 +153,45 @@ export function BookDetailView(covers = {}) {
     .filter(Boolean)
     .join('');
 
+  function renderTimestampedNotes(b) {
+    const notes = b.timestampedNotes || [];
+    if (!notes.length && !b.notes) {
+      return '<div class="detail-empty-hint">No notes yet</div>';
+    }
+    let html = '';
+    if (notes.length) {
+      html += notes
+        .slice()
+        .reverse()
+        .map(
+          (n) => `
+          <div class="detail-ts-note">
+            <span class="detail-ts-note-time">${escapeHtml(
+              n.timestamp || ''
+            )}</span>
+            <span class="detail-ts-note-text">${escapeHtml(n.text)}</span>
+            <button class="detail-bookmark-remove" data-action="remove-ts-note" data-book-id="${
+              b.id
+            }" data-note-id="${n.id}">${icons.x}</button>
+          </div>`
+        )
+        .join('');
+    }
+    if (b.notes) {
+      html += `<div class="detail-notes" style="margin-top:var(--sp-sm)">${escapeHtml(
+        b.notes
+      )}</div>`;
+    }
+    return html;
+  }
+
   return `
     <div class="detail-overlay open" data-action="close-detail"></div>
-    <div class="detail-view open">
+    <div class="detail-view open" role="dialog" aria-modal="true" aria-label="${escapeHtml(
+      book.title || 'Book details'
+    )}">
       <div class="detail-header">
-        <button class="btn-icon" data-action="close-detail">${
+        <button class="btn-icon" data-action="close-detail" aria-label="Back">${
           icons.chevronLeft
         }</button>
         <div class="detail-header-title">${
@@ -284,6 +318,19 @@ export function BookDetailView(covers = {}) {
           </div>
         </div>
 
+        <!-- Timestamped Notes -->
+        <div class="detail-section">
+          <div class="detail-section-header">
+            <span>${icons.edit} Notes</span>
+            <button class="btn" data-action="add-timestamped-note" data-book-id="${
+              book.id
+            }">${icons.plus} Add</button>
+          </div>
+          <div class="detail-timestamped-notes">
+            ${renderTimestampedNotes(book)}
+          </div>
+        </div>
+
         ${
           book.description
             ? `
@@ -292,19 +339,6 @@ export function BookDetailView(covers = {}) {
             icons.bookOpen
           } Description</span></div>
           <div class="detail-description">${escapeHtml(book.description)}</div>
-        </div>
-        `
-            : ''
-        }
-
-        ${
-          book.notes
-            ? `
-        <div class="detail-section">
-          <div class="detail-section-header"><span>${
-            icons.edit
-          } Notes</span></div>
-          <div class="detail-notes">${escapeHtml(book.notes)}</div>
         </div>
         `
             : ''

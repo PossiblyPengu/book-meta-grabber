@@ -75,6 +75,9 @@ export function SettingsView() {
           <button class="btn" data-action="import-library">${
             icons.upload
           } Import Library</button>
+          <button class="btn" data-action="import-goodreads">${
+            icons.upload
+          } Import Goodreads CSV</button>
           <button class="btn" data-action="export-json">${
             icons.download
           } Export JSON</button>
@@ -97,6 +100,36 @@ export function SettingsView() {
             value="${settings.dailyGoal || 30}"
             data-action="set-daily-goal"
           >
+        </div>
+        <div class="settings-row">
+          <label>Yearly Book Goal</label>
+          <input
+            type="number"
+            class="editor-input"
+            style="width:100px;text-align:center"
+            min="1"
+            max="500"
+            value="${settings.yearlyGoal || 12}"
+            data-action="set-yearly-goal"
+          >
+        </div>
+      </div>
+
+      <div class="settings-section-header">Smart Shelves</div>
+      <div class="settings-card">
+        <p style="padding:var(--sp-sm) var(--sp-section);font-size:0.8125rem;color:var(--text-secondary)">
+          Create auto-populated shelves based on rules.
+        </p>
+        <div class="settings-btn-group">
+          <button class="btn" data-action="create-smart-shelf" data-preset="top-rated">${
+            icons.star
+          } Top Rated (4+)</button>
+          <button class="btn" data-action="create-smart-shelf" data-preset="favorites">${
+            icons.star
+          } Favorites</button>
+          <button class="btn" data-action="create-smart-shelf" data-preset="long-books">${
+            icons.book
+          } Long (>80%)</button>
         </div>
       </div>
 

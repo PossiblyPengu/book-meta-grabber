@@ -142,8 +142,29 @@ export function getShelfBooks(shelfId) {
     return status ? books.filter((b) => b.status === status) : books;
   }
 
+  // Smart shelf: auto-populated by rules
+  if (shelf.rules && shelf.rules.length > 0) {
+    return books.filter((b) => matchesSmartRules(b, shelf.rules));
+  }
+
   const bookSet = new Set(shelf.bookIds);
   return books.filter((b) => bookSet.has(b.id));
+}
+
+function matchesSmartRules(book, rules) {
+  return rules.every((rule) => {
+    const val = String(book[rule.field] || '').toLowerCase();
+    const target = String(rule.value || '').toLowerCase();
+    switch (rule.op) {
+      case 'equals': return val === target;
+      case 'contains': return val.includes(target);
+      case 'gt': return Number(book[rule.field] || 0) > Number(rule.value);
+      case 'lt': return Number(book[rule.field] || 0) < Number(rule.value);
+      case 'gte': return Number(book[rule.field] || 0) >= Number(rule.value);
+      case 'exists': return !!book[rule.field];
+      default: return false;
+    }
+  });
 }
 
 export function getBookById(id) {

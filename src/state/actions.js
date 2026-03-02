@@ -5,6 +5,7 @@ import {
   saveShelves,
   saveSettings,
   saveActivityLog,
+  deleteCover,
 } from '../services/storage.js';
 import { debounce } from '../utils/debounce.js';
 
@@ -70,6 +71,8 @@ export function removeBooks(ids) {
         : { ...s, bookIds: s.bookIds.filter((bid) => !idSet.has(bid)) }
     ),
   });
+  // Clean up orphaned covers from IndexedDB
+  for (const id of ids) deleteCover(id);
   debouncedSaveBooks();
   debouncedSaveShelves();
 }
@@ -98,6 +101,22 @@ export function createShelf(name, color = '#3b82f6') {
     name,
     color,
     bookIds: [],
+    isSystem: false,
+    createdAt: new Date().toISOString(),
+  };
+  setState({ shelves: [...shelves, shelf] });
+  debouncedSaveShelves();
+  return shelf;
+}
+
+export function createSmartShelf(name, rules, color = '#8b5cf6') {
+  const { shelves } = getState();
+  const shelf = {
+    id: generateId(),
+    name,
+    color,
+    bookIds: [],
+    rules,
     isSystem: false,
     createdAt: new Date().toISOString(),
   };

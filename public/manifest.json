@@ -1,0 +1,19 @@
+{
+  "name": "Book Meta Grabber",
+  "short_name": "BookMeta",
+  "description": "Extract and enrich metadata from your book collection",
+  "start_url": "/book-meta-grabber/",
+  "scope": "/book-meta-grabber/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7C3AED",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

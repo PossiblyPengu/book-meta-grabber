@@ -29,6 +29,9 @@
   align-items: center;
   gap: var(--sp-md);
   padding: var(--sp-sm) var(--sp-lg);
+  padding-top: max(var(--sp-sm), env(safe-area-inset-top));
+  padding-left: max(var(--sp-lg), env(safe-area-inset-left));
+  padding-right: max(var(--sp-lg), env(safe-area-inset-right));
   background: var(--header-bg);
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
@@ -48,6 +51,9 @@
   align-items: center;
   gap: var(--sp-2xs);
   padding: var(--sp-xs) var(--sp-lg);
+  padding-bottom: max(var(--sp-xs), env(safe-area-inset-bottom));
+  padding-left: max(var(--sp-lg), env(safe-area-inset-left));
+  padding-right: max(var(--sp-lg), env(safe-area-inset-right));
   background: var(--tab-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -120,6 +126,8 @@
   flex-wrap: wrap;
   gap: var(--sp-xs);
   padding: var(--sp-sm) var(--sp-lg);
+  padding-left: max(var(--sp-lg), env(safe-area-inset-left));
+  padding-right: max(var(--sp-lg), env(safe-area-inset-right));
   border-bottom: var(--border-w) solid var(--border-color);
 }
 
@@ -156,6 +164,8 @@
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--sp-md);
   padding: var(--sp-lg);
+  padding-left: max(var(--sp-lg), env(safe-area-inset-left));
+  padding-right: max(var(--sp-lg), env(safe-area-inset-right));
   animation: fadeIn 0.3s ease;
 }
 
@@ -164,6 +174,8 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--sp-lg);
     padding: var(--sp-xl);
+    padding-left: max(var(--sp-xl), env(safe-area-inset-left));
+    padding-right: max(var(--sp-xl), env(safe-area-inset-right));
   }
 }
 

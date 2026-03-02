@@ -2,8 +2,10 @@ import { icons } from '../icons.js';
 import { getState } from '../../state/store.js';
 import { getStreakInfo } from '../../state/selectors.js';
 
+const SORT_LABELS = { addedAt: 'Date', title: 'Title', author: 'Author', year: 'Year', progress: 'Progress' };
+
 export function Header() {
-  const { filters, ui, activeView } = getState();
+  const { filters, ui, activeView, sort } = getState();
 
   // Only show header on audiobooks/ebooks views
   if (activeView !== 'audiobooks' && activeView !== 'ebooks') return '';
@@ -33,9 +35,9 @@ export function Header() {
         >
       </div>
       <div class="header-actions">
-        <button class="btn-icon" data-action="toggle-sort" aria-label="Sort">${
-          icons.sort
-        }</button>
+        <button class="btn-icon sort-btn" data-action="toggle-sort" aria-label="Sort by ${SORT_LABELS[sort.by] || sort.by}" title="Sort: ${SORT_LABELS[sort.by] || sort.by}">
+          ${icons.sort}<span class="sort-indicator">${SORT_LABELS[sort.by] || ''}</span>
+        </button>
         <button class="btn-icon" data-action="toggle-select" aria-label="Select mode"
           ${ui.selectMode ? 'style="color:var(--primary-light)"' : ''}>
           ${icons.check}

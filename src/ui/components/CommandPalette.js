@@ -8,13 +8,14 @@ export function CommandPalette() {
   if (!ui.commandPaletteOpen) return '';
 
   return `
-    <div class="command-palette-overlay" data-action="close-command-palette">
+    <div class="command-palette-overlay" data-action="close-command-palette" role="dialog" aria-modal="true" aria-label="Command palette">
       <div class="command-palette" data-stop-propagation>
         <input
           class="command-palette-input"
           id="commandPaletteInput"
           placeholder="Search books, run actions..."
           autofocus
+          aria-label="Search books and actions"
           data-action="command-palette-search"
         >
         <div class="command-palette-results" id="commandPaletteResults">
@@ -99,6 +100,10 @@ function renderQuickActions() {
       <span class="command-palette-item-icon">${icons.moon}</span>
       <span class="command-palette-item-text">Toggle theme</span>
       <span class="command-palette-item-hint">Ctrl+D</span>
+    </div>
+    <div class="command-palette-item" data-action="scan-isbn">
+      <span class="command-palette-item-icon">${icons.maximize}</span>
+      <span class="command-palette-item-text">Scan ISBN barcode</span>
     </div>
     <div class="command-palette-item" data-action="nav" data-view="settings">
       <span class="command-palette-item-icon">${icons.settings}</span>

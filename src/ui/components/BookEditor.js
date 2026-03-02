@@ -101,7 +101,7 @@ export function BookEditor(covers = {}) {
     <div class="editor-overlay ${
       open ? 'open' : ''
     }" data-action="close-editor"></div>
-    <div class="editor-panel ${open ? 'open' : ''}">
+    <div class="editor-panel ${open ? 'open' : ''}" role="dialog" aria-modal="true" aria-label="Edit metadata">
       <div class="editor-drag-handle"></div>
       <div class="editor-header">
         <h2>Edit Metadata</h2>

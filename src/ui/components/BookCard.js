@@ -13,11 +13,12 @@ function renderStars(rating) {
   }${'<span class="star-empty">★</span>'.repeat(empty)}</div>`;
 }
 
-export function BookCard(book, { selected = false, covers = {} } = {}) {
+export function BookCard(book, { selected = false, covers = {}, coversLoaded = true } = {}) {
   const cover = covers[book.id];
+  const placeholderClass = !coversLoaded ? 'book-card-placeholder shimmer' : 'book-card-placeholder';
   const coverHtml = cover
     ? `<img src="data:${cover.mime};base64,${cover.base64}" alt="" loading="lazy">`
-    : `<div class="book-card-placeholder">${icons.book}</div>`;
+    : `<div class="${placeholderClass}">${icons.book}</div>`;
 
   const progress =
     book.progress > 0

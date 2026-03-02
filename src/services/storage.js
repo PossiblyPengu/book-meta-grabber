@@ -170,7 +170,10 @@ export function saveShelves(shelves) {
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 
+const SETTINGS_VERSION = 2;
+
 const DEFAULT_SETTINGS = {
+  _version: SETTINGS_VERSION,
   theme: 'dark',
   gridSize: 'medium',
   viewMode: 'grid',
@@ -180,8 +183,25 @@ const DEFAULT_SETTINGS = {
   dailyGoal: 30,
 };
 
+function migrateSettings(settings) {
+  const v = settings._version || 1;
+  if (v < 2) {
+    // v2: added dailyGoal default
+    settings.dailyGoal = settings.dailyGoal ?? 30;
+  }
+  settings._version = SETTINGS_VERSION;
+  return settings;
+}
+
 export function loadSettings() {
-  return { ...DEFAULT_SETTINGS, ...getJSON(SETTINGS_KEY, {}) };
+  const saved = getJSON(SETTINGS_KEY, {});
+  const merged = { ...DEFAULT_SETTINGS, ...saved };
+  if ((saved._version || 1) < SETTINGS_VERSION) {
+    const migrated = migrateSettings(merged);
+    setJSON(SETTINGS_KEY, migrated);
+    return migrated;
+  }
+  return merged;
 }
 
 export function saveSettings(settings) {

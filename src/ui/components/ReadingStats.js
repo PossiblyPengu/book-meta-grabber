@@ -226,6 +226,135 @@ export function ReadingStats() {
     )
     .join('');
 
+  // ── Streak heatmap (last 91 days = 13 weeks) ──
+  const heatmapDays = 91;
+  const heatCellSize = 14;
+  const heatGap = 3;
+  const heatCols = 13;
+  const heatRows = 7;
+  const heatW = heatCols * (heatCellSize + heatGap);
+  const heatH = heatRows * (heatCellSize + heatGap) + 20;
+
+  const heatCells = [];
+  const heatStart = new Date();
+  heatStart.setDate(heatStart.getDate() - heatmapDays + 1);
+  // Align to start of week (Sunday)
+  heatStart.setDate(heatStart.getDate() - heatStart.getDay());
+
+  for (let week = 0; week < heatCols; week++) {
+    for (let day = 0; day < heatRows; day++) {
+      const cellDate = new Date(heatStart);
+      cellDate.setDate(cellDate.getDate() + week * 7 + day);
+      const key = cellDate.toISOString().slice(0, 10);
+      const entry = activityLog[key];
+      const mins = entry?.minutesRead || 0;
+      const level =
+        mins === 0
+          ? 0
+          : mins < dailyGoal * 0.5
+          ? 1
+          : mins < dailyGoal
+          ? 2
+          : mins < dailyGoal * 1.5
+          ? 3
+          : 4;
+      const x = week * (heatCellSize + heatGap);
+      const y = day * (heatCellSize + heatGap);
+      heatCells.push(
+        `<rect x="${x}" y="${y}" width="${heatCellSize}" height="${heatCellSize}" rx="2" class="heatmap-cell heatmap-level-${level}"><title>${key}: ${mins}m</title></rect>`
+      );
+    }
+  }
+
+  const heatmapChart = `
+    <svg viewBox="0 0 ${heatW} ${heatH}" class="stats-heatmap-svg">
+      ${heatCells.join('')}
+    </svg>`;
+
+  // ── Achievements ──
+  const streakInfo = {
+    currentStreak: 0,
+    longestStreak: 0,
+    totalDaysRead: 0,
+    totalBooksFinished: books.filter((b) => b.status === 'finished').length,
+  };
+
+  // Calculate streaks
+  let streak = 0;
+  const sd = new Date();
+  for (let i = 0; i < 365; i++) {
+    const dateStr = sd.toISOString().slice(0, 10);
+    const entry = activityLog[dateStr];
+    if (entry && entry.minutesRead > 0) {
+      streak++;
+      if (streak > streakInfo.longestStreak) streakInfo.longestStreak = streak;
+    } else {
+      if (i === 0) {
+        sd.setDate(sd.getDate() - 1);
+        continue;
+      }
+      break;
+    }
+    sd.setDate(sd.getDate() - 1);
+  }
+  streakInfo.currentStreak = streak;
+
+  // Total days with activity
+  streakInfo.totalDaysRead = Object.values(activityLog).filter(
+    (e) => e.minutesRead > 0
+  ).length;
+
+  const achievements = [
+    {
+      icon: '🔥',
+      label: 'Current Streak',
+      value: `${streakInfo.currentStreak} days`,
+    },
+    {
+      icon: '🏆',
+      label: 'Best Streak',
+      value: `${streakInfo.longestStreak} days`,
+    },
+    {
+      icon: '📖',
+      label: 'Days Active',
+      value: `${streakInfo.totalDaysRead}`,
+    },
+    {
+      icon: '✅',
+      label: 'Books Finished',
+      value: `${streakInfo.totalBooksFinished}`,
+    },
+  ];
+
+  const milestones = [
+    { threshold: 7, label: '7-Day Streak', icon: '⭐' },
+    { threshold: 30, label: '30-Day Streak', icon: '💫' },
+    { threshold: 100, label: '100-Day Streak', icon: '🌟' },
+    { threshold: 365, label: '365-Day Streak', icon: '👑' },
+  ];
+
+  const milestonesHtml = milestones
+    .map((m) => {
+      const earned = streakInfo.longestStreak >= m.threshold;
+      return `<div class="achievement-badge ${earned ? 'earned' : 'locked'}">
+        <span class="achievement-icon">${m.icon}</span>
+        <span class="achievement-label">${m.label}</span>
+      </div>`;
+    })
+    .join('');
+
+  const achievementsHtml = achievements
+    .map(
+      (a) =>
+        `<div class="achievement-stat">
+          <span class="achievement-stat-icon">${a.icon}</span>
+          <span class="achievement-stat-value">${a.value}</span>
+          <span class="achievement-stat-label">${a.label}</span>
+        </div>`
+    )
+    .join('');
+
   return `
     <div class="stats-page">
       <h2>${icons.barChart} Reading Stats</h2>
@@ -264,6 +393,47 @@ export function ReadingStats() {
         </div>`
             : ''
         }
+
+        <div class="stats-panel stats-panel-wide">
+          <h3>Reading Heatmap (last 13 weeks)</h3>
+          <div class="stats-heatmap-container">${heatmapChart}</div>
+        </div>
+
+        <div class="stats-panel">
+          <h3>Achievements</h3>
+          <div class="stats-achievements">${achievementsHtml}</div>
+        </div>
+
+        <div class="stats-panel">
+          <h3>Milestones</h3>
+          <div class="stats-milestones">${milestonesHtml}</div>
+        </div>
+
+        ${renderYearlyChallenge(books, settings)}
+      </div>
+    </div>
+  `;
+}
+
+function renderYearlyChallenge(books, settings) {
+  const yearlyGoal = settings.yearlyGoal || 12;
+  const thisYear = String(new Date().getFullYear());
+  const finished = books.filter(
+    (b) => b.status === 'finished' && b.finishDate?.startsWith(thisYear)
+  ).length;
+  const pct = Math.min(100, Math.round((finished / yearlyGoal) * 100));
+
+  return `
+    <div class="stats-panel stats-panel-wide">
+      <h3>Yearly Challenge ${thisYear}</h3>
+      <div class="challenge-progress">
+        <div class="challenge-bar-track">
+          <div class="challenge-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="challenge-label">
+          <strong>${finished}</strong> / ${yearlyGoal} books
+          <span class="challenge-pct">(${pct}%)</span>
+        </div>
       </div>
     </div>
   `;

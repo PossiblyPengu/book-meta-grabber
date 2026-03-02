@@ -17,6 +17,7 @@ import {
   addSession,
   removeBooks,
   createShelf,
+  createSmartShelf,
   addBooksToShelf,
   removeBooksFromShelf,
   setView,
@@ -66,8 +67,11 @@ import {
 } from './services/apis.js';
 import { enrichBooks, cancelEnrichment } from './services/enrichment.js';
 import { debounce } from './utils/debounce.js';
+import { trapFocus } from './utils/focusTrap.js';
+import { isScannerSupported, startScanner } from './utils/barcodeScanner.js';
 
 import { App } from './ui/components/App.js';
+import { Modal } from './ui/components/Modal.js';
 import { render } from './ui/renderer.js';
 import { renderCommandPaletteResults } from './ui/components/CommandPalette.js';
 import { showToast } from './ui/components/Toast.js';
@@ -75,6 +79,7 @@ import { showToast } from './ui/components/Toast.js';
 // ── App-level mutable state (not in store — ephemeral) ──────────────────────
 let covers = {};
 let modalCallback = null;
+let releaseFocusTrap = null;
 
 // ── Reading Timer State ─────────────────────────────────────────────────────
 let timerInterval = null;
@@ -183,16 +188,48 @@ async function init() {
   setupKeyboard();
 }
 
+// ── Confirm Dialog (replaces window.confirm) ─────────────────────────────
+
+function showConfirm(title, body, onConfirm, danger = true) {
+  const html = Modal({ title, body, confirmText: 'Confirm', cancelText: 'Cancel', danger });
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper.firstElementChild);
+  modalCallback = onConfirm;
+  // Focus trap the modal
+  const modal = document.querySelector('.modal-overlay .modal');
+  if (modal) {
+    if (releaseFocusTrap) releaseFocusTrap();
+    releaseFocusTrap = trapFocus(modal);
+  }
+}
+
 // ── Render ───────────────────────────────────────────────────────────────────
 
 function renderApp() {
   const root = document.getElementById('app');
   render(root, App(covers));
 
-  // After render, focus command palette input if open
-  if (getState().ui.commandPaletteOpen) {
-    const input = document.getElementById('commandPaletteInput');
-    if (input) input.focus();
+  // Release any previous focus trap
+  if (releaseFocusTrap) {
+    releaseFocusTrap();
+    releaseFocusTrap = null;
+  }
+
+  // Apply focus trapping to topmost overlay
+  const modal = document.querySelector('.modal-overlay .modal');
+  const cmdPalette = document.querySelector('.command-palette');
+  const editorPanel = document.querySelector('.editor-panel.open');
+  const detailView = document.querySelector('.detail-view.open');
+
+  if (modal) {
+    releaseFocusTrap = trapFocus(modal);
+  } else if (cmdPalette) {
+    releaseFocusTrap = trapFocus(cmdPalette);
+  } else if (editorPanel) {
+    releaseFocusTrap = trapFocus(editorPanel);
+  } else if (detailView) {
+    releaseFocusTrap = trapFocus(detailView);
   }
 }
 
@@ -231,6 +268,10 @@ function setupEvents() {
     if (el.dataset.action === 'set-daily-goal') {
       const val = parseInt(el.value, 10);
       if (val > 0) updateSettings({ dailyGoal: val });
+    }
+    if (el.dataset.action === 'set-yearly-goal') {
+      const val = parseInt(el.value, 10);
+      if (val > 0) updateSettings({ yearlyGoal: val });
     }
     if (el.dataset.action === 'audio-scrub') {
       handleAction('audio-scrub', el, e);
@@ -346,12 +387,16 @@ async function handleAction(action, el, _e) {
 
     case 'batch-delete': {
       const ids = [...getState().ui.selectedBookIds];
-      if (confirm(`Delete ${ids.length} book(s)?`)) {
-        for (const id of ids) await deleteCover(id);
-        removeBooks(ids);
-        clearSelection();
-        showToast(`Deleted ${ids.length} book(s)`, 'success');
-      }
+      showConfirm(
+        'Delete Books',
+        `Are you sure you want to delete ${ids.length} book(s)? This cannot be undone.`,
+        async () => {
+          for (const id of ids) await deleteCover(id);
+          removeBooks(ids);
+          clearSelection();
+          showToast(`Deleted ${ids.length} book(s)`, 'success');
+        }
+      );
       break;
     }
 
@@ -446,6 +491,11 @@ async function handleAction(action, el, _e) {
       openEditor(el.dataset.bookId);
       break;
 
+    case 'scan-isbn':
+      closeCommandPalette();
+      handleScanIsbn();
+      break;
+
     // ── Theme ──
     case 'toggle-theme':
       toggleTheme();
@@ -469,6 +519,10 @@ async function handleAction(action, el, _e) {
       handleImportLibrary();
       break;
 
+    case 'import-goodreads':
+      handleImportGoodreads();
+      break;
+
     case 'export-json':
       handleExport(null, 'json');
       break;
@@ -477,16 +531,34 @@ async function handleAction(action, el, _e) {
       handleExport(null, 'csv');
       break;
 
+    case 'create-smart-shelf': {
+      const presets = {
+        'top-rated': { name: 'Top Rated', rules: [{ field: 'rating', op: 'gte', value: 4 }] },
+        'favorites': { name: 'Favorites', rules: [{ field: 'favorite', op: 'equals', value: 'true' }] },
+        'long-books': { name: 'Almost Done', rules: [{ field: 'progress', op: 'gt', value: 80 }] },
+      };
+      const preset = presets[el.dataset.preset];
+      if (preset) {
+        createSmartShelf(preset.name, preset.rules);
+        showToast(`Smart shelf "${preset.name}" created`, 'success');
+      }
+      break;
+    }
+
     case 'enrich-all':
       await handleBulkEnrich(getState().books.map((b) => b.id));
       break;
 
     case 'clear-library':
-      if (confirm('Delete ALL books? This cannot be undone.')) {
-        setState({ books: [] });
-        covers = {};
-        showToast('Library cleared', 'success');
-      }
+      showConfirm(
+        'Clear Library',
+        'Delete ALL books? This cannot be undone.',
+        () => {
+          setState({ books: [] });
+          covers = {};
+          showToast('Library cleared', 'success');
+        }
+      );
       break;
 
     // ── Sessions ──
@@ -791,6 +863,38 @@ async function handleAction(action, el, _e) {
       break;
     }
 
+    case 'add-timestamped-note': {
+      const bookId = el.dataset.bookId;
+      const book = getBookById(bookId);
+      if (book) {
+        const text = prompt('Note:');
+        if (text?.trim()) {
+          const tsNotes = [...(book.timestampedNotes || []), {
+            id: Date.now().toString(36),
+            text: text.trim(),
+            timestamp: new Date().toLocaleString(),
+            position: book.currentPage || `${book.progress || 0}%`,
+            createdAt: new Date().toISOString(),
+          }];
+          updateBook(bookId, { timestampedNotes: tsNotes });
+          showToast('Note added', 'success');
+        }
+      }
+      break;
+    }
+
+    case 'remove-ts-note': {
+      const bookId = el.dataset.bookId;
+      const noteId = el.dataset.noteId;
+      const book = getBookById(bookId);
+      if (book && noteId) {
+        const tsNotes = (book.timestampedNotes || []).filter((n) => n.id !== noteId);
+        updateBook(bookId, { timestampedNotes: tsNotes });
+        showToast('Note removed', 'info');
+      }
+      break;
+    }
+
     // ── Enrichment ──
     case 'cancel-enrichment':
       cancelEnrichment();
@@ -804,12 +908,14 @@ async function handleAction(action, el, _e) {
     case 'close-modal':
       document.querySelector('.modal-overlay')?.remove();
       modalCallback = null;
+      if (releaseFocusTrap) { releaseFocusTrap(); releaseFocusTrap = null; }
       break;
 
     case 'confirm-modal':
       modalCallback?.();
       document.querySelector('.modal-overlay')?.remove();
       modalCallback = null;
+      if (releaseFocusTrap) { releaseFocusTrap(); releaseFocusTrap = null; }
       break;
   }
 }
@@ -884,18 +990,27 @@ async function importFiles(items) {
   const existingFiles = new Set(
     existingBooks.map((b) => (b.fileName || '').toLowerCase())
   );
+  const existingIsbns = new Set(
+    existingBooks.filter((b) => b.isbn).map((b) => b.isbn.replace(/[-\s]/g, ''))
+  );
 
   const unique = [];
   let dupCount = 0;
   for (const entry of bookEntries) {
     const key = makeKey(entry.title, entry.author);
     const fileKey = (entry.fileName || '').toLowerCase();
-    if (existingKeys.has(key) || existingFiles.has(fileKey)) {
+    const isbnKey = entry.isbn ? entry.isbn.replace(/[-\s]/g, '') : '';
+    if (
+      existingKeys.has(key) ||
+      existingFiles.has(fileKey) ||
+      (isbnKey && existingIsbns.has(isbnKey))
+    ) {
       dupCount++;
     } else {
       unique.push(entry);
       existingKeys.add(key);
       existingFiles.add(fileKey);
+      if (isbnKey) existingIsbns.add(isbnKey);
     }
   }
 
@@ -956,9 +1071,20 @@ function handleEditorSave() {
 
   const get = (id) => document.getElementById(id)?.value || '';
 
+  const title = get('editTitle').trim();
+  const author = get('editAuthor').trim();
+  if (!title) {
+    showToast('Title is required', 'error');
+    return;
+  }
+  if (!author) {
+    showToast('Author is required', 'error');
+    return;
+  }
+
   updateBook(ui.editorBookId, {
-    title: get('editTitle'),
-    author: get('editAuthor'),
+    title,
+    author,
     narrator: get('editNarrator'),
     series: get('editSeries'),
     year: get('editYear'),
@@ -1180,19 +1306,42 @@ function handleExport(bookIds = null, format = 'json') {
     const headers = [
       'title',
       'author',
+      'narrator',
+      'series',
       'format',
       'year',
       'publisher',
       'isbn',
       'genre',
+      'language',
+      'description',
       'status',
       'progress',
+      'rating',
+      'favorite',
+      'tags',
+      'notes',
+      'duration',
+      'startDate',
+      'finishDate',
+      'addedAt',
+      'sessions',
+      'totalMinutesRead',
     ];
-    const rows = toExport.map((b) =>
-      headers
-        .map((h) => `"${String(b[h] || '').replace(/"/g, '""')}"`)
-        .join(',')
-    );
+    const rows = toExport.map((b) => {
+      const vals = {
+        ...b,
+        tags: (b.tags || []).join('; '),
+        sessions: (b.sessions || []).length,
+        totalMinutesRead: (b.sessions || []).reduce(
+          (sum, s) => sum + (s.minutes || 0),
+          0
+        ),
+      };
+      return headers
+        .map((h) => `"${String(vals[h] ?? '').replace(/"/g, '""')}"`)
+        .join(',');
+    });
     content = [headers.join(','), ...rows].join('\n');
     filename = 'library.csv';
     mimeType = 'text/csv';
@@ -1235,6 +1384,171 @@ function handleImportLibrary() {
     }
   };
   input.click();
+}
+
+async function handleScanIsbn() {
+  if (!isScannerSupported()) {
+    showToast('Barcode scanning not supported in this browser', 'error');
+    return;
+  }
+
+  // Create scanner overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'scanner-overlay';
+  overlay.innerHTML = `
+    <div class="scanner-header">
+      <span>Scan ISBN Barcode</span>
+      <button class="btn-icon" id="scannerClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="scanner-viewport" id="scannerViewport"></div>
+    <p class="scanner-hint">Point camera at a book's ISBN barcode</p>
+  `;
+  document.body.appendChild(overlay);
+
+  const scanner = await startScanner(
+    async (isbn) => {
+      scanner?.stop();
+      overlay.remove();
+      showToast(`ISBN detected: ${isbn}`, 'success');
+
+      // Look up the ISBN via APIs
+      try {
+        const results = await fetchOpenLibrary(`isbn:${isbn}`);
+        if (results?.length) {
+          const bookData = results[0];
+          addBooks([{ ...bookData, isbn, format: 'epub' }]);
+          showToast(`Added: ${bookData.title || isbn}`, 'success');
+        } else {
+          addBooks([{ title: `ISBN ${isbn}`, author: '', isbn, format: 'epub' }]);
+          showToast('Book added — enrich to fill metadata', 'info');
+        }
+      } catch {
+        addBooks([{ title: `ISBN ${isbn}`, author: '', isbn, format: 'epub' }]);
+        showToast('Book added — enrich to fill metadata', 'info');
+      }
+    },
+    (err) => {
+      overlay.remove();
+      showToast(err, 'error');
+    }
+  );
+
+  if (!scanner) {
+    overlay.remove();
+    return;
+  }
+
+  // Attach video to viewport
+  const viewport = overlay.querySelector('#scannerViewport');
+  scanner.video.className = 'scanner-video';
+  viewport.appendChild(scanner.video);
+
+  // Close button
+  overlay.querySelector('#scannerClose').onclick = () => {
+    scanner.stop();
+    overlay.remove();
+  };
+}
+
+function handleImportGoodreads() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.csv';
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const books = parseGoodreadsCsv(text);
+      if (!books.length) {
+        showToast('No books found in CSV', 'info');
+        return;
+      }
+      addBooks(books);
+      showToast(`Imported ${books.length} book(s) from Goodreads`, 'success');
+    } catch (e) {
+      showToast('Failed to parse CSV file', 'error');
+    }
+  };
+  input.click();
+}
+
+function parseGoodreadsCsv(text) {
+  const lines = text.split('\n');
+  if (lines.length < 2) return [];
+
+  // Parse header row
+  const headers = parseCsvRow(lines[0]);
+  const col = (name) => headers.findIndex(
+    (h) => h.toLowerCase().trim() === name.toLowerCase()
+  );
+
+  const iTitle = col('title');
+  const iAuthor = col('author');
+  const iIsbn = col('isbn13') !== -1 ? col('isbn13') : col('isbn');
+  const iRating = col('my rating');
+  const iPages = col('number of pages');
+  const iYear = col('year published') !== -1 ? col('year published') : col('original publication year');
+  const iShelf = col('exclusive shelf');
+  const iDateRead = col('date read');
+  const iDateAdded = col('date added');
+  const iReview = col('my review');
+  const iPublisher = col('publisher');
+
+  if (iTitle === -1 || iAuthor === -1) return [];
+
+  const books = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const row = parseCsvRow(lines[i]);
+    if (!row[iTitle]) continue;
+
+    const shelfStatus = {
+      'currently-reading': 'reading',
+      'read': 'finished',
+      'to-read': 'unread',
+    };
+
+    const rating = iRating !== -1 ? parseInt(row[iRating], 10) || 0 : 0;
+
+    books.push({
+      title: row[iTitle]?.trim() || '',
+      author: row[iAuthor]?.trim() || '',
+      isbn: iIsbn !== -1 ? (row[iIsbn] || '').replace(/[="]/g, '').trim() : '',
+      rating: rating > 0 ? rating : 0,
+      year: iYear !== -1 ? (row[iYear] || '').trim() : '',
+      status: iShelf !== -1 ? (shelfStatus[row[iShelf]?.trim()] || 'unread') : 'unread',
+      finishDate: iDateRead !== -1 ? (row[iDateRead] || '').trim() : '',
+      notes: iReview !== -1 ? (row[iReview] || '').trim() : '',
+      publisher: iPublisher !== -1 ? (row[iPublisher] || '').trim() : '',
+      progress: iShelf !== -1 && row[iShelf]?.trim() === 'read' ? 100 : 0,
+      format: 'epub',
+    });
+  }
+  return books;
+}
+
+function parseCsvRow(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = false;
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { result.push(current); current = ''; }
+      else current += ch;
+    }
+  }
+  result.push(current);
+  return result;
 }
 
 // ── Drag & Drop ──────────────────────────────────────────────────────────────
@@ -1344,6 +1658,46 @@ function setupKeyboard() {
       else if (getState().ui.selectMode) clearSelection();
     }
 
+    // Arrow keys: Navigate book grid
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      const grid = document.querySelector('.book-grid');
+      if (!grid || getState().ui.editorBookId || getState().ui.detailBookId || getState().ui.commandPaletteOpen) return;
+
+      const cards = [...grid.querySelectorAll('.book-card')];
+      if (!cards.length) return;
+
+      const focused = document.activeElement?.closest('.book-card');
+      let idx = focused ? cards.indexOf(focused) : -1;
+
+      // Calculate columns from grid
+      const cols = Math.round(grid.offsetWidth / cards[0].offsetWidth) || 1;
+
+      if (idx === -1) {
+        idx = 0;
+      } else {
+        e.preventDefault();
+        if (e.key === 'ArrowRight') idx = Math.min(idx + 1, cards.length - 1);
+        else if (e.key === 'ArrowLeft') idx = Math.max(idx - 1, 0);
+        else if (e.key === 'ArrowDown') idx = Math.min(idx + cols, cards.length - 1);
+        else if (e.key === 'ArrowUp') idx = Math.max(idx - cols, 0);
+      }
+
+      cards[idx].setAttribute('tabindex', '0');
+      cards[idx].focus();
+      // Clean up other tabindexes
+      cards.forEach((c, i) => { if (i !== idx) c.removeAttribute('tabindex'); });
+    }
+
+    // Enter: Open focused book card
+    if (e.key === 'Enter' && document.activeElement?.closest('.book-card')) {
+      const card = document.activeElement.closest('.book-card');
+      const bookId = card.dataset.bookId;
+      if (bookId) {
+        e.preventDefault();
+        openDetailView(bookId);
+      }
+    }
+
     // Delete: Remove selected
     if (
       e.key === 'Delete' &&
@@ -1351,11 +1705,15 @@ function setupKeyboard() {
       getState().ui.selectedBookIds.size > 0
     ) {
       const ids = [...getState().ui.selectedBookIds];
-      if (confirm(`Delete ${ids.length} book(s)?`)) {
-        removeBooks(ids);
-        clearSelection();
-        showToast(`Deleted ${ids.length} book(s)`, 'success');
-      }
+      showConfirm(
+        'Delete Books',
+        `Are you sure you want to delete ${ids.length} book(s)?`,
+        () => {
+          removeBooks(ids);
+          clearSelection();
+          showToast(`Deleted ${ids.length} book(s)`, 'success');
+        }
+      );
     }
   });
 }

@@ -8,11 +8,11 @@ export function Modal({
   danger = false,
 }) {
   return `
-    <div class="modal-overlay" data-action="close-modal">
+    <div class="modal-overlay" data-action="close-modal" role="dialog" aria-modal="true" aria-label="${title}">
       <div class="modal" data-stop-propagation>
         <div class="modal-header">
           <h3>${title}</h3>
-          <button class="btn-icon" data-action="close-modal" style="margin-left:auto">${
+          <button class="btn-icon" data-action="close-modal" aria-label="Close" style="margin-left:auto">${
             icons.x
           }</button>
         </div>
