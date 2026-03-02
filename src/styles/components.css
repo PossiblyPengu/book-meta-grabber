@@ -2889,10 +2889,15 @@
     padding-bottom: max(var(--sp-xs), env(safe-area-inset-bottom));
     padding-left: max(var(--sp-sm), env(safe-area-inset-left));
     padding-right: max(var(--sp-sm), env(safe-area-inset-right));
+    justify-content: space-around;
+    width: 100%;
   }
   .tab-button {
-    padding: var(--sp-sm) var(--sp-sm);
+    flex: 1;
+    justify-content: center;
+    padding: var(--sp-sm) var(--sp-xs);
     font-size: 0.68rem;
+    min-height: 44px;
   }
   .tab-label {
     display: none;
