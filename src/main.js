@@ -963,6 +963,75 @@ async function handleAction(action, el, _e) {
 
 // ── File Import ──────────────────────────────────────────────────────────────
 
+/**
+ * Groups individual audio files that belong to the same audiobook
+ * (matching album/series + author metadata) into a single entry.
+ */
+function mergeAudioBookParts(entries) {
+  const nonAudio = [];
+  const audioByAlbum = new Map();
+
+  for (const entry of entries) {
+    // Only group individual audio files that have an album/series tag
+    if (
+      isAudioFormat(entry.format) &&
+      entry.format !== 'audiobook-folder' &&
+      entry.series
+    ) {
+      const key = `${entry.series.toLowerCase().trim()}::${(entry.author || '').toLowerCase().trim()}`;
+      if (!audioByAlbum.has(key)) audioByAlbum.set(key, []);
+      audioByAlbum.get(key).push(entry);
+    } else {
+      nonAudio.push(entry);
+    }
+  }
+
+  const merged = [...nonAudio];
+
+  for (const [, group] of audioByAlbum) {
+    if (group.length === 1) {
+      // Single file — keep as-is
+      merged.push(group[0]);
+      continue;
+    }
+
+    // Sort by track number, then by filename
+    group.sort((a, b) => {
+      const ta = a.trackNumber ?? Infinity;
+      const tb = b.trackNumber ?? Infinity;
+      if (ta !== tb) return ta - tb;
+      return (a.fileName || '').localeCompare(b.fileName || '');
+    });
+
+    const primary = group[0];
+    const totalDuration = group.reduce((sum, e) => sum + (e.duration || 0), 0);
+
+    // Use the first available cover art from any part
+    let coverBase64 = null;
+    let coverMime = null;
+    for (const e of group) {
+      if (e.coverBase64) {
+        coverBase64 = e.coverBase64;
+        coverMime = e.coverMime;
+        break;
+      }
+    }
+
+    merged.push({
+      ...primary,
+      title: primary.series || primary.title,
+      format: 'audiobook-folder',
+      fileName: primary.series || primary.fileName,
+      partCount: group.length,
+      duration: totalDuration || null,
+      coverBase64,
+      coverMime,
+    });
+  }
+
+  return merged;
+}
+
 async function handleAddFiles() {
   const files = await pickFiles();
   if (!files.length) return;
@@ -978,7 +1047,7 @@ async function handleAddFolder() {
 }
 
 async function importFiles(items) {
-  const bookEntries = [];
+  let bookEntries = [];
 
   for (const item of items) {
     if (item.format === 'audiobook-folder') {
@@ -1018,6 +1087,11 @@ async function importFiles(items) {
       }
     }
   }
+
+  // ── Merge multi-file audiobooks ──
+  // When individual audio files share the same album (series) + author,
+  // group them into a single audiobook-folder entry.
+  bookEntries = mergeAudioBookParts(bookEntries);
 
   if (bookEntries.length === 0) return;
 
