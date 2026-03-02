@@ -23,7 +23,8 @@ export function ReadingStats() {
       ratingSum += b.rating;
     }
   }
-  const avgRating = ratedCount > 0 ? (ratingSum / ratedCount).toFixed(1) : '\u2013';
+  const avgRating =
+    ratedCount > 0 ? (ratingSum / ratedCount).toFixed(1) : '\u2013';
 
   // -- Streaks --
   const streakInfo = { currentStreak: 0, longestStreak: 0, totalDaysRead: 0 };
@@ -91,7 +92,9 @@ export function ReadingStats() {
       return `
         <rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="3" fill="${color}" opacity="0.85" />
         <text x="${x + barWidth / 2}" y="${chartH + 14}" text-anchor="middle"
-              font-size="9" font-weight="600" fill="var(--text-muted)" font-family="var(--font-mono)">${dayLabels[i]}</text>
+              font-size="9" font-weight="600" fill="var(--text-muted)" font-family="var(--font-mono)">${
+                dayLabels[i]
+              }</text>
         ${
           val > 0
             ? `<text x="${x + barWidth / 2}" y="${y - 4}" text-anchor="middle"
@@ -239,7 +242,9 @@ export function ReadingStats() {
 
       <div class="stats-grid">
         <div class="stats-panel">
-          <h3>This Week <span class="stats-panel-meta">${formatTime(weekTotal)} total</span></h3>
+          <h3>This Week <span class="stats-panel-meta">${formatTime(
+            weekTotal
+          )} total</span></h3>
           <div class="stats-chart-container">${weeklyChart}</div>
         </div>
 
@@ -252,7 +257,9 @@ export function ReadingStats() {
         </div>
 
         <div class="stats-panel stats-panel-wide">
-          <h3>Activity <span class="stats-panel-meta">${streakInfo.totalDaysRead} days active</span></h3>
+          <h3>Activity <span class="stats-panel-meta">${
+            streakInfo.totalDaysRead
+          } days active</span></h3>
           <div class="stats-heatmap-container">${heatmapChart}</div>
         </div>
 
