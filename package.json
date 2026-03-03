@@ -4,27 +4,29 @@
   "description": "Web metadata + cover grabber for books and audiobooks",
   "type": "module",
   "scripts": {
-    "dev":        "vite",
-    "build":      "vite build",
-    
-    "test":       "echo \"No tests configured\" && exit 0",
-    "lint":       "eslint src/ public/ --ext .js --max-warnings=0",
-    "lint:fix":   "eslint src/ public/ --ext .js --fix",
-    "format":     "prettier --write \"**/*.{js,css,md,json,html}\"",
-    "ci":         "npm run lint && npm run build"
+    "dev": "vite",
+    "build": "vite build",
+    "generate-icons": "pwa-assets-generator --config pwa-assets.config.js",
+    "test": "echo \"No tests configured\" && exit 0",
+    "lint": "eslint src/ public/ --ext .js --max-warnings=0",
+    "lint:fix": "eslint src/ public/ --ext .js --fix",
+    "format": "prettier --write \"**/*.{js,css,md,json,html}\"",
+    "ci": "npm run lint && npm run build"
   },
   "dependencies": {
+    "browser-id3-writer": "^4.0.0",
     "jszip": "^3.10.1",
-    "pdfjs-dist": "^4.0.379",
     "music-metadata-browser": "^2.5.10",
-    "browser-id3-writer": "^4.0.0"
+    "pdfjs-dist": "^4.0.379"
   },
   "devDependencies": {
-    "vite":           "^5.0.0",
-    "eslint":         "^8.50.0",
-    "prettier":       "^2.8.8",
+    "@vite-pwa/assets-generator": "^1.0.2",
+    "eslint": "^8.50.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-prettier": "^4.2.1"
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.8",
+    "vite": "^5.0.0",
+    "vite-plugin-pwa": "^1.2.0"
   },
   "author": "Andrew",
   "engines": {
