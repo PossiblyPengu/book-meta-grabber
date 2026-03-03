@@ -91,6 +91,160 @@ let covers = {};
 let modalCallback = null;
 let releaseFocusTrap = null;
 
+// ── Audio Playback Engine ───────────────────────────────────────────────────
+// File objects keyed by bookId — available only for the current browser session.
+const audioFiles = new Map(); // bookId → File[]
+let audioEl = null; // single shared HTMLAudioElement
+let audioBookId = null; // bookId currently loaded into audioEl
+let audioPartIndex = 0; // which file in the parts array is active
+let audioObjUrl = null; // current blob URL (revoked on change)
+
+function ensureAudioEl() {
+  if (audioEl) return;
+  audioEl = new Audio();
+  audioEl.addEventListener('timeupdate', onAudioTimeUpdate);
+  audioEl.addEventListener('ended', onAudioEnded);
+  audioEl.addEventListener('error', () =>
+    showToast('Audio playback error', 'error')
+  );
+}
+
+function getBookDurationSecs(book) {
+  if (!book) return 0;
+  if (typeof book.duration === 'number') return book.duration;
+  if (typeof book.duration === 'string' && book.duration.includes(':')) {
+    const p = book.duration.split(':').map(Number);
+    if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2];
+    if (p.length === 2) return p[0] * 60 + p[1];
+  }
+  return 0;
+}
+
+function getPartDurations(book) {
+  if (book?.audioParts?.length)
+    return book.audioParts.map((p) => p.duration || 0);
+  return [getBookDurationSecs(book)];
+}
+
+function onAudioTimeUpdate() {
+  if (!audioBookId || !audioEl) return;
+  const book = getBookById(audioBookId);
+  if (!book) return;
+  const totalSecs = getBookDurationSecs(book);
+  if (!totalSecs) return;
+
+  const durations = getPartDurations(book);
+  let elapsed = audioEl.currentTime;
+  for (let i = 0; i < audioPartIndex; i++) elapsed += durations[i] || 0;
+
+  const progress = Math.min(100, Math.round((elapsed / totalSecs) * 100));
+
+  // Update scrubber directly — no re-render needed
+  const scrubber = document.getElementById('audioScrubber');
+  if (scrubber) scrubber.value = progress;
+
+  // Persist to store only every ≥2% change to limit re-renders
+  if (Math.abs((book.progress || 0) - progress) >= 2) {
+    updateBook(audioBookId, { progress });
+  }
+}
+
+function onAudioEnded() {
+  const files = audioFiles.get(audioBookId);
+  if (files && audioPartIndex < files.length - 1) {
+    loadAudioPart(audioBookId, audioPartIndex + 1, 0, true);
+  } else if (audioBookId) {
+    updateBook(audioBookId, {
+      progress: 100,
+      status: 'finished',
+      finishDate: new Date().toISOString().slice(0, 10),
+    });
+    showToast('Finished!', 'success');
+  }
+}
+
+function loadAudioPart(bookId, partIndex, seekSecs, autoplay) {
+  const files = audioFiles.get(bookId);
+  if (!files?.[partIndex]) return;
+  ensureAudioEl();
+  if (audioObjUrl) {
+    URL.revokeObjectURL(audioObjUrl);
+    audioObjUrl = null;
+  }
+  audioObjUrl = URL.createObjectURL(files[partIndex]);
+  audioEl.src = audioObjUrl;
+  audioBookId = bookId;
+  audioPartIndex = partIndex;
+  audioEl.playbackRate = getState().settings?.playbackSpeed || 1;
+  if (seekSecs > 0) {
+    audioEl.addEventListener(
+      'loadedmetadata',
+      () => {
+        audioEl.currentTime = seekSecs;
+      },
+      { once: true }
+    );
+  }
+  if (autoplay) audioEl.play().catch(() => {});
+}
+
+function seekAudioToSecs(bookId, targetSecs) {
+  const book = getBookById(bookId);
+  const durations = getPartDurations(book);
+  let cum = 0;
+  for (let i = 0; i < durations.length; i++) {
+    const len = durations[i] || 0;
+    if (targetSecs <= cum + len || i === durations.length - 1) {
+      const offset = Math.max(0, targetSecs - cum);
+      if (i !== audioPartIndex || audioBookId !== bookId) {
+        loadAudioPart(bookId, i, offset, !audioEl?.paused);
+      } else {
+        audioEl.currentTime = offset;
+      }
+      return;
+    }
+    cum += len;
+  }
+}
+
+function toggleAudioPlayback(bookId) {
+  const files = audioFiles.get(bookId);
+  if (!files?.length) {
+    showToast('Audio files not available — re-import to play', 'warning');
+    return;
+  }
+  // Same book already loaded → toggle play/pause
+  if (audioEl && audioBookId === bookId) {
+    if (audioEl.paused) audioEl.play().catch(() => {});
+    else audioEl.pause();
+    return;
+  }
+  // Different book or first play — resume from saved progress
+  const book = getBookById(bookId);
+  const totalSecs = getBookDurationSecs(book);
+  const progress = book?.progress || 0;
+  let startPart = 0;
+  let seekInPart = 0;
+  if (totalSecs && progress > 0 && progress < 100) {
+    const targetSecs = (progress / 100) * totalSecs;
+    const durations = getPartDurations(book);
+    let cum = 0;
+    for (let i = 0; i < durations.length; i++) {
+      if (
+        targetSecs <= cum + (durations[i] || 0) ||
+        i === durations.length - 1
+      ) {
+        startPart = i;
+        seekInPart = Math.max(0, targetSecs - cum);
+        break;
+      }
+      cum += durations[i] || 0;
+    }
+  }
+  loadAudioPart(bookId, startPart, seekInPart, true);
+  setNowPlaying(bookId);
+}
+
 // ── Reading Timer State ─────────────────────────────────────────────────────
 let timerInterval = null;
 let timerStartTime = null;
@@ -973,8 +1127,12 @@ async function handleAction(action, el, _e) {
 
     case 'toggle-now-playing-timer': {
       const bookId = el.dataset.bookId;
-      if (timerRunning && timerBookId === bookId) {
-        // Pause
+      const book = getBookById(bookId);
+      if (isAudioFormat(book?.format)) {
+        // Real audio playback for audiobooks
+        toggleAudioPlayback(bookId);
+      } else if (timerRunning && timerBookId === bookId) {
+        // Pause reading timer
         timerPausedElapsed = getTimerElapsed();
         timerStartTime = null;
         timerRunning = false;
@@ -986,13 +1144,13 @@ async function handleAction(action, el, _e) {
         timerBookId === bookId &&
         timerPausedElapsed > 0
       ) {
-        // Resume
+        // Resume reading timer
         timerStartTime = Date.now();
         timerRunning = true;
         timerInterval = setInterval(updateTimerDisplay, 1000);
         showToast('Timer resumed', 'info');
       } else {
-        // Start new timer
+        // Start new reading timer
         if (timerRunning) stopTimerCleanup();
         timerBookId = bookId;
         timerStartTime = Date.now();
@@ -1009,6 +1167,14 @@ async function handleAction(action, el, _e) {
       const bookId = el.dataset.bookId;
       const value = parseInt(el.value, 10);
       if (bookId && !isNaN(value)) {
+        if (audioEl && audioBookId === bookId) {
+          const bk = getBookById(bookId);
+          const totalSecs = getBookDurationSecs(bk);
+          if (totalSecs) {
+            seekAudioToSecs(bookId, (value / 100) * totalSecs);
+            break;
+          }
+        }
         updateBook(bookId, { progress: value });
       }
       break;
@@ -1016,20 +1182,38 @@ async function handleAction(action, el, _e) {
 
     case 'audio-skip-back': {
       const bookId = el.dataset.bookId;
-      const book = getBookById(bookId);
-      if (book) {
-        const newProg = Math.max(0, (book.progress || 0) - 1);
-        updateBook(bookId, { progress: newProg });
+      if (audioEl && audioBookId === bookId) {
+        const bk = getBookById(bookId);
+        const durations = getPartDurations(bk);
+        let cum = 0;
+        for (let i = 0; i < audioPartIndex; i++) cum += durations[i] || 0;
+        seekAudioToSecs(bookId, Math.max(0, cum + audioEl.currentTime - 30));
+      } else {
+        const bk = getBookById(bookId);
+        if (bk)
+          updateBook(bookId, { progress: Math.max(0, (bk.progress || 0) - 1) });
       }
       break;
     }
 
     case 'audio-skip-forward': {
       const bookId = el.dataset.bookId;
-      const book = getBookById(bookId);
-      if (book) {
-        const newProg = Math.min(100, (book.progress || 0) + 1);
-        updateBook(bookId, { progress: newProg });
+      if (audioEl && audioBookId === bookId) {
+        const bk = getBookById(bookId);
+        const totalSecs = getBookDurationSecs(bk);
+        const durations = getPartDurations(bk);
+        let cum = 0;
+        for (let i = 0; i < audioPartIndex; i++) cum += durations[i] || 0;
+        seekAudioToSecs(
+          bookId,
+          Math.min(totalSecs || Infinity, cum + audioEl.currentTime + 30)
+        );
+      } else {
+        const bk = getBookById(bookId);
+        if (bk)
+          updateBook(bookId, {
+            progress: Math.min(100, (bk.progress || 0) + 1),
+          });
       }
       break;
     }
@@ -1038,6 +1222,7 @@ async function handleAction(action, el, _e) {
       const speed = parseFloat(el.dataset.speed);
       if (!isNaN(speed)) {
         updatePlaybackSpeed(speed);
+        if (audioEl) audioEl.playbackRate = speed;
         showToast(`Playback speed: ${speed}x`, 'info');
       }
       break;
@@ -1286,6 +1471,21 @@ async function handleAddFolder() {
 async function importFiles(items) {
   let bookEntries = [];
 
+  // Build name → File map so we can play audio after import
+  const importedFilesByName = new Map();
+  for (const item of items) {
+    if (item.file && isAudioFormat(item.format)) {
+      importedFilesByName.set(item.name, item.file);
+      importedFilesByName.set(item.name.toLowerCase(), item.file);
+    }
+    if (item.format === 'audiobook-folder' && item.parts) {
+      for (const p of item.parts) {
+        importedFilesByName.set(p.name, p.file);
+        importedFilesByName.set(p.name.toLowerCase(), p.file);
+      }
+    }
+  }
+
   for (const item of items) {
     if (item.format === 'audiobook-folder') {
       // Multi-part audiobook: extract from first part
@@ -1473,6 +1673,28 @@ async function importFiles(items) {
   if (unique.length === 0) return;
 
   const newBooks = addBooks(unique);
+
+  // ── Store audio file refs for playback within this session ──
+  for (let i = 0; i < newBooks.length; i++) {
+    const entry = unique[i];
+    const bookId = newBooks[i].id;
+    if (!isAudioFormat(entry.format)) continue;
+    if (entry.sourceFileNames?.length > 1) {
+      const partFiles = entry.sourceFileNames
+        .map(
+          (fn) =>
+            importedFilesByName.get(fn) ??
+            importedFilesByName.get(fn.toLowerCase())
+        )
+        .filter(Boolean);
+      if (partFiles.length) audioFiles.set(bookId, partFiles);
+    } else if (entry.fileName) {
+      const f =
+        importedFilesByName.get(entry.fileName) ??
+        importedFilesByName.get(entry.fileName.toLowerCase());
+      if (f) audioFiles.set(bookId, [f]);
+    }
+  }
 
   // Save covers to IndexedDB
   for (let i = 0; i < newBooks.length; i++) {

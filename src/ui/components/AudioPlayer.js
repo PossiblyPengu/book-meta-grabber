@@ -9,14 +9,14 @@ export function AudioPlayer(book, _insights) {
   const speed = settings.playbackSpeed || 1;
   const progress = book.progress || 0;
 
-  // Duration display
-  const duration = book.duration || '';
+  // Duration — stored as seconds (number) from the metadata worker
   let totalSecs = 0;
-  if (duration) {
-    const parts = duration.split(':').map(Number);
-    if (parts.length === 3)
-      totalSecs = parts[0] * 3600 + parts[1] * 60 + parts[2];
-    else if (parts.length === 2) totalSecs = parts[0] * 3600 + parts[1] * 60;
+  if (typeof book.duration === 'number') {
+    totalSecs = book.duration;
+  } else if (typeof book.duration === 'string' && book.duration.includes(':')) {
+    const p = book.duration.split(':').map(Number);
+    if (p.length === 3) totalSecs = p[0] * 3600 + p[1] * 60 + p[2];
+    else if (p.length === 2) totalSecs = p[0] * 60 + p[1];
   }
 
   const listenedSecs = Math.round(totalSecs * (progress / 100));
