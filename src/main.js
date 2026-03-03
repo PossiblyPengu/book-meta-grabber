@@ -83,6 +83,7 @@ import {
 import { App } from './ui/components/App.js';
 import { Modal } from './ui/components/Modal.js';
 import { render } from './ui/renderer.js';
+import { icons } from './ui/icons.js';
 import { renderCommandPaletteResults } from './ui/components/CommandPalette.js';
 import { showToast } from './ui/components/Toast.js';
 
@@ -99,11 +100,25 @@ let audioBookId = null; // bookId currently loaded into audioEl
 let audioPartIndex = 0; // which file in the parts array is active
 let audioObjUrl = null; // current blob URL (revoked on change)
 
+function updatePlayPauseIcons(playing) {
+  document
+    .querySelectorAll(
+      '[data-action="toggle-now-playing-timer"] svg, [data-action="toggle-now-playing-timer"]'
+    )
+    .forEach((el) => {
+      const btn = el.closest('[data-action="toggle-now-playing-timer"]') || el;
+      if (!btn.dataset.action) return;
+      btn.innerHTML = playing ? icons.pause : icons.play;
+    });
+}
+
 function ensureAudioEl() {
   if (audioEl) return;
   audioEl = new Audio();
   audioEl.addEventListener('timeupdate', onAudioTimeUpdate);
   audioEl.addEventListener('ended', onAudioEnded);
+  audioEl.addEventListener('play', () => updatePlayPauseIcons(true));
+  audioEl.addEventListener('pause', () => updatePlayPauseIcons(false));
   audioEl.addEventListener('error', () =>
     showToast('Audio playback error', 'error')
   );
@@ -1491,6 +1506,9 @@ async function importFiles(items) {
       // Multi-part audiobook: extract from first part
       const first = item.parts?.[0];
       if (!first?.file) continue;
+      const sortedParts = [...item.parts].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
       try {
         const meta = await extractMetadata(first.file, first.name);
         bookEntries.push({
@@ -1498,7 +1516,17 @@ async function importFiles(items) {
           title: meta.title || item.name,
           format: 'audiobook-folder',
           fileName: item.name,
-          partCount: item.parts.length,
+          partCount: sortedParts.length,
+          sourceFileNames: sortedParts.map((p) => p.name.toLowerCase()),
+          audioParts: sortedParts.map((p, idx) => ({
+            fileName: p.name,
+            title: p.name
+              .replace(/\.[^.]+$/, '')
+              .replace(/[_-]/g, ' ')
+              .trim(),
+            duration: null,
+            trackNumber: idx + 1,
+          })),
         });
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -1506,7 +1534,17 @@ async function importFiles(items) {
         bookEntries.push({
           title: item.name,
           format: 'audiobook-folder',
-          partCount: item.parts?.length || 0,
+          partCount: sortedParts.length,
+          sourceFileNames: sortedParts.map((p) => p.name.toLowerCase()),
+          audioParts: sortedParts.map((p, idx) => ({
+            fileName: p.name,
+            title: p.name
+              .replace(/\.[^.]+$/, '')
+              .replace(/[_-]/g, ' ')
+              .trim(),
+            duration: null,
+            trackNumber: idx + 1,
+          })),
         });
       }
     } else if (item.file) {
@@ -1679,7 +1717,8 @@ async function importFiles(items) {
     const entry = unique[i];
     const bookId = newBooks[i].id;
     if (!isAudioFormat(entry.format)) continue;
-    if (entry.sourceFileNames?.length > 1) {
+    if (entry.sourceFileNames?.length) {
+      // Multi-part audiobook (folder import or merged files)
       const partFiles = entry.sourceFileNames
         .map(
           (fn) =>
@@ -1689,6 +1728,7 @@ async function importFiles(items) {
         .filter(Boolean);
       if (partFiles.length) audioFiles.set(bookId, partFiles);
     } else if (entry.fileName) {
+      // Single-file import — key matches the original file name
       const f =
         importedFilesByName.get(entry.fileName) ??
         importedFilesByName.get(entry.fileName.toLowerCase());
